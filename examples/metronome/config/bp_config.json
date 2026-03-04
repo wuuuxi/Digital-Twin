@@ -1,0 +1,36 @@
+{
+  "motion": "benchpress",
+
+  "data_settings": {
+    "folder": "C:/Users/PC/OneDrive/Experiment/20240604_HKSI_benchpress_yuetian/20240604 Yuetian bp_xlsx/",
+    "data_files": {
+      "20": [6.65, 19.032, "20kg/MVN-004.xlsx", "20kg/test 2024_06_04 16_16_22.csv"]
+    },
+    "musc_mvc": [0.1276, 0.298, 0.3023, 0.3392, 0.3792, 0.3061, 0.7502, 0.2241, 0.226, 0.3334, 0.0539, 0.048],
+    "fs": 1000
+  },
+
+  "opensim_settings": {
+    "model_path": "../../workspace",
+    "model_name": "whole body model_yuetian_realtime.osim",
+    "geometry_path": "workspace/Geometry"
+  },
+
+  "audio_settings": {
+    "sound_path": "../../workspace",
+    "fixed_beep_count": 3
+  },
+
+  "playback_settings": {
+    "target_lift_duration": 1.5,
+    "target_lower_duration": 1.5,
+    "lift_speed_ratio": null,
+    "lower_speed_ratio": null
+  },
+
+  "visualization_settings": {
+    "arm_length": 0.37,
+    "shoulder_height": 0.45
+  }
+
+}

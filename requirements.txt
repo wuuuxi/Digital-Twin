@@ -1,0 +1,23 @@
+environment.yml
+
+name: Digital_Twin
+channels:
+  - conda-forge
+  - defaults
+  - opensim-org
+dependencies:
+  - python>=3.12.12
+  - numpy>=2.0.2
+  - pandas>=2.3.3
+  - scipy>=1.16.3
+  - pygame>=2.6.1
+  - opensim>=4.5.2
+  - pip>=25.3
+  - pip:
+    - psutil>=5.8.0
+    - GPUtil>=1.4.0
+
+
+
+conda install opensim-org::opensim
+opensim=4.5
