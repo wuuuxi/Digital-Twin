@@ -691,3 +691,17 @@
 [2026-03-04 15:55:02.243] [info] Loaded model WholeBodyModel-yuetian from file ../../workspace/whole body model_yuetian_realtime.osim
 [2026-03-04 15:55:02.598] [warning] Coordinate.setValue:  coordinate pelvis_list is locked. Unable to change its value.
 [2026-03-04 15:55:02.598] [warning] Coordinate.setValue:  coordinate pelvis_rotation is locked. Unable to change its value.
+[2026-03-19 20:14:42.524] [info] Updating Model file from 40000 to latest format...
+[2026-03-19 20:14:42.578] [info] Loaded model WholeBodyModel-yuetian from file ../../workspace/whole body model_yuetian_realtime.osim
+[2026-03-19 20:15:22.673] [info] Updating Model file from 40000 to latest format...
+[2026-03-19 20:15:22.724] [info] Loaded model WholeBodyModel-yuetian from file ../../workspace/whole body model_yuetian_realtime.osim
+[2026-03-19 20:15:23.066] [warning] Coordinate.setValue:  coordinate pelvis_list is locked. Unable to change its value.
+[2026-03-19 20:15:23.067] [warning] Coordinate.setValue:  coordinate pelvis_rotation is locked. Unable to change its value.
+[2026-03-19 20:17:34.727] [info] Updating Model file from 40000 to latest format...
+[2026-03-19 20:17:34.777] [info] Loaded model WholeBodyModel-yuetian from file ../../workspace/whole body model_yuetian_realtime.osim
+[2026-03-19 20:18:53.162] [info] Updating Model file from 40000 to latest format...
+[2026-03-19 20:18:53.216] [info] Loaded model WholeBodyModel-yuetian from file ../../workspace/whole body model_yuetian_realtime.osim
+[2026-03-19 20:19:21.420] [info] Updating Model file from 40000 to latest format...
+[2026-03-19 20:19:21.470] [info] Loaded model WholeBodyModel-yuetian from file ../../workspace/whole body model_yuetian_realtime.osim
+[2026-03-19 20:19:21.811] [warning] Coordinate.setValue:  coordinate pelvis_list is locked. Unable to change its value.
+[2026-03-19 20:19:21.812] [warning] Coordinate.setValue:  coordinate pelvis_rotation is locked. Unable to change its value.

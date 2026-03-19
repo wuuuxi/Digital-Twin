@@ -1,9 +1,9 @@
 import time
 import threading
 
-from digitaltwin.osim_model import OpenSimModel
+from digitaltwin.osim.osim_model import OpenSimModel
 from digitaltwin.config_manager import ConfigManager
-from digitaltwin.visualizer import SpeedController, GlobalAudioScheduler
+from digitaltwin.visualization.realtime import SpeedController, GlobalAudioScheduler
 from digitaltwin.data.data_manager import DataManager
 # os.environ['LIBGL_ALWAYS_SOFTWARE'] = '1'
 
@@ -129,7 +129,7 @@ class VisualizerApp:
             current_data = self.get_data_for_time(cycle_time, phase)
 
             # 更新模型
-            self.opensim_model.updStateQ(current_data[:4])  # 更新关节角度
+            self.opensim_model.update_state_q(current_data[:4])  # 更新关节角度
             # self.opensim_model.updStateAct(current_data[:4])
             self.opensim_model.update_visualization()
 
@@ -145,7 +145,7 @@ class VisualizerApp:
     def run_visualization(self):
         """运行可视化（现在由音频调度器驱动）"""
         # self.opensim_model.initBenchPressQ()
-        self.opensim_model.initQ()
+        self.opensim_model.initialize_pose()
         self.opensim_model.update_visualization()
 
         print("Starting Audio-Visual synchronized visualization...")

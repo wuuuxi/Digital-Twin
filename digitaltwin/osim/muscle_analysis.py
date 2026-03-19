@@ -8,8 +8,7 @@ import sys
 import os
 import io
 
-sys.path.append('..')
-from basic import *
+from digitaltwin.data.helpers import find_nearest_idx
 from contextlib import redirect_stdout
 
 

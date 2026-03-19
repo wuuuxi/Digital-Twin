@@ -4,25 +4,29 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e826f58e-80b6-431c-ae55-618990f064b5" name="更改" comment="Initial commit">
-      <change afterPath="$PROJECT_DIR$/1.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/digitaltwin/data/emg_processor.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/digitaltwin/data/robot_processor.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/digitaltwin/data/utils.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/digitaltwin/data/xsens_processor.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/digitaltwin/processing/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/digitaltwin/processing/alignment.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/digitaltwin/processing/curve_analysis.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/digitaltwin/subject.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/digitaltwin/visualization/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/digitaltwin/visualization/plot_curves.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/data_analysis/config/20250708_BenchPress_Chenzui.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/data_analysis/config/20251009_BenchPress_Yuetian.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/data_analysis/run.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+    <list default="true" id="e826f58e-80b6-431c-ae55-618990f064b5" name="更改" comment="Add code about data processing.">
+      <change afterPath="$PROJECT_DIR$/digitaltwin/osim/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/digitaltwin/data/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/data/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/digitaltwin/data/data_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/data/data_manager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/data/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/data/helpers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/muscle_state.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/osim/muscle_state.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/osim/Opensim_scaling.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/osim/opensim_scaling.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/osim/muscle_analysis.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/osim/muscle_analysis.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/osim_model.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/osim/osim_model.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/processing/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/analysis/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/processing/alignment.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/analysis/alignment.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/processing/curve_analysis.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/analysis/curve_analysis.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/subject.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/subject.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/visualization/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/visualization/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/visualizer/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/visualizer/audio.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/visualization/audio.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/visualizer/visualizer_app.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/visualization/realtime.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/data_analysis/config/20251009_BenchPress_Yuetian.json" beforeDir="false" afterPath="$PROJECT_DIR$/examples/data_analysis/config/20251009_BenchPress_Yuetian.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/data_analysis/run.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/data_analysis/run.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/metronome/bp-metronome.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/metronome/bp-metronome.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/metronome/sq-metronome.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/metronome/sq-metronome.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/workspace/opensim.log" beforeDir="false" afterPath="$PROJECT_DIR$/workspace/opensim.log" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -72,6 +76,7 @@
     "Python.1.executor": "Run",
     "Python.benchpress_set_beat_vel.executor": "Run",
     "Python.bp (1).executor": "Run",
+    "Python.bp-metronome.executor": "Run",
     "Python.bp-visualization.executor": "Run",
     "Python.bp.executor": "Run",
     "Python.generate_beep_sounds.executor": "Run",
@@ -79,6 +84,7 @@
     "Python.run (1).executor": "Run",
     "Python.run.executor": "Run",
     "Python.sq (1).executor": "Run",
+    "Python.sq-metronome (1).executor": "Run",
     "Python.sq-visualization.executor": "Run",
     "Python.sq.executor": "Run",
     "Python.test.executor": "Run",
@@ -93,14 +99,15 @@
 }]]></component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\digitaltwin\visualization" />
+      <recent name="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\digitaltwin\osim" />
       <recent name="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\examples\data_analysis" />
       <recent name="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\examples\data_analysis\config" />
       <recent name="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\examples\metronome" />
-      <recent name="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\examples" />
     </key>
   </component>
   <component name="RunManager" selected="Python.run">
-    <configuration name="1" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="bp-metronome" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="Digital Twin" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -109,33 +116,11 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/examples/metronome" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/1.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="main" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="Digital Twin" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/main.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/metronome/bp-metronome.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -175,11 +160,11 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/examples/metronome" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\examples\metronome\sq-metronome.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/metronome/sq-metronome.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -191,9 +176,8 @@
     <recent_temporary>
       <list>
         <item itemvalue="Python.run" />
-        <item itemvalue="Python.1" />
-        <item itemvalue="Python.main" />
         <item itemvalue="Python.sq-metronome" />
+        <item itemvalue="Python.bp-metronome" />
       </list>
     </recent_temporary>
   </component>
@@ -221,11 +205,31 @@
       <option name="project" value="LOCAL" />
       <updated>1772620376332</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Add code about data processing.">
+      <option name="closed" value="true" />
+      <created>1773913054301</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1773913054301</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Initial commit" />
-    <option name="LAST_COMMIT_MESSAGE" value="Initial commit" />
+    <MESSAGE value="Add code about data processing." />
+    <option name="LAST_COMMIT_MESSAGE" value="Add code about data processing." />
   </component>
 </project>

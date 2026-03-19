@@ -79,7 +79,7 @@ class ConfigManager:
         }
 
     def get_motion(self) -> Dict[str, Any]:
-        """获取音频设置"""
+        """获取运动设置"""
         return self.config.get("motion", {})
 
     def get_data_settings(self) -> Dict[str, Any]:

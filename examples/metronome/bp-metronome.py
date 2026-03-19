@@ -1,7 +1,12 @@
 import time
 import threading
 import os
-import digitaltwin as dt
+# import digitaltwin as dt
+
+from digitaltwin.osim.osim_model import OpenSimModel
+from digitaltwin.config_manager import ConfigManager
+from digitaltwin.visualization.realtime import SpeedController, GlobalAudioScheduler
+from digitaltwin.data.data_manager import DataManager
 
 os.environ['LIBGL_ALWAYS_SOFTWARE'] = '1'
 
@@ -11,7 +16,7 @@ class BenchPressVisualizerApp:
 
     def __init__(self, config_path: str = "config.json"):
 
-        self.config_manager = dt.ConfigManager(config_path)
+        self.config_manager = ConfigManager(config_path)
         if not self.config_manager.load_config():
             print("警告：使用默认配置")
 
@@ -22,7 +27,7 @@ class BenchPressVisualizerApp:
         self.playback_settings = self.config_manager.get_playback_settings()
         self.opensim_settings = self.config_manager.get_opensim_settings()
 
-        self.data_manager = dt.DataManager(data_settings, self.motion)
+        self.data_manager = DataManager(data_settings, self.motion)
 
         self.speed_controller = None
         self.audio_scheduler = None
@@ -45,18 +50,18 @@ class BenchPressVisualizerApp:
             time.sleep(0.1)
 
         # 设置阶段速度
-        self.speed_controller = dt.SpeedController(self.data_manager, self.playback_settings)
+        self.speed_controller = SpeedController(self.data_manager, self.playback_settings)
         # self.metronome = AudioCueManager(self.speed_controller, self.audio_settings)
         # self.audio_scheduler = GlobalAudioScheduler(self.speed_controller, self.audio_settings)
 
-        self.audio_scheduler = dt.GlobalAudioScheduler(
+        self.audio_scheduler = GlobalAudioScheduler(
             self.speed_controller,
             self.audio_settings,
             self.data_manager
         )
         self.audio_scheduler.set_frame_update_callback(self.update_visualization_frame)
 
-        self.opensim_model = dt.OpenSimModel(self.opensim_settings, self.motion)
+        self.opensim_model = OpenSimModel(self.opensim_settings, self.motion)
 
         self.prepare_data_lookup()
 
@@ -229,8 +234,8 @@ class BenchPressVisualizerApp:
             current_data = self.get_data_for_time(cycle_time, phase)
 
             # 更新模型
-            self.opensim_model.updStateQ(current_data[:4])
-            self.opensim_model.updStateAct(current_data[:4])
+            self.opensim_model.update_state_q(current_data[:4])  # 更新关节角度
+            self.opensim_model.update_state_activation(current_data[:4])  # 更新肌肉激活状态
             self.opensim_model.update_visualization()
 
             # 可选：显示当前时间信息
@@ -244,7 +249,7 @@ class BenchPressVisualizerApp:
 
     def run_visualization(self):
         """运行可视化（现在由音频调度器驱动）"""
-        self.opensim_model.initQ()
+        self.opensim_model.initialize_pose()
         self.opensim_model.update_visualization()
 
         print("Starting Audio-Visual synchronized visualization...")

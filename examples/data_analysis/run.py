@@ -20,8 +20,8 @@ from digitaltwin.subject import Subject
 from digitaltwin.data.robot_processor import RobotProcessor
 from digitaltwin.data.emg_processor import EMGProcessor
 from digitaltwin.data.xsens_processor import XsensProcessor
-from digitaltwin.processing.alignment import DataAligner
-from digitaltwin.processing.curve_analysis import CurveAnalyzer
+from digitaltwin.analysis.alignment import DataAligner
+from digitaltwin.analysis.curve_analysis import CurveAnalyzer
 from digitaltwin.visualization.plot_curves import CurvePlotter
 
 
@@ -41,7 +41,7 @@ class MultiLoadPipeline:
         """
         self.subject = subject
         self.emg_processor = EMGProcessor(
-            fs=subject.emg_Fs,
+            fs=subject.emg_fs,
             musc_mvc=subject.musc_mvc,
             musc_label=subject.musc_label
         )
@@ -264,11 +264,11 @@ if __name__ == '__main__':
     results = pipeline.run(include_xsens=False)
 
     # 绘图 - 可选择不同的可视化函数
-    pipeline.plot(save_path='average_curves.png')             # 平均曲线
+    # pipeline.plot()                                           # 平均曲线
     pipeline.visualize_alignment()                            # 对齐可视化
     pipeline.visualize_movement_segments()                    # 运动切片
     pipeline.visualize_test_3d_scatter()                      # 3D散点图
-    pipeline.visualize_muscle_analysis()                      # 肌肉分析
-    pipeline.visualize_analyze_kinematic_emg_errors_by_position()  # 位置误差分析
-    pipeline.analyze_muscle_kinematic_errors_individual()     # 单肌肉误差分析
+    # pipeline.visualize_muscle_analysis()                      # 肌肉分析
+    # pipeline.visualize_analyze_kinematic_emg_errors_by_position()  # 位置误差分析
+    # pipeline.analyze_muscle_kinematic_errors_individual()     # 单肌肉误差分析
     plt.show()

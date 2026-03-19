@@ -1,15 +1,8 @@
 import os
 import json
 import numpy as np
-from datetime import datetime
 
-
-def make_result_folder(experiment_label):
-    """创建带时间戳的结果文件夹"""
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    result_folder = os.path.join('../..', 'result', experiment_label, timestamp)
-    os.makedirs(result_folder, exist_ok=True)
-    return result_folder
+from digitaltwin.data.helpers import make_result_folder
 
 
 class Subject:
@@ -37,7 +30,7 @@ class Subject:
             0.1276, 0.2980, 0.3023, 0.3392, 0.3792, 0.3061,
             0.7502, 0.1041, 0.0660, 0.4334, 0.1539, 0.0480
         ],
-        "emg_Fs": 1000,
+        "emg_fs": 1000,
         "motion_flag": "all",
         "target_motion": "squat",
         "turn_position": False,
@@ -48,12 +41,6 @@ class Subject:
     }
 
     def __init__(self, config_path: str):
-        """
-        从 JSON 配置文件加载实验参数
-
-        Args:
-            config_path: JSON 配置文件路径
-        """
         self.config_path = config_path
         self.config = {}
 
@@ -109,17 +96,17 @@ class Subject:
         mf = paths.get("muscle_folder", None)
         if mf is not None and not os.path.isabs(mf):
             if mf.startswith("result/") or mf.startswith("result\\"):
-                self.muscle_folder = mf          # 相对于工作目录
+                self.muscle_folder = mf
             else:
-                self.muscle_folder = os.path.join(self.folder, mf)  # 相对于 folder
+                self.muscle_folder = os.path.join(self.folder, mf)
         else:
-            self.muscle_folder = mf  # None 或绝对路径
+            self.muscle_folder = mf
 
         # ---- EMG 设置 ----
         emg = self.config.get("emg_settings", {})
         self.musc_label = emg.get("musc_label", self.DEFAULTS["musc_label"])
         self.musc_mvc = emg.get("musc_mvc", self.DEFAULTS["musc_mvc"])
-        self.emg_Fs = emg.get("emg_Fs", self.DEFAULTS["emg_Fs"])
+        self.emg_fs = emg.get("emg_Fs", self.DEFAULTS["emg_fs"])
 
         # ---- 运动设置 ----
         motion = self.config.get("motion_settings", {})
@@ -154,7 +141,7 @@ class Subject:
         self.test = False
         self.robot_files_test = None
 
-        # 创建结果文件夹
+        # 创建结果文件夹（复用 data/utils 中的函数）
         self.result_folder = make_result_folder(self.experiment_label)
         if self.muscle_folder is None:
             self.muscle_folder = self.result_folder
@@ -169,7 +156,7 @@ class Subject:
     # ------------------------------------------------------------------
 
     def save_config(self, save_path: str = None) -> bool:
-        """将当前配置保存为 JSON 文件（方便调试或生成模板）"""
+        """将当前配置保存为 JSON 文件"""
         save_path = save_path or self.config_path
         try:
             with open(save_path, 'w', encoding='utf-8') as f:

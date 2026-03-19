@@ -95,69 +95,6 @@ class AudioCueManager:
 
         self.metronome.play(frequency, duration, sound_type)
 
-    # def check_and_play_beep(self, current_phase_name, cycle_elapsed_time):
-    #     """
-    #     检查是否需要播放提示音
-    #     current_phase_name: 'lift' or 'lower'
-    #     cycle_elapsed_time: 当前循环经过的时间(秒)
-    #     frame_index: 当前帧索引（用于调试）
-    #     """
-    #
-    #     # 检测阶段切换
-    #     if self.current_phase != current_phase_name:
-    #         old_phase = self.current_phase
-    #         self.current_phase = current_phase_name
-    #         self.phase_start_time = cycle_elapsed_time
-    #         self.last_beep_time = cycle_elapsed_time
-    #
-    #         # 重置阶段内的音效计数器
-    #         if self.current_phase == 'lift':
-    #             phase_duration = self.speed_controller.lift_duration
-    #             self.current_phase_speed = self.speed_controller.lift_playback_speed
-    #         else:
-    #             phase_duration = self.speed_controller.lower_duration
-    #             self.current_phase_speed = self.speed_controller.lower_playback_speed
-    #
-    #         # 计算该阶段的音效时间点
-    #         self.current_phase_beep_times = self._calculate_phase_beep_times(phase_duration)
-    #         self.current_beep_index = 0  # 重置索引
-    #     else:
-    #         # 在同一阶段，检查是否到达下一个提示音时间
-    #         phase_elapsed = cycle_elapsed_time - self.phase_start_time
-    #
-    #         # 检查是否有音效需要播放
-    #         if self.current_phase_beep_times and self.current_beep_index < len(self.current_phase_beep_times):
-    #             next_beep_time = self.current_phase_beep_times[self.current_beep_index]
-    #
-    #             # 使用小容差检查时间点
-    #             if phase_elapsed >= next_beep_time - 0.05:  # 50ms容差
-    #                 # 检查是否是最后一个音效
-    #                 is_last_beep = (self.current_beep_index == len(self.current_phase_beep_times) - 1)
-    #
-    #                 if not is_last_beep:
-    #                     # 前n-1个为Motion音效 (800Hz)
-    #                     self.play_beep(frequency=800, duration=0.15, sound_type="Motion")
-    #                 else:
-    #                     # 最后一个为Finish音效 (1200Hz)
-    #                     self.play_beep(frequency=1200, duration=0.15, sound_type="Finish")
-    #                     # print(f"    Finish beep triggered at {phase_elapsed:.1f}s")
-    #
-    #                 self.current_beep_index += 1
-    #
-    #                 # 调试信息
-    #                 # print(f"    Beep {self.metronome.current_beep_index-1}/{len(current_phase_beep_times)} triggered at {phase_elapsed:.1f}s")
-    #
-    #         # 特别检查：如果阶段即将结束但最后一个音效还未触发，强制触发
-    #         if (self.current_phase_beep_times and
-    #                 self.current_beep_index < len(self.current_phase_beep_times) and
-    #                 self.current_beep_index == len(self.current_phase_beep_times) - 1 and
-    #                 phase_elapsed >= self.current_phase_beep_times[-1] - 0.2):  # 在最后一个音效时间点前200ms开始检查
-    #
-    #             # 强制触发最后一个音效（Finish）
-    #             self.play_beep(frequency=1200, duration=0.15, sound_type="Finish")
-    #             # print(f"    FORCED Finish beep triggered at {phase_elapsed:.1f}s (before phase end)")
-    #             self.current_beep_index += 1
-
     def check_and_play_beep(self, current_phase_name, cycle_elapsed_time, test_flag=False):
         """检查是否需要播放提示音"""
 
@@ -280,34 +217,6 @@ class AudioCueManager:
         # print(f"  Beep times: {[f'{t:.2f}' for t in beep_times]}")
 
         return beep_times
-
-    # def _calculate_phase_beep_times(self, phase_duration):
-    #     """
-    #     计算阶段内的音效时间点
-    #     """
-    #     if phase_duration <= 0:
-    #         return []
-    #
-    #     # num_beeps = max(1, int(round(phase_duration / self.beep_interval)))
-    #     num_beeps = self.fixed_beep_count
-    #
-    #     # 计算时间间隔
-    #     interval = phase_duration / num_beeps
-    #
-    #     # 生成音效时间点
-    #     beep_times = [interval * (i + 1) for i in range(num_beeps)]
-    #
-    #     # 确保最后一个音效正好在阶段结束时
-    #     if beep_times and abs(beep_times[-1] - phase_duration) > 0.01:
-    #         beep_times[-1] = phase_duration
-    #
-    #     motion_count = max(0, num_beeps - 1)
-    #     finish_count = 1 if num_beeps > 0 else 0
-    #
-    #     # print(f"    Phase duration: {phase_duration:.1f}s, {num_beeps} beep times: {[f'{t:.1f}' for t in beep_times]}")
-    #     # print(f"    Beep distribution: {motion_count} Motion + {finish_count} Finish")
-    #
-    #     return beep_times
 
     def reset(self):
         self.current_phase = None
