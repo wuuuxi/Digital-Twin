@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Modified Squat script to load data from files instead of UDP connection
-Based on opensimRTDisplay_Squat.py and main.py data loading patterns
 """
 from opensim import *
 import time

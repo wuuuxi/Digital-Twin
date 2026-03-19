@@ -3,6 +3,8 @@ import pandas as pd
 import scipy
 import os
 
+from .emg_processor import EMGProcessor
+
 class DataManager:
     """数据加载和管理类"""
 
@@ -20,6 +22,8 @@ class DataManager:
         self.original_lower_duration = 0
         self.current_data_index = 0
         self.loop_mode = True
+
+        self.emg_processor = EMGProcessor(fs=self.Fs, musc_mvc=self.musc_mvc)
 
         # Configuration - modify these paths and parameters as needed
         self.ArmLength = 0.37
