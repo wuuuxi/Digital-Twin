@@ -11,11 +11,33 @@ import shutil
 import sys
 
 
-def find_nearest_idx(array, value):
-    """Find nearest index for a value in array"""
+def find_nearest_idx(array, value, axis=None):
+    """
+    Find nearest index for a value in array.
+
+    Parameters
+    ----------
+    array : array_like
+        Input array (1-D or N-D).
+    value : float
+        Target value.
+    axis : int, optional
+        If None (default), search over the flattened array and return
+        a scalar index (1-D) or unraveled tuple (N-D).
+        If given, compute the nearest index along that axis and return
+        an array of indices with the same shape as *array* minus *axis*.
+
+    Returns
+    -------
+    int or tuple of int or np.ndarray
+    """
     array = np.asarray(array)
-    idx = (np.abs(array - value)).argmin()
-    return idx
+    if axis is not None:
+        return np.abs(array - value).argmin(axis=axis)
+    flat_idx = np.abs(array - value).argmin()
+    if array.ndim == 1:
+        return int(flat_idx)
+    return np.unravel_index(flat_idx, array.shape)
 
 
 def resample_data(data, target_length, time_col='time'):

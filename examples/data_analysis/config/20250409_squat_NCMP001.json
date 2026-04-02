@@ -1,0 +1,45 @@
+{
+  "experiment_label": "20250409_squat_NCMP001",
+
+  "paths": {
+    "folder": "C:/Users/PC/OneDrive/Experiment/20250409_HKSI/20250409 NCMP001/",
+    "emg_folder": "EMG",
+    "robot_folder": "robot/Model Test/DataSet2025_04_09",
+    "load_folder": "vload",
+    "muscle_folder": "result/20250409_squat_NCMP001/20250409_164021"
+  },
+
+  "emg_settings": {
+    "musc_label": ["TA", "GL", "SOL", "FibLon", "VL", "RF", "Abs", "ES", "PMCla", "PMSte", "LD", "DelAnt", "VM", "Addl", "BF", "ST", "GlutMax", "GlutMed", "DelMed", "DelPos", "Bic", "TriLong", "TriLat", "BRD"],
+    "musc_mvc": [0.1276, 0.298, 0.3023, 0.3392, 0.3792, 0.3061, 0.7502, 0.2241, 0.226, 0.3334, 0.0539, 0.048, 0.1276, 0.298, 0.3023, 0.3392, 0.3792, 0.3061, 0.7502, 0.2241, 0.226, 0.3334, 0.0539, 0.048]
+  },
+
+  "motion_settings": {
+    "motion_flag": "all",
+    "target_motion": "squat",
+    "read_ori_robot_var": true
+  },
+
+  "robot_files": {
+    "20": ["robot/NCMP-001_15R_20250409_161018.csv", "test 2025_04_09 16_09_46.csv", 0],
+    "35": ["robot/NCMP-001_30R_20250409_160611.csv", "test 2025_04_09 16_05_43.csv", 0],
+    "50": ["robot/NCMP-001_45R_20250409_160359.csv", "test 2025_04_09 16_02_34.csv", 0],
+    "65": ["robot/NCMP-001_60R_20250409_161159.csv", "test 2025_04_09 16_11_30.csv", 0],
+    "95": ["robot/NCMP-001_85R_20250409_160798.csv", "test 2025_04_09 16_07_34.csv", 0]
+  },
+
+  "vload_parameters": {
+    "FibLon_0.2_0.5": ["data_Eric_1_Squat_model_adjust_17_01_23.csv", "test 2025_04_09 17_02_02.csv", 31.8, 0.2, [42, 63], 3],
+    "GL_0.1_0.2": ["data_Eric_1_Squat_model_adjust_17_24_25.csv", "test 2025_04_09 17_24_27.csv", 5.45, 0.1, [15, 30], 1],
+    "VL_0.3_0.5": ["data_Eric_1_Squat_model_adjust_17_28_41.csv", "test 2025_04_09 17_28_44.csv", 6.4, 0.3, [19, 32], 4]
+  },
+
+  "analysis_settings": {
+    "height_range": [1.3, 1.95],
+    "load_range": [20, 90],
+    "titles": ["FibLon", "GL", "VL"],
+    "goal": [0.2, 0.1, 0.3],
+    "epsilons": [0.5],
+    "max_iter": [10000, 10000, 10000]
+  }
+}
