@@ -21,9 +21,8 @@ from digitaltwin.analysis.rbf_fitting import rbf_fit, rbf_predict
 DEFAULT_DATA_LEN = 50
 
 
-def plot_activation_3d(data, pos_col='pos_l', load_col='load', emg_col='emg0',
-                       label=None, cmap='hot', result_folder=None,
-                       num_centers=20, sigma=1.0, data_len=DEFAULT_DATA_LEN):
+def plot_activation_3d(data, params, pos_col='pos_l', load_col='load', emg_col='emg0',
+                       label=None, cmap='hot', result_folder=None):
     """
     拟合 RBF 并绘制位置-负载-激活的 3D 散点图 + 曲面图。
 
@@ -41,17 +40,8 @@ def plot_activation_3d(data, pos_col='pos_l', load_col='load', emg_col='emg0',
     list
         [xi, yi, zi, centers, weights, scaler, sigma]
     """
-    x, y, z = data[pos_col], data[load_col], data[emg_col]
 
-    xi = np.linspace(min(x), max(x), data_len)
-    yi = np.linspace(min(y), max(y), data_len)
-    xi, yi = np.meshgrid(xi, yi)
-
-    centers, weights, scaler, sigma_out = rbf_fit(
-        (x, y), z, num_centers=num_centers, sigma=sigma)
-    zi = rbf_predict(
-        (xi.flatten(), yi.flatten()), centers, weights, scaler, sigma_out
-    ).reshape(xi.shape)
+    xi, yi, zi = params['xi'], params['yi'], params['zi']
 
     # ---------- 原始散点 3D ----------
     fig = plt.figure(figsize=(8, 6))
@@ -101,8 +91,6 @@ def plot_activation_3d(data, pos_col='pos_l', load_col='load', emg_col='emg0',
         plt.savefig(os.path.join(result_folder,
                     f'{label}_RBF.png'))
     plt.close(fig)
-
-    return [xi, yi, zi, centers, weights, scaler, sigma_out]
 
 
 def compare_activation_maps(data_robot, data_smith, pos_col='pos_l',
@@ -171,7 +159,7 @@ def compare_activation_maps(data_robot, data_smith, pos_col='pos_l',
     return [xi, yi, zi_1, c1, w1, s1, sig1]
 
 
-def draw_heatmap_2d(data, sigma_smooth=1):
+def draw_heatmap_2d(params, sigma_smooth=1, label=None, result_folder=None):
     """
     绘制简单的 2D 高斯平滑热力图。
 
@@ -181,10 +169,19 @@ def draw_heatmap_2d(data, sigma_smooth=1):
         二维数据矩阵
     sigma_smooth : float
         高斯平滑 sigma
+    label : str, optional
+    result_folder : str, optional
     """
-    data = gaussian_filter(data, sigma=sigma_smooth)
-    plt.figure(figsize=(10, 8))
-    # sns.heatmap(data, annot=True, fmt='.2f', cmap='YlGnBu')
-    sns.heatmap(data, cmap='hot')
-    plt.title('Heatmap')
+    xi, yi, zi = params['xi'], params['yi'], params['zi']
+    zi = gaussian_filter(zi, sigma=sigma_smooth)
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    contour = ax.contourf(xi, yi, zi, levels=100, cmap='hot')
+    plt.colorbar(contour, ax=ax)
+    ax.set_xlabel('Height (m)'); ax.set_ylabel('Load (kg)')
+    ax.set_title(label)
+    if result_folder:
+        plt.savefig(os.path.join(result_folder,
+                                 f'{label}_RBF_2D.png'))
+    plt.close(fig)
     # plt.show()

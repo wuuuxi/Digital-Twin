@@ -1,12 +1,3 @@
-"""
-机器人数据处理模块
-处理机器人传感器数据
-"""
-# import numpy as np
-# import pandas as pd
-# import os
-# from digitaltwin.data.utils import print_debug_info, save_pickle, load_pickle
-
 import os
 import numpy as np
 import pandas as pd
@@ -156,244 +147,121 @@ class RobotProcessor:
         return df
 
 
-# class RobotProcessor:
-#     """机器人数据处理器"""
-#
-#     def __init__(self, turn_position=False):
-#         """
-#         初始化机器人处理器
-#
-#         Parameters:
-#         -----------
-#         turn_position : bool
-#             是否翻转位置数据
-#         """
-#         self.turn_position = turn_position
-#         self.data = None
-#
-#     def load_from_csv(self, file_path):
-#         """
-#         从CSV文件加载机器人数据
-#
-#         Parameters:
-#         -----------
-#         file_path : str
-#             CSV文件路径
-#
-#         Returns:
-#         --------
-#         pd.DataFrame
-#             机器人数据
-#         """
-#         try:
-#             print_debug_info(f"加载机器人文件: {os.path.basename(file_path)}")
-#
-#             if file_path.endswith('.csv'):
-#                 df = pd.read_csv(file_path)
-#             elif file_path.endswith('.xlsx') or file_path.endswith('.xls'):
-#                 df = pd.read_excel(file_path)
-#             else:
-#                 try:
-#                     df = pd.read_csv(file_path, sep='\t')
-#                 except:
-#                     df = pd.read_csv(file_path, sep=',')
-#
-#             print_debug_info(f"机器人数据加载成功: {len(df)}行")
-#             return df
-#
-#         except Exception as e:
-#             print_debug_info(f"机器人数据加载失败: {e}")
-#             return None
-#
-#     def standardize_columns(self, df):
-#         """
-#         标准化列名
-#
-#         Parameters:
-#         -----------
-#         df : pd.DataFrame
-#             原始数据
-#
-#         Returns:
-#         --------
-#         pd.DataFrame
-#             标准化后的数据
-#         """
-#         column_mapping = {
-#             'axis4_force': 'force_l',
-#             'axis4_vel': 'vel_l',
-#             'axis4_pos': 'pos_l',
-#             'axis4_accel': 'acc_l',
-#             'axis3_force': 'force_r',
-#             'axis3_vel': 'vel_r',
-#             'axis3_pos': 'pos_r',
-#             'axis3_accel': 'acc_r',
-#             'Timestamp': 'time',
-#             'Time': 'time'
-#         }
-#
-#         # 只映射存在的列
-#         rename_dict = {k: v for k, v in column_mapping.items() if k in df.columns}
-#
-#         if rename_dict:
-#             df = df.rename(columns=rename_dict)
-#
-#         return df
-#
-#     def create_time_column(self, df, fs=100):
-#         """
-#         创建时间列
-#
-#         Parameters:
-#         -----------
-#         df : pd.DataFrame
-#             数据
-#         fs : int
-#             采样率
-#
-#         Returns:
-#         --------
-#         pd.DataFrame
-#             添加时间列后的数据
-#         """
-#         if 'time' in df.columns:
-#             return df
-#
-#         if 'TimeStamp' in df.columns:
-#             df['time'] = pd.to_datetime(df['TimeStamp'])
-#         else:
-#             df['time'] = np.arange(len(df)) / fs
-#
-#         return df
-#
-#     def normalize_time(self, df, time_col='time'):
-#         """
-#         归一化时间（从0开始）
-#
-#         Parameters:
-#         -----------
-#         df : pd.DataFrame
-#             数据
-#         time_col : str
-#             时间列名
-#
-#         Returns:
-#         --------
-#         pd.DataFrame
-#             处理后的数据
-#         """
-#         if time_col not in df.columns:
-#             return df
-#
-#         df = df.copy()
-#
-#         if df[time_col].dtype == 'object' or 'datetime' in str(df[time_col].dtype):
-#             df['time_abs'] = pd.to_datetime(df[time_col])
-#             df[time_col] = (df['time_abs'] - df['time_abs'].iloc[0]).dt.total_seconds()
-#         else:
-#             df[time_col] = df[time_col] - df[time_col].iloc[0]
-#
-#         return df
-#
-#     def apply_position_transform(self, df, pos_col='pos_l'):
-#         """
-#         应用位置变换
-#
-#         Parameters:
-#         -----------
-#         df : pd.DataFrame
-#             数据
-#         pos_col : str
-#             位置列名
-#
-#         Returns:
-#         --------
-#         pd.DataFrame
-#             变换后的数据
-#         """
-#         if pos_col not in df.columns:
-#             return df
-#
-#         df = df.copy()
-#
-#         if self.turn_position:
-#             df[pos_col] = 0.7 + df[pos_col]
-#         else:
-#             df[pos_col] = 0.7 - df[pos_col]
-#
-#         return df
-#
-#     def add_load_info(self, df, load_weight):
-#         """
-#         添加负载信息
-#
-#         Parameters:
-#         -----------
-#         df : pd.DataFrame
-#             数据
-#         load_weight : str or float
-#             负载重量
-#
-#         Returns:
-#         --------
-#         pd.DataFrame
-#             添加负载信息后的数据
-#         """
-#         df = df.copy()
-#         df['load'] = float(load_weight)
-#         df['load_weight'] = str(load_weight)
-#         return df
-#
-#     def process_robot_data(self, file_path, load_weight, fs=100):
-#         """
-#         完整的机器人数据处理流程
-#
-#         Parameters:
-#         -----------
-#         file_path : str
-#             文件路径
-#         load_weight : str or float
-#             负载重量
-#         fs : int
-#             采样率
-#
-#         Returns:
-#         --------
-#         pd.DataFrame
-#             处理后的机器人数据
-#         """
-#         # 加载数据
-#         df = self.load_from_csv(file_path)
-#         if df is None:
-#             return None
-#
-#         # 标准化列名
-#         df = self.standardize_columns(df)
-#
-#         # 创建时间列
-#         df = self.create_time_column(df, fs)
-#
-#         # 归一化时间
-#         df = self.normalize_time(df)
-#
-#         # 应用位置变换
-#         df = self.apply_position_transform(df)
-#
-#         # 添加负载信息
-#         df = self.add_load_info(df, load_weight)
-#
-#         self.data = df
-#         return df
-#
-#     def save_processed_data(self, save_path):
-#         """保存处理后的机器人数据"""
-#         if self.data is not None:
-#             self.data.to_csv(save_path, index=False)
-#             print_debug_info(f"机器人数据已保存到: {save_path}")
-#
-#     def load_processed_data(self, load_path):
-#         """加载处理后的机器人数据"""
-#         if os.path.exists(load_path):
-#             self.data = pd.read_csv(load_path)
-#             print_debug_info(f"机器人数据已加载: {load_path}")
-#         return self.data
+class RobotOriginProcessor:
+    """
+    机器人原始数据处理器。
+    处理机器人直接输出的原始 CSV 文件（如变负载实验数据），
+    该格式前 17 行为设备头部信息，实际数据从第 18 行开始。
+
+    与 RobotProcessor 的区别：
+    - RobotProcessor: 读取经过软件处理后的标准格式（Timestamp + axis4_*）
+    - RobotOriginProcessor: 读取机器人原始输出（skiprows=17, ' time' + ' axis3_*'）
+    """
+
+    # 原始格式列名映射（列名前有空格）
+    COLUMN_MAP = {
+        ' time': 'time',
+        ' axis3_force(N)': 'force_l',
+        ' axis3_pos(m)': 'pos_l',
+        ' axis3_vel(m/s)': 'vel_l',
+    }
+
+    HEADER_ROWS = 17  # 设备头部信息行数
+
+    @staticmethod
+    def process(robot_file, robot_folder, folder,
+                turn_position=False, start_time=0, end_time=-1):
+        """
+        处理机器人原始数据文件。
+
+        Parameters
+        ----------
+        robot_file : str
+            机器人数据文件名
+        robot_folder : str
+            主搜索目录
+        folder : str
+            实验根目录（回退搜索）
+        turn_position : bool
+            是否反转位置数据方向
+        start_time : float
+            起始时间截取（秒），0 表示不截取
+        end_time : float
+            结束时间截取（秒），-1 表示不截取
+
+        Returns
+        -------
+        pd.DataFrame or None
+            处理后的机器人数据，包含 time, pos_l, vel_l, force_l 列
+        """
+        try:
+            # 1. 解析文件路径
+            file_path = RobotOriginProcessor._resolve_file_path(
+                robot_file, robot_folder, folder)
+            if file_path is None:
+                return None
+
+            # 2. 读取数据（跳过头部信息）
+            robot_df = pd.read_csv(
+                file_path,
+                skiprows=RobotOriginProcessor.HEADER_ROWS)
+
+            # 3. 提取并重命名列
+            available = [c for c in RobotOriginProcessor.COLUMN_MAP
+                         if c in robot_df.columns]
+            if not available:
+                print(f"原始机器人数据中未找到预期列: "
+                      f"{robot_df.columns.tolist()}")
+                return None
+            robot_data = robot_df[available].rename(
+                columns=RobotOriginProcessor.COLUMN_MAP)
+
+            # 4. 确保 time 列为数值型
+            robot_data['time'] = pd.to_numeric(
+                robot_data['time'], errors='coerce')
+            robot_data = robot_data.dropna(
+                subset=['time']).reset_index(drop=True)
+
+            # 5. 位置调整
+            if 'pos_l' in robot_data.columns:
+                if turn_position:
+                    robot_data['pos_l'] = 0.7 + robot_data['pos_l']
+                else:
+                    robot_data['pos_l'] = 0.7 - robot_data['pos_l']
+
+            # 6. 时间截取
+            if start_time and start_time > 0:
+                from digitaltwin.utils.array_tools import (
+                    find_nearest_idx)
+                start_idx = find_nearest_idx(
+                    robot_data['time'].values, start_time)
+                robot_data = robot_data.iloc[
+                    start_idx:].reset_index(drop=True)
+
+            if end_time != -1 and end_time > 0:
+                from digitaltwin.utils.array_tools import (
+                    find_nearest_idx)
+                end_idx = find_nearest_idx(
+                    robot_data['time'].values, end_time)
+                robot_data = robot_data.iloc[
+                    :end_idx].reset_index(drop=True)
+
+            return robot_data
+
+        except Exception as e:
+            print(f"原始机器人数据处理错误: {e}")
+            return None
+
+    @staticmethod
+    def _resolve_file_path(robot_file, robot_folder, folder):
+        """解析原始机器人数据文件路径"""
+        if os.path.isabs(robot_file):
+            if os.path.exists(robot_file):
+                return robot_file
+            return None
+        for search_dir in [robot_folder, folder]:
+            file_path = os.path.join(search_dir, robot_file)
+            if os.path.exists(file_path):
+                return file_path
+        print(f"原始机器人文件不存在: {robot_file}")
+        return None

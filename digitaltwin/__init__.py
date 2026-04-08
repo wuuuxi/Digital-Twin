@@ -5,5 +5,5 @@ from .utils import logger
 from .visualization import CurvePlotter
 
 from .config_manager import *
+from .pipeline import MultiLoadPipeline
 from .subject import Subject
-

@@ -3,7 +3,10 @@ import pandas as pd
 import os
 
 from .emg_processor import EMGProcessor
-from .helpers import find_nearest_idx, resample_data, extract_continuous_segments, select_longest_segment
+from digitaltwin.utils.array_tools import (
+    find_nearest_idx, resample_data,
+    extract_continuous_segments, select_longest_segment,
+)
 
 
 class DataManager:

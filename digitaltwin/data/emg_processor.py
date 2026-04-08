@@ -251,6 +251,77 @@ class EMGProcessor:
             return None
 
     @staticmethod
+    def compute_median_frequency(signal, fs, window_size=256, overlap=128):
+        """
+        计算 EMG 信号的中值频率（Median Frequency, MDF）时间序列。
+
+        使用短时傅里叶变换（STFT）在滑动窗口上计算功率谱密度，
+        并求出将功率谱面积一分为二的频率。
+
+        Parameters
+        ----------
+        signal : np.ndarray
+            原始 EMG 信号（建议带通滤波后的信号）
+        fs : int
+            采样率 (Hz)
+        window_size : int
+            FFT 窗口大小（样本数），默认 256
+        overlap : int
+            窗口重叠样本数，默认 128
+
+        Returns
+        -------
+        times : np.ndarray
+            每个窗口中心对应的时间 (s)
+        mdf : np.ndarray
+            中值频率序列 (Hz)
+        """
+        step = window_size - overlap
+        n_windows = (len(signal) - window_size) // step + 1
+        if n_windows <= 0:
+            return np.array([]), np.array([])
+
+        times = np.zeros(n_windows)
+        mdf = np.zeros(n_windows)
+        window_func = np.hanning(window_size)
+
+        nyquist = fs / 2
+        low_cutoff = 20 / nyquist
+        high_cutoff = 450 / nyquist
+        b, a = scipy.signal.butter(4, [low_cutoff, high_cutoff],
+                                   btype='band', analog=False)
+
+        for i in range(n_windows):
+            start = i * step
+            end = start + window_size
+            segment = signal[start:end]
+
+            # 带通滤波（与 rectification 一致的 20-450 Hz 范围）
+            filtered = scipy.signal.filtfilt(b, a, segment)
+
+            # 加汉宁窗
+            windowed = filtered * window_func
+
+            # FFT → 功率谱
+            fft_vals = np.fft.rfft(windowed)
+            power = np.abs(fft_vals) ** 2
+            freqs = np.fft.rfftfreq(window_size, d=1.0 / fs)
+
+            # 中值频率：累积功率达到总功率 50% 的频率
+            cumulative_power = np.cumsum(power)
+            total_power = cumulative_power[-1]
+            if total_power > 0:
+                median_idx = np.searchsorted(cumulative_power,
+                                             total_power / 2)
+                mdf[i] = freqs[min(median_idx, len(freqs) - 1)]
+            else:
+                mdf[i] = 0.0
+
+            times[i] = (start + window_size / 2) / fs
+
+        return times, mdf
+
+    @staticmethod
     def _resolve_file_path(emg_file, emg_folder, folder):
         """解析 EMG 文件的完整路径"""
         if os.path.isabs(emg_file):

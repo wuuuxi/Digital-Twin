@@ -1,23 +1,16 @@
 """
-Digital Twin 主入口文件。
-
-用法：
-    from digitaltwin.subject import Subject
-    from digitaltwin.run import MultiLoadPipeline
-
-    subject = Subject('20250708_BenchPress_Chenzui')
-    pipeline = MultiLoadPipeline(subject)
-    results = pipeline.run()
+多负载数据处理流水线。
+统一调度 RobotProcessor、EMGProcessor、XsensProcessor、
+DataAligner、CurveAnalyzer 和 CurvePlotter，完成从数据加载到
+曲线分析、RBF 热力图生成和变负载优化的全流程。
 """
 import os
 import numpy as np
 import pandas as pd
 import pickle
 from datetime import datetime
-import matplotlib.pyplot as plt
 
-from digitaltwin.subject import Subject
-from digitaltwin.data.robot_processor import RobotProcessor
+from digitaltwin.data.robot_processor import RobotProcessor, RobotOriginProcessor
 from digitaltwin.data.emg_processor import EMGProcessor
 from digitaltwin.data.xsens_processor import XsensProcessor
 from digitaltwin.analysis.alignment import DataAligner
@@ -63,6 +56,8 @@ class MultiLoadPipeline:
         self.aligned_data = None
         self.debug = False
 
+    # ==================== 核心流水线 ====================
+
     def run(self, robot_files=None, include_xsens=True):
         """
         执行完整的多负载数据处理流水线。
@@ -96,7 +91,6 @@ class MultiLoadPipeline:
         self.plotter.set_results(all_results)
         self._log(f"成功处理 {len(all_results)}/{len(robot_files)} 个负载")
 
-        # 对齐所有负载的数据
         if all_results:
             self._align_all_loads()
 
@@ -149,6 +143,13 @@ class MultiLoadPipeline:
 
             # 4. 对齐机器人和 EMG 数据
             aligned = self.aligner.align_robot_emg(robot_data, emg_data)
+
+            # 4.5 计算每块肌肉的 MDF 并注入 aligned_data
+            #     使 MDF 与 pos_l / vel_l 等共享同一时间轴，
+            #     后续 cut_aligned_data 切片后 cutted_data 中即有 mdf_* 列。
+            aligned = self._inject_mdf_columns(
+                aligned, emg_data, self.subject.emg_fs)
+
             result['aligned_data'] = aligned
 
             # 5. 运动分割
@@ -261,6 +262,68 @@ class MultiLoadPipeline:
             data.rename(columns={emg_col: 'emg_activation'}, inplace=True)
         return data
 
+    # ==================== MDF 注入 ====================
+
+    @staticmethod
+    def _inject_mdf_columns(aligned, emg_data, fs,
+                            window_size=256, overlap=128):
+        """
+        将每块肌肉的 MDF 计算结果插值到 aligned_data 的时间轴上，
+        作为新列 mdf_<muscle> 写入 DataFrame。
+
+        这样经过后续 cut_aligned_data 切片后，cutted_data 中自然
+        包含 mdf_* 列，与 pos_l / vel_l / emg_* 完全共享同一行索引。
+
+        Parameters
+        ----------
+        aligned : pd.DataFrame
+            对齐后的 DataFrame，必须包含 'time' 列。
+        emg_data : dict
+            EMGProcessor.process() 返回的字典，包含
+            'time', 'raw_signals' 等。
+        fs : int
+            EMG 采样率 (Hz)。
+        window_size : int
+            STFT 窗口大小。
+        overlap : int
+            窗口重叠样本数。
+
+        Returns
+        -------
+        pd.DataFrame
+            添加了 mdf_* 列的 aligned DataFrame。
+        """
+        if aligned is None or emg_data is None:
+            return aligned
+        if 'time' not in aligned.columns:
+            return aligned
+
+        aligned_time = aligned['time'].values
+        emg_time = emg_data.get('time')
+        raw_signals = emg_data.get('raw_signals', {})
+        if emg_time is None or len(emg_time) == 0:
+            return aligned
+
+        t0 = emg_time[0]
+
+        for musc_name, raw_signal in raw_signals.items():
+            mdf_times, mdf_vals = EMGProcessor.compute_median_frequency(
+                raw_signal, fs,
+                window_size=window_size, overlap=overlap)
+            if len(mdf_times) == 0:
+                aligned[f'mdf_{musc_name}'] = np.nan
+                continue
+
+            # mdf_times 是相对于 EMG 信号开头的时间，加上偏移得到绝对时间
+            mdf_abs = mdf_times + t0
+
+            # 插值到 aligned 的时间轴
+            mdf_interp = np.interp(aligned_time, mdf_abs, mdf_vals,
+                                   left=np.nan, right=np.nan)
+            aligned[f'mdf_{musc_name}'] = mdf_interp
+
+        return aligned
+
     # ==================== 热力图 / RBF 拟合 ====================
 
     def load_training_robot_data(self):
@@ -275,7 +338,6 @@ class MultiLoadPipeline:
         if self.aligned_data is not None:
             return self.aligned_data
 
-        # 如果尚未运行 pipeline，尝试从缓存加载
         cache_path = os.path.join(
             self.subject.result_folder, 'aligned_data.pkl')
         if os.path.exists(cache_path):
@@ -284,7 +346,6 @@ class MultiLoadPipeline:
             self._log(f"从缓存加载对齐数据: {cache_path}")
             return self.aligned_data
 
-        # 否则执行完整 pipeline
         self.run(include_xsens=False)
         return self.aligned_data
 
@@ -301,18 +362,18 @@ class MultiLoadPipeline:
         save_dir : str, optional
             图片 / 参数保存目录，默认 subject.result_folder/heatmap。
         data_len : int
-            网格每维的采样点数（对应 rbf_fitting 的 data_len）。
+            网格每维的采样点数。
         sigma : float
             RBF 核宽度参数。
         num_centers : int
             KMeans 聚类中心数。
         fit_3d : bool
-            是否同时进行 3-D (position, velocity, load) 拟合。
+            是否同时进行 3-D 拟合。
 
         Returns
         -------
         dict
-            {muscle_name: rbf_params_dict} 的字典。
+            {muscle_name: rbf_params_dict}
         """
         data = self.load_training_robot_data()
         if data is None:
@@ -336,29 +397,23 @@ class MultiLoadPipeline:
 
             self._log(f"拟合肌肉 {musc} 的激活热力图...")
 
-            # 2-D RBF (position × load → activation)
             params = fit_activation_map(
                 data, pos_col='pos_l', load_col=load_col, emg_col=emg_col,
                 num_centers=num_centers, sigma=sigma, data_len=data_len)
             all_params[musc] = params
 
-            # 可视化：3-D 散点 + 曲面图
             plot_activation_3d(
-                data, pos_col='pos_l', load_col=load_col, emg_col=emg_col,
-                label=musc, num_centers=num_centers, sigma=sigma,
-                data_len=data_len, result_folder=save_dir)
+                data, params, pos_col='pos_l', load_col=load_col, emg_col=emg_col,
+                label=musc, result_folder=save_dir)
 
-            # 可视化：2-D 热力图（用 RBF 预测网格）
-            draw_heatmap_2d(params['zi'])
+            draw_heatmap_2d(params, label=musc, result_folder=save_dir)
 
-            # 可选 3-D 拟合 (position × load × velocity)
             if fit_3d and 'vel_l' in data.columns:
                 params_3d = fit_activation_map_3d(
                     data, 'pos_l', load_col, emg_col, 'vel_l',
                     num_centers=num_centers, sigma=sigma, data_len=data_len)
                 all_params[f'{musc}_3d'] = params_3d
 
-            # 保存 RBF 参数
             params_dir = os.path.join(save_dir, 'params')
             os.makedirs(params_dir, exist_ok=True)
             save_rbf_params(
@@ -366,7 +421,6 @@ class MultiLoadPipeline:
                 params['scaler'], params['sigma'],
                 os.path.join(params_dir, f'{musc}_rbf_params.pkl'))
 
-        # RMSE 报告
         for musc, p in all_params.items():
             if '_3d' not in musc:
                 emg_col = f'emg_{musc}'
@@ -378,15 +432,271 @@ class MultiLoadPipeline:
         self._log(f"热力图已保存至 {save_dir}")
         return all_params
 
+    # ==================== EMG 中值频率分析 ====================
+
+    def compute_median_frequencies(self, muscles=None,
+                                   window_size=256, overlap=128):
+        """
+        对每个负载、每块肌肉计算 EMG 中值频率（MDF）时间序列。
+
+        Parameters
+        ----------
+        muscles : list[str], optional
+            要分析的肌肉列表，默认 subject.musc_label。
+        window_size : int
+            STFT 窗口大小（样本数）。
+        overlap : int
+            窗口重叠样本数。
+
+        Returns
+        -------
+        dict
+            结构: {load_weight: {muscle_name: {'time': ndarray, 'mdf': ndarray}}}
+        """
+        if not self.results:
+            self._log("请先调用 run() 加载数据。")
+            return {}
+
+        if muscles is None:
+            muscles = self.subject.musc_label
+
+        fs = self.subject.emg_fs
+        mdf_results = {}
+
+        for load_weight, result in self.results.items():
+            emg_data = result.get('emg_data')
+            if emg_data is None:
+                continue
+
+            mdf_results[load_weight] = {}
+            for musc in muscles:
+                raw_signal = emg_data['raw_signals'].get(musc)
+                if raw_signal is None:
+                    continue
+
+                times, mdf = EMGProcessor.compute_median_frequency(
+                    raw_signal, fs,
+                    window_size=window_size, overlap=overlap)
+                mdf_results[load_weight][musc] = {
+                    'time': times, 'mdf': mdf
+                }
+
+            self._log(f"负载 {load_weight}kg: "
+                      f"已计算 {len(mdf_results[load_weight])} 块肌肉的 MDF")
+
+        return mdf_results
+
+    def compute_segmented_mdf(self, muscles=None,
+                              window_size=256, overlap=128):
+        """
+        计算运动切片后的 MDF，并与位置对齐。
+
+        对每个负载的已切片数据，将每个运动周期的 EMG 原始信号
+        分段计算 MDF，然后通过时间插值将 MDF 对齐到位置序列。
+
+        Parameters
+        ----------
+        muscles : list[str], optional
+            要分析的肌肉列表。
+        window_size : int
+            STFT 窗口大小。
+        overlap : int
+            窗口重叠样本数。
+
+        Returns
+        -------
+        dict
+            结构: {load_weight: {muscle_name: {'position': ndarray, 'mdf': ndarray}}}
+        """
+        if not self.results:
+            self._log("请先调用 run() 加载数据。")
+            return {}
+
+        if muscles is None:
+            muscles = self.subject.musc_label
+
+        fs = self.subject.emg_fs
+        seg_mdf = {}
+
+        for load_weight, result in self.results.items():
+            emg_data = result.get('emg_data')
+            aligned = result.get('aligned_data')
+            if emg_data is None or aligned is None:
+                continue
+
+            seg_mdf[load_weight] = {}
+            # 获取对齐后的时间和位置
+            if 'time' in aligned.columns and 'pos_l' in aligned.columns:
+                aligned_time = aligned['time'].values
+                aligned_pos = aligned['pos_l'].values
+            else:
+                continue
+
+            for musc in muscles:
+                raw_signal = emg_data['raw_signals'].get(musc)
+                if raw_signal is None:
+                    continue
+
+                mdf_times, mdf_vals = EMGProcessor.compute_median_frequency(
+                    raw_signal, fs,
+                    window_size=window_size, overlap=overlap)
+
+                if len(mdf_times) == 0:
+                    continue
+
+                # 将 MDF 时间序列插值到对齐后的时间点，获得对应位置
+                emg_time = emg_data['time']
+                # mdf_times 基于 EMG 采样时间，需映射到对齐时间
+                # 使用 EMG 原始时间的起始偏移
+                mdf_abs_times = mdf_times + (emg_time[0] if len(emg_time) > 0 else 0)
+
+                # 插值：在对齐时间轴上找到 MDF 对应的位置
+                mdf_positions = np.interp(mdf_abs_times, aligned_time, aligned_pos,
+                                          left=np.nan, right=np.nan)
+
+                # 去掉超出范围的点
+                valid = ~np.isnan(mdf_positions)
+                seg_mdf[load_weight][musc] = {
+                    'position': mdf_positions[valid],
+                    'mdf': mdf_vals[valid]
+                }
+
+        return seg_mdf
+
+    # ==================== 变负载数据加载 ====================
+
+    def run_vload(self):
+        """
+        加载并处理 subject.vload_parameters 中的每组变负载实验数据。
+        复用本 pipeline 的 EMGProcessor、DataAligner 和 _inject_mdf_columns，
+        处理流程与固定负载完全一致：加载 → 对齐 → MDF注入 → 切片。
+
+        结果存储在 self.vload_results 中，结构与 self.results 同构：
+            {label: {'aligned_data', 'cutted_data', 'emg_data',
+                     'robot_data', 'metadata'}}
+
+        vload_parameters 格式（来自 JSON 配置）：
+            {"FibLon_0.2_0.5": [robot_file, emg_file, start_time, goal, load_range, mode]}
+
+        Returns
+        -------
+        dict
+            变负载处理结果
+        """
+        vload_params = self.subject.vload_parameters
+        if not vload_params:
+            self._log('配置中未找到 vload_parameters')
+            self.vload_results = {}
+            return {}
+
+        self._log(f'\n开始处理 {len(vload_params)} 组变负载数据...')
+        vload_results = {}
+
+        for label, params in vload_params.items():
+            robot_file = params[0]
+            emg_file = params[1]
+            start_time = params[2] if len(params) > 2 else 0
+
+            # 解析 label: "FibLon_0.2_0.5" → target_muscle="FibLon"
+            parts = label.split('_')
+            target_muscle = parts[0] if parts else label
+            goal_activation = params[3] if len(params) > 3 else None
+            load_range = params[4] if len(params) > 4 else None
+            mode = params[5] if len(params) > 5 else None
+
+            self._log(f'\n加载变负载: {label} (目标肌肉: {target_muscle})')
+
+            try:
+                # 1. 加载机器人数据
+                #    根据 subject.read_ori_robot_var 选择处理器：
+                #    - True:  RobotOriginProcessor（原始格式，skiprows=17）
+                #    - False: RobotProcessor（标准格式）
+                read_ori = getattr(
+                    self.subject, 'read_ori_robot_var', False)
+                end_time = (
+                    load_range[1]
+                    if load_range is not None and len(load_range) > 1
+                    else -1)
+
+                if read_ori:
+                    robot_data = RobotOriginProcessor.process(
+                        robot_file,
+                        self.subject.robot_folder,
+                        self.subject.folder,
+                        turn_position=self.subject.turn_position,
+                        start_time=start_time,
+                        end_time=end_time)
+                else:
+                    robot_data = RobotProcessor.process(
+                        robot_file, '0',
+                        self.subject.robot_folder,
+                        self.subject.folder,
+                        turn_position=self.subject.turn_position)
+
+                if robot_data is None:
+                    self._log(f'  机器人数据加载失败: {robot_file}')
+                    continue
+                robot_data['load'] = 0.0
+                robot_data['load_weight'] = label
+                self._log(f'  机器人数据加载成功: {len(robot_data)} 样本')
+
+                # 2. 加载 EMG 数据
+                emg_data = self.emg_processor.process(
+                    emg_file, label,
+                    self.subject.emg_folder, self.subject.folder,
+                    motion_flag=self.subject.motion_flag,
+                    remove_leading_zeros=self.subject.remove_leading_zeros)
+                if emg_data is None:
+                    self._log(f'  EMG数据加载失败: {emg_file}')
+                    continue
+
+                # 应用 emg_delay（start_time 在旧代码中即 emg_delay）
+                if start_time and start_time > 0 and emg_data.get('time') is not None:
+                    emg_data['time'] = emg_data['time'] + start_time
+
+                # 3. 对齐
+                aligned = self.aligner.align_robot_emg(robot_data, emg_data)
+                if aligned is None:
+                    self._log(f'  对齐失败: {label}')
+                    continue
+
+                # 4. 注入 MDF 列
+                aligned = self._inject_mdf_columns(
+                    aligned, emg_data, self.subject.emg_fs)
+
+                # 5. 运动切片
+                cutted = self.aligner.cut_aligned_data(aligned)
+
+                vload_results[label] = {
+                    'aligned_data': aligned,
+                    'cutted_data': cutted,
+                    'emg_data': emg_data,
+                    'robot_data': robot_data,
+                    'metadata': {
+                        'target_muscle': target_muscle,
+                        'goal_activation': goal_activation,
+                        'load_range': load_range,
+                        'mode': mode,
+                    }
+                }
+                n_cut = len(cutted) if cutted is not None else 0
+                self._log(f'  成功: aligned {len(aligned)} 样本, '
+                          f'cutted {n_cut} 样本')
+
+            except Exception as e:
+                self._log(f'  变负载 {label} 处理失败: {e}')
+                import traceback
+                traceback.print_exc()
+
+        self.vload_results = vload_results
+        self._log(f'\n变负载处理完成: {len(vload_results)}/{len(vload_params)} 成功')
+        return vload_results
+
     # ==================== 变负载优化 ====================
 
     def run_variable_load_optimization(self, variable_mode=1):
         """
         基于 RBF 模型运行变负载优化。
-
-        需先执行 generate_heatmaps() 以在 result_folder 中生成
-        各肌肉的 *_rbf_params.pkl 文件。优化配置读取自 subject
-        的 titles, goal, epsilons, max_iter 等属性。
 
         Parameters
         ----------
@@ -401,29 +711,8 @@ class MultiLoadPipeline:
         )
         self._log("变负载优化完成。")
 
+    # ==================== 日志 ====================
+
     def _log(self, msg):
         if self.debug:
             print(msg)
-
-
-if __name__ == '__main__':
-    # 示例用法
-    # subject = Subject('config/20251009_BenchPress_Yuetian.json')
-    subject = Subject('config/20250409_squat_NCMP001.json')
-    pipeline = MultiLoadPipeline(subject)
-    pipeline.debug = True
-    # results = pipeline.run(include_xsens=False)
-
-    # # 绘图 - 可选择不同的可视化函数
-    # pipeline.plot()                                           # 平均曲线
-    # pipeline.visualize_alignment()                            # 对齐可视化
-    # pipeline.visualize_movement_segments()                    # 运动切片
-    # pipeline.visualize_test_3d_scatter()                      # 3D散点图
-    # pipeline.visualize_muscle_analysis()                      # 肌肉分析
-    # pipeline.visualize_analyze_kinematic_emg_errors_by_position()  # 位置误差分析
-    # pipeline.analyze_muscle_kinematic_errors_individual()     # 单肌肉误差分析
-
-    # 热力图 + 变负载优化
-    pipeline.generate_heatmaps()
-    # pipeline.run_variable_load_optimization()
-    plt.show()

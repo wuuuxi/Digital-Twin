@@ -2,7 +2,7 @@ import os
 import json
 import numpy as np
 
-from digitaltwin.data.helpers import make_result_folder
+from digitaltwin.utils.file_tools import make_result_folder
 
 
 class Subject:
