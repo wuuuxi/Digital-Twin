@@ -1,15 +1,9 @@
 {
   "experiment_label": "20250708_BenchPress_Chenzui",
-
-  "paths": {
-    "folder": "C:/Users/PC/OneDrive/Experiment/20250708_HKSI_Chenzui_bp/",
-    "emg_folder": "emg_v",
-    "robot_folder": "robot_v",
-    "load_folder": "vload",
-    "muscle_folder": "vload/20250708_BenchPress_Chenzui/20250708_171905"
-  },
+  "folder": "C:/Users/PC/OneDrive/Experiment/20250708_HKSI_Chenzui_bp/",
 
   "emg_settings": {
+    "fs": 1000,
     "musc_label": ["TA", "GL", "SOL", "FibLon", "VL", "RF", "Abs", "ES", "PMCla", "PMSte", "LD", "DelAnt", "VM", "Addl", "BF", "ST", "GlutMax", "GlutMed", "DelMed", "DelPos", "Bic", "TriLong", "TriLat", "BRD"],
     "musc_mvc": [0.1276, 0.298, 0.3023, 0.3392, 0.3792, 0.3061, 0.7502, 0.2241, 0.226, 0.3334, 0.0539, 0.348, 0.1276, 0.298, 0.3023, 0.3392, 0.3792, 0.3061, 0.7502, 0.1041, 0.066, 0.4334, 0.1539, 0.048]
   },
@@ -20,27 +14,119 @@
     "remove_leading_zeros": true
   },
 
-  "robot_files": {
-    "20": ["Robot/Chenzui_BP20kg_20250708_144205.csv", "Chenzui_BenchPress20kg_1_2025-07-08_02-41-52.csv", 20],
-    "30": ["Robot/Chenzui_BP30kg_20250708_144944.csv", "Chenzui_BenchPress30kg_1_2025-07-08_02-49-16.csv", 15],
-    "40": ["Robot/Chenzui_BP40kg_20250708_145212.csv", "Chenzui_BenchPress40kg_1_2025-07-08_02-52-04.csv", 15],
-    "50": ["Robot/Chenzui_BP50kg_20250708_145442.csv", "Chenzui_BenchPress50kg_1_2025-07-08_02-54-24.csv", 12],
-    "70": ["Robot/Chenzui_BP70kg_20250708_145949.csv", "Chenzui_BenchPress70kg_1_2025-07-08_02-59-16.csv", 10]
+  "modeling_file": {
+    "emg_folder": "emg_v",
+    "data": {
+      "20": {
+        "robot_file": "Robot/Chenzui_BP20kg_20250708_144205.csv",
+        "emg_file": "Chenzui_BenchPress20kg_1_2025-07-08_02-41-52.csv",
+        "start_time": 20
+      },
+      "30": {
+        "robot_file": "Robot/Chenzui_BP30kg_20250708_144944.csv",
+        "emg_file": "Chenzui_BenchPress30kg_1_2025-07-08_02-49-16.csv",
+        "start_time": 15
+      },
+      "40": {
+        "robot_file": "Robot/Chenzui_BP40kg_20250708_145212.csv",
+        "emg_file": "Chenzui_BenchPress40kg_1_2025-07-08_02-52-04.csv",
+        "start_time": 15
+      },
+      "50": {
+        "robot_file": "Robot/Chenzui_BP50kg_20250708_145442.csv",
+        "emg_file": "Chenzui_BenchPress50kg_1_2025-07-08_02-54-24.csv",
+        "start_time": 12
+      },
+      "70": {
+        "robot_file": "Robot/Chenzui_BP70kg_20250708_145949.csv",
+        "emg_file": "Chenzui_BenchPress70kg_1_2025-07-08_02-59-16.csv",
+        "start_time": 10
+      }
+    }
   },
 
-  "vload_parameters": {
-    "Bic_0.13_0.5": ["Chenzui_BIC0.13_20250708_192348.csv", "Chenzui_BIC0.13_1_2025-07-08_07-23-33.csv", 0, 0.13, [13, 35], 20],
-    "DelAnt_0.2_0.5": ["Chenzui_DelAnt0.2_20250708_192714.csv", "Chenzui_DelAnt0.2_1_2025-07-08_07-26-16.csv", 0, 0.2, [11, 27], 11],
-    "DelPos_0.1_0.5": ["Chenzui_DelPost0.1_20250708_193553.csv", "Chenzui_DelPost0.1_1_2025-07-08_07-35-45.csv", 0, 0.1, [7, 27], 19],
-    "TriLat_0.15_0.5": ["Chenzui_TriLat0.15_20250708_193917.csv", "Chenzui_TriLat0.15_1_2025-07-08_07-39-09.csv", 0, 0.2, [7, 30], 22],
-    "TriLong_0.2_0.5": ["Chenzui_TriLon0.2_20250708_194642.csv", "Chenzui_TriLon0.2_1_2025-07-08_07-46-33.csv", 0, 0.1, [5, 27], 21],
-    "DelAnt+TriLong_0.2_0.5": ["Chenzui_DelAntTriLon0.2_20250708_193028.csv", "Chenzui_DelAntTriLon0.2_1_2025-07-08_07-30-13.csv", 0, 0.1, [16, 37], 11],
-    "TriLat_m3_0.5": ["Chenzui_TriLatM_20250708_194203.csv", "Chenzui_TriLatM_1_2025-07-08_07-41-52.csv", 0, 0.13, [10, 27], 22],
-    "TriLong_m3_0.5": ["Chenzui_TriLonM_20250708_194822.csv", "Chenzui_TriLonM_1_2025-07-08_07-48-12.csv", 0, 0.2, [8, 27], 21],
-    "TriLat+TriLong_m3_0.5": ["Chenzui_TriLatTriLonM_20250708_194429.csv", "Chenzui_TriLatTriLonM_1_2025-07-08_07-44-21.csv", 0, 0.1, [7, -1], 22]
+  "variable_load_file": {
+    "emg_folder": "emg_v",
+    "robot_folder": "robot_v",
+    "load_folder": "vload",
+    "data": {
+      "Bic_0.13_0.5": {
+        "robot_file": "Chenzui_BIC0.13_20250708_192348.csv",
+        "emg_file": "Chenzui_BIC0.13_1_2025-07-08_07-23-33.csv",
+        "vload_file": "Bic_0.13_0.5.csv",
+        "target_activation": 0.13,
+        "load_range": [13, 35],
+        "target_muscle": "Bic"
+      },
+      "DelAnt_0.2_0.5": {
+        "robot_file": "Chenzui_DelAnt0.2_20250708_192714.csv",
+        "emg_file": "Chenzui_DelAnt0.2_1_2025-07-08_07-26-16.csv",
+        "vload_file": "DelAnt_0.2_0.5.csv",
+        "target_activation": 0.2,
+        "load_range": [11, 27],
+        "target_muscle": "DelAnt"
+      },
+      "DelPos_0.1_0.5": {
+        "robot_file": "Chenzui_DelPost0.1_20250708_193553.csv",
+        "emg_file": "Chenzui_DelPost0.1_1_2025-07-08_07-35-45.csv",
+        "vload_file": "DelPos_0.1_0.5.csv",
+        "target_activation": 0.1,
+        "load_range": [7, 27],
+        "target_muscle": "DelPos"
+      },
+      "TriLat_0.15_0.5": {
+        "robot_file": "Chenzui_TriLat0.15_20250708_193917.csv",
+        "emg_file": "Chenzui_TriLat0.15_1_2025-07-08_07-39-09.csv",
+        "vload_file": "TriLat_0.15_0.5.csv",
+        "target_activation": 0.2,
+        "load_range": [7, 30],
+        "target_muscle": "TriLat"
+      },
+      "TriLong_0.2_0.5": {
+        "robot_file": "Chenzui_TriLon0.2_20250708_194642.csv",
+        "emg_file": "Chenzui_TriLon0.2_1_2025-07-08_07-46-33.csv",
+        "vload_file": "TriLong_0.2_0.5.csv",
+        "target_activation": 0.1,
+        "load_range": [5, 27],
+        "target_muscle": "TriLong"
+      },
+      "DelAnt+TriLong_0.2_0.5": {
+        "robot_file": "Chenzui_DelAntTriLon0.2_20250708_193028.csv",
+        "emg_file": "Chenzui_DelAntTriLon0.2_1_2025-07-08_07-30-13.csv",
+        "vload_file": "DelAnt+TriLong_0.2_0.5.csv",
+        "target_activation": 0.1,
+        "load_range": [16, 37],
+        "target_muscle": ["DelAnt", "TriLong"]
+      },
+      "TriLat_m3_0.5": {
+        "robot_file": "Chenzui_TriLatM_20250708_194203.csv",
+        "emg_file": "Chenzui_TriLatM_1_2025-07-08_07-41-52.csv",
+        "vload_file": "TriLat_m3_0.5.csv",
+        "target_activation": 0.13,
+        "load_range": [10, 27],
+        "target_muscle": "TriLat"
+      },
+      "TriLong_m3_0.5": {
+        "robot_file": "Chenzui_TriLonM_20250708_194822.csv",
+        "emg_file": "Chenzui_TriLonM_1_2025-07-08_07-48-12.csv",
+        "vload_file": "TriLong_m3_0.5.csv",
+        "target_activation": 0.2,
+        "load_range": [8, 27],
+        "target_muscle": "TriLong"
+      },
+      "TriLat+TriLong_m3_0.5": {
+        "robot_file": "Chenzui_TriLatTriLonM_20250708_194429.csv",
+        "emg_file": "Chenzui_TriLatTriLonM_1_2025-07-08_07-44-21.csv",
+        "vload_file": "TriLat+TriLong_m3_0.5.csv",
+        "target_activation": 0.1,
+        "load_range": [7, -1],
+        "target_muscle": ["TriLat", "TriLong"]
+      }
+    }
   },
 
-  "analysis_settings": {
+  "heatmap_settings": {
+    "muscle_folder": "vload/20250708_BenchPress_Chenzui/20250708_171905",
     "height_range": [1.101, 1.525],
     "titles": ["DelAnt", "DelPos", "TriLat", "TriLong", "Bic"],
     "goal": [0.2, 0.1, 0.15, 0.15, 0.15]

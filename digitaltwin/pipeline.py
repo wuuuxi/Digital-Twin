@@ -75,7 +75,7 @@ class MultiLoadPipeline:
             每个负载的处理结果
         """
         if robot_files is None:
-            robot_files = self.subject.robot_files
+            robot_files = self.subject.modeling_data
 
         self._log(f"开始处理 {len(robot_files)} 个负载的数据...")
         all_results = {}
@@ -98,8 +98,10 @@ class MultiLoadPipeline:
 
     def _process_single_load(self, load_weight, file_info, include_xsens):
         """处理单个负载的数据"""
-        robot_file, emg_file, start_time = file_info[:3]
-        xsens_file = file_info[3] if len(file_info) > 3 else None
+        robot_file = file_info.get("robot_file", "")
+        emg_file = file_info.get("emg_file", "")
+        start_time = file_info.get("start_time", 0)
+        xsens_file = file_info.get("xsens_file", None)
 
         result = {
             'load_weight': load_weight,
@@ -115,7 +117,7 @@ class MultiLoadPipeline:
             # 1. 机器人数据
             robot_data = RobotProcessor.process(
                 robot_file, load_weight,
-                self.subject.robot_folder, self.subject.folder,
+                self.subject.modeling_robot_folder, self.subject.folder,
                 turn_position=self.subject.turn_position)
             if robot_data is None:
                 self._log(f"负载 {load_weight}kg: 机器人数据处理失败")
@@ -126,7 +128,7 @@ class MultiLoadPipeline:
             # 2. EMG 数据
             emg_data = self.emg_processor.process(
                 emg_file, load_weight,
-                self.subject.emg_folder, self.subject.folder,
+                self.subject.modeling_emg_folder, self.subject.folder,
                 motion_flag=self.subject.motion_flag,
                 remove_leading_zeros=self.subject.remove_leading_zeros)
             if emg_data is None:
@@ -268,11 +270,14 @@ class MultiLoadPipeline:
     def _inject_mdf_columns(aligned, emg_data, fs,
                             window_size=256, overlap=128):
         """
-        将每块肌肉的 MDF 计算结果插值到 aligned_data 的时间轴上，
-        作为新列 mdf_<muscle> 写入 DataFrame。
+        将每块肌肉的 MDF 和 RMS 插值到 aligned_data 的时间轴上，
+        作为新列 mdf_<muscle> 和 rms_<muscle> 写入 DataFrame。
+
+        优先使用 emg_data 中预计算的 mdf_signals / rms_signals；
+        若不存在则回退到从 raw_signals 重新计算。
 
         这样经过后续 cut_aligned_data 切片后，cutted_data 中自然
-        包含 mdf_* 列，与 pos_l / vel_l / emg_* 完全共享同一行索引。
+        包含 mdf_* 和 rms_* 列，与 pos_l / vel_l / emg_* 完全共享同一行索引。
 
         Parameters
         ----------
@@ -280,18 +285,18 @@ class MultiLoadPipeline:
             对齐后的 DataFrame，必须包含 'time' 列。
         emg_data : dict
             EMGProcessor.process() 返回的字典，包含
-            'time', 'raw_signals' 等。
+            'time', 'raw_signals', 'mdf_signals', 'rms_signals' 等。
         fs : int
             EMG 采样率 (Hz)。
         window_size : int
-            STFT 窗口大小。
+            STFT 窗口大小（回退计算时使用）。
         overlap : int
-            窗口重叠样本数。
+            窗口重叠样本数（回退计算时使用）。
 
         Returns
         -------
         pd.DataFrame
-            添加了 mdf_* 列的 aligned DataFrame。
+            添加了 mdf_* 和 rms_* 列的 aligned DataFrame。
         """
         if aligned is None or emg_data is None:
             return aligned
@@ -300,27 +305,47 @@ class MultiLoadPipeline:
 
         aligned_time = aligned['time'].values
         emg_time = emg_data.get('time')
-        raw_signals = emg_data.get('raw_signals', {})
         if emg_time is None or len(emg_time) == 0:
             return aligned
 
         t0 = emg_time[0]
+        raw_signals = emg_data.get('raw_signals', {})
+        mdf_signals = emg_data.get('mdf_signals', {})
+        rms_signals = emg_data.get('rms_signals', {})
 
-        for musc_name, raw_signal in raw_signals.items():
-            mdf_times, mdf_vals = EMGProcessor.compute_median_frequency(
-                raw_signal, fs,
-                window_size=window_size, overlap=overlap)
+        for musc_name in raw_signals.keys():
+            # --- MDF 注入 ---
+            if musc_name in mdf_signals:
+                mdf_times = mdf_signals[musc_name]['time']
+                mdf_vals = mdf_signals[musc_name]['values']
+            else:
+                mdf_times, mdf_vals = EMGProcessor.compute_median_frequency(
+                    raw_signals[musc_name], fs,
+                    window_size=window_size, overlap=overlap)
+
             if len(mdf_times) == 0:
                 aligned[f'mdf_{musc_name}'] = np.nan
-                continue
+            else:
+                mdf_abs = mdf_times + t0
+                aligned[f'mdf_{musc_name}'] = np.interp(
+                    aligned_time, mdf_abs, mdf_vals,
+                    left=np.nan, right=np.nan)
 
-            # mdf_times 是相对于 EMG 信号开头的时间，加上偏移得到绝对时间
-            mdf_abs = mdf_times + t0
+            # --- RMS 注入 ---
+            if musc_name in rms_signals:
+                rms_times = rms_signals[musc_name]['time']
+                rms_vals = rms_signals[musc_name]['values']
+            else:
+                rms_times, rms_vals = EMGProcessor.compute_rms(
+                    raw_signals[musc_name], fs)
 
-            # 插值到 aligned 的时间轴
-            mdf_interp = np.interp(aligned_time, mdf_abs, mdf_vals,
-                                   left=np.nan, right=np.nan)
-            aligned[f'mdf_{musc_name}'] = mdf_interp
+            if len(rms_times) == 0:
+                aligned[f'rms_{musc_name}'] = np.nan
+            else:
+                rms_abs = rms_times + t0
+                aligned[f'rms_{musc_name}'] = np.interp(
+                    aligned_time, rms_abs, rms_vals,
+                    left=np.nan, right=np.nan)
 
         return aligned
 
@@ -567,7 +592,7 @@ class MultiLoadPipeline:
 
     def run_vload(self):
         """
-        加载并处理 subject.vload_parameters 中的每组变负载实验数据。
+        加载并处理 subject.vload_data 中的每组变负载实验数据。
         复用本 pipeline 的 EMGProcessor、DataAligner 和 _inject_mdf_columns，
         处理流程与固定负载完全一致：加载 → 对齐 → MDF注入 → 切片。
 
@@ -575,44 +600,41 @@ class MultiLoadPipeline:
             {label: {'aligned_data', 'cutted_data', 'emg_data',
                      'robot_data', 'metadata'}}
 
-        vload_parameters 格式（来自 JSON 配置）：
-            {"FibLon_0.2_0.5": [robot_file, emg_file, start_time, goal, load_range, mode]}
+        variable_load_file.data 格式（来自 JSON 配置）：
+            {"FibLon_0.2_0.5": {"robot_file": ..., "emg_file": ...,
+             "target_activation": ..., "start_time": ...,
+             "load_range": ..., "target_muscle": ...}}
 
         Returns
         -------
         dict
             变负载处理结果
         """
-        vload_params = self.subject.vload_parameters
-        if not vload_params:
-            self._log('配置中未找到 vload_parameters')
+        vload_data = self.subject.vload_data
+        if not vload_data:
+            self._log('配置中未找到 variable_load_file 数据')
             self.vload_results = {}
             return {}
 
-        self._log(f'\n开始处理 {len(vload_params)} 组变负载数据...')
+        self._log(f'\n开始处理 {len(vload_data)} 组变负载数据...')
         vload_results = {}
 
-        for label, params in vload_params.items():
-            robot_file = params[0]
-            emg_file = params[1]
-            start_time = params[2] if len(params) > 2 else 0
-
-            # 解析 label: "FibLon_0.2_0.5" → target_muscle="FibLon"
-            parts = label.split('_')
-            target_muscle = parts[0] if parts else label
-            goal_activation = params[3] if len(params) > 3 else None
-            load_range = params[4] if len(params) > 4 else None
-            mode = params[5] if len(params) > 5 else None
+        for label, params in vload_data.items():
+            robot_file = params.get("robot_file", "")
+            emg_file = params.get("emg_file", "")
+            start_time = params.get("start_time", 0)
+            target_muscle = params.get("target_muscle")
+            goal_activation = params.get("target_activation")
+            load_range = params.get("load_range", self.subject.load_range)
 
             self._log(f'\n加载变负载: {label} (目标肌肉: {target_muscle})')
 
             try:
                 # 1. 加载机器人数据
-                #    根据 subject.read_ori_robot_var 选择处理器：
+                #    根据 subject.read_ori_robot 选择处理器：
                 #    - True:  RobotOriginProcessor（原始格式，skiprows=17）
                 #    - False: RobotProcessor（标准格式）
-                read_ori = getattr(
-                    self.subject, 'read_ori_robot_var', False)
+                read_ori = self.subject.read_ori_robot
                 end_time = (
                     load_range[1]
                     if load_range is not None and len(load_range) > 1
@@ -621,7 +643,7 @@ class MultiLoadPipeline:
                 if read_ori:
                     robot_data = RobotOriginProcessor.process(
                         robot_file,
-                        self.subject.robot_folder,
+                        self.subject.vload_robot_folder,
                         self.subject.folder,
                         turn_position=self.subject.turn_position,
                         start_time=start_time,
@@ -629,7 +651,7 @@ class MultiLoadPipeline:
                 else:
                     robot_data = RobotProcessor.process(
                         robot_file, '0',
-                        self.subject.robot_folder,
+                        self.subject.vload_robot_folder,
                         self.subject.folder,
                         turn_position=self.subject.turn_position)
 
@@ -643,7 +665,7 @@ class MultiLoadPipeline:
                 # 2. 加载 EMG 数据
                 emg_data = self.emg_processor.process(
                     emg_file, label,
-                    self.subject.emg_folder, self.subject.folder,
+                    self.subject.vload_emg_folder, self.subject.folder,
                     motion_flag=self.subject.motion_flag,
                     remove_leading_zeros=self.subject.remove_leading_zeros)
                 if emg_data is None:
@@ -676,7 +698,6 @@ class MultiLoadPipeline:
                         'target_muscle': target_muscle,
                         'goal_activation': goal_activation,
                         'load_range': load_range,
-                        'mode': mode,
                     }
                 }
                 n_cut = len(cutted) if cutted is not None else 0
@@ -689,7 +710,7 @@ class MultiLoadPipeline:
                 traceback.print_exc()
 
         self.vload_results = vload_results
-        self._log(f'\n变负载处理完成: {len(vload_results)}/{len(vload_params)} 成功')
+        self._log(f'\n变负载处理完成: {len(vload_results)}/{len(vload_data)} 成功')
         return vload_results
 
     # ==================== 变负载优化 ====================

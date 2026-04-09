@@ -116,7 +116,7 @@ class DataManager:
             emg_file_path = os.path.join(self.folder, emg_file)
             emg_raw = self.emg_processor.load_from_csv(emg_file_path).T
             for i in range(len(self.musc_mvc)):
-                emg_raw[i + 1] = EMGProcessor.rectification(
+                emg_raw[i + 1] = EMGProcessor.compute_envelope(
                     emg_raw[i + 1], self.fs, ref=self.musc_mvc[i])
 
             robot_time = np.asarray(xsens_data['time'])

@@ -228,7 +228,7 @@ class CurvePlotter:
         n_loads = len(load_weights)
         if n_loads == 0: return
 
-        fig, axes = plt.subplots(n_loads, 1, figsize=(12, 4 * n_loads))
+        fig, axes = plt.subplots(n_loads, 1, figsize=(10, 3 * n_loads))
         if n_loads == 1: axes = [axes]
 
         for i, lw in enumerate(load_weights):

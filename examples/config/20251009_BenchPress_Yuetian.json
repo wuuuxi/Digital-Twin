@@ -1,15 +1,9 @@
 {
   "experiment_label": "20251009_BenchPress_Yuetian",
-
-  "paths": {
-    "folder": "D:/OneDrive/Experiment/20251009_HKSI_BP_yuetian/",
-    "emg_folder": "EMG1",
-    "robot_folder": "Robot1",
-    "load_folder": "vload",
-    "muscle_folder": "vload/20251009_BenchPress_Yuetian/20251012_224331"
-  },
+  "folder": "C:/Users/PC/OneDrive/Experiment/20251009_HKSI_BP_yuetian/",
 
   "emg_settings": {
+    "fs": 1000,
     "musc_label": ["TA", "GL", "SOL", "FibLon", "VL", "RF", "Abs", "ES", "PMCla", "PMSte", "LD", "DelAnt", "VM", "Addl", "BF", "ST", "GlutMax", "GlutMed", "DelMed", "DelPos", "Bic", "TriLong", "TriLat", "BRD"],
     "musc_mvc": [0.1276, 0.298, 0.3023, 0.3392, 0.3792, 0.3061, 0.7502, 0.2241, 0.226, 0.3334, 0.0539, 0.348, 0.1276, 0.298, 0.3023, 0.3392, 0.3792, 0.3061, 0.7502, 0.1041, 0.066, 0.4334, 0.1539, 0.048]
   },
@@ -21,25 +15,97 @@
     "turn_position": true
   },
 
-  "robot_files": {
-    "20": ["Robot1/RobotUdp_Eric_dt_bp_20kg_1_20251009_181530.csv", "Eric_20kg_1_2025-10-09_06-15-26.csv", 0],
-    "35": ["Robot1/RobotUdp_Eric_dt_bp_35kg_1_20251009_181643.csv", "Eric_35kg_1_2025-10-09_06-16-24.csv", 30],
-    "50": ["Robot1/RobotUdp_Eric_dt_bp_50kg_1_20251009_181902.csv", "Eric_50kg_1_2025-10-09_06-18-58.csv", 5],
-    "65": ["Robot1/RobotUdp_Eric_dt_bp_65kg_1_20251009_182319.csv", "Eric_65kg_1_2025-10-09_06-22-56.csv", 0],
-    "75": ["Robot1/RobotUdp_Eric_dt_bp_75kg_1_20251009_182939.csv", "Eric_75kg_1_2025-10-09_06-24-58.csv", 10],
-    "85": ["Robot1/RobotUdp_Eric_dt_bp_85kg_1_20251009_183700.csv", "Eric_85kg_1_2025-10-09_06-36-25.csv", 0]
+  "modeling_file": {
+    "emg_folder": "EMG1",
+    "data": {
+      "20": {
+        "robot_file": "Robot1/RobotUdp_Eric_dt_bp_20kg_1_20251009_181530.csv",
+        "emg_file": "Eric_20kg_1_2025-10-09_06-15-26.csv"
+      },
+      "35": {
+        "robot_file": "Robot1/RobotUdp_Eric_dt_bp_35kg_1_20251009_181643.csv",
+        "emg_file": "Eric_35kg_1_2025-10-09_06-16-24.csv",
+        "start_time": 30
+      },
+      "50": {
+        "robot_file": "Robot1/RobotUdp_Eric_dt_bp_50kg_1_20251009_181902.csv",
+        "emg_file": "Eric_50kg_1_2025-10-09_06-18-58.csv",
+        "start_time": 5
+      },
+      "65": {
+        "robot_file": "Robot1/RobotUdp_Eric_dt_bp_65kg_1_20251009_182319.csv",
+        "emg_file": "Eric_65kg_1_2025-10-09_06-22-56.csv"
+      },
+      "75": {
+        "robot_file": "Robot1/RobotUdp_Eric_dt_bp_75kg_1_20251009_182939.csv",
+        "emg_file": "Eric_75kg_1_2025-10-09_06-24-58.csv",
+        "start_time": 10
+      },
+      "85": {
+        "robot_file": "Robot1/RobotUdp_Eric_dt_bp_85kg_1_20251009_183700.csv",
+        "emg_file": "Eric_85kg_1_2025-10-09_06-36-25.csv"
+      }
+    }
   },
 
-  "vload_parameters": {
-    "Bic_0.13_0.5": ["RobotUdp_Eric_dt_bp_20kg_1_20251009_181530.csv", "Eric_20kg_1_2025-10-09_06-15-26.csv", 0, 0.1, [8, 20], 20],
-    "DelAnt_0.2_0.5": ["RobotUdp_Eric_dt_bp_35kg_1_20251009_181643.csv", "Eric_35kg_1_2025-10-09_06-16-24.csv", 0, 0.2, [42, 57], 11],
-    "DelPos_0.1_0.5": ["RobotUdp_Eric_dt_bp_50kg_1_20251009_181902.csv", "Eric_50kg_1_2025-10-09_06-18-58.csv", 0, 0.1, [8, 20], 19],
-    "TriLat_0.15_0.5": ["RobotUdp_Eric_dt_bp_65kg_1_20251009_182319.csv", "Eric_65kg_1_2025-10-09_06-22-56.csv", 0, 0.2, [10, 20], 22],
-    "TriLong_0.2_0.5": ["RobotUdp_Eric_dt_bp_75kg_1_20251009_182939.csv", "Eric_75kg_1_2025-10-09_06-24-58.csv", 0, 0.1, [10, 22], 21],
-    "DelMed_0.1_0.5": ["RobotUdp_Eric_dt_bp_85kg_1_20251009_183700.csv", "Eric_85kg_1_2025-10-09_06-36-25.csv", 0, 0.1, [8, 20], 18]
+  "variable_load_file": {
+    "emg_folder": "EMG1",
+    "robot_folder": "Robot1",
+    "load_folder": "vload",
+    "data": {
+      "Bic_0.13_0.5": {
+        "robot_file": "RobotUdp_Eric_dt_bp_20kg_1_20251009_181530.csv",
+        "emg_file": "Eric_20kg_1_2025-10-09_06-15-26.csv",
+        "vload_file": "Bic_0.13_0.5.csv",
+        "target_activation": 0.1,
+        "load_range": [8, 20],
+        "target_muscle": "Bic"
+      },
+      "DelAnt_0.2_0.5": {
+        "robot_file": "RobotUdp_Eric_dt_bp_35kg_1_20251009_181643.csv",
+        "emg_file": "Eric_35kg_1_2025-10-09_06-16-24.csv",
+        "vload_file": "DelAnt_0.2_0.5.csv",
+        "target_activation": 0.2,
+        "load_range": [42, 57],
+        "target_muscle": "DelAnt"
+      },
+      "DelPos_0.1_0.5": {
+        "robot_file": "RobotUdp_Eric_dt_bp_50kg_1_20251009_181902.csv",
+        "emg_file": "Eric_50kg_1_2025-10-09_06-18-58.csv",
+        "vload_file": "DelPos_0.1_0.5.csv",
+        "target_activation": 0.1,
+        "load_range": [8, 20],
+        "target_muscle": "DelPos"
+      },
+      "TriLat_0.15_0.5": {
+        "robot_file": "RobotUdp_Eric_dt_bp_65kg_1_20251009_182319.csv",
+        "emg_file": "Eric_65kg_1_2025-10-09_06-22-56.csv",
+        "vload_file": "TriLat_0.15_0.5.csv",
+        "target_activation": 0.2,
+        "load_range": [10, 20],
+        "target_muscle": "TriLat"
+      },
+      "TriLong_0.2_0.5": {
+        "robot_file": "RobotUdp_Eric_dt_bp_75kg_1_20251009_182939.csv",
+        "emg_file": "Eric_75kg_1_2025-10-09_06-24-58.csv",
+        "vload_file": "TriLong_0.2_0.5.csv",
+        "target_activation": 0.1,
+        "load_range": [10, 22],
+        "target_muscle": "TriLong"
+      },
+      "DelMed_0.1_0.5": {
+        "robot_file": "RobotUdp_Eric_dt_bp_85kg_1_20251009_183700.csv",
+        "emg_file": "Eric_85kg_1_2025-10-09_06-36-25.csv",
+        "vload_file": "DelMed_0.1_0.5.csv",
+        "target_activation": 0.1,
+        "load_range": [8, 20],
+        "target_muscle": "DelMed"
+      }
+    }
   },
 
-  "analysis_settings": {
+  "heatmap_settings": {
+    "muscle_folder": "vload/20251009_BenchPress_Yuetian/20251012_224331",
     "titles": ["DelAnt", "DelPos", "TriLat", "TriLong", "Bic"],
     "goal": [0.2, 0.1, 0.15, 0.15, 0.15]
   }

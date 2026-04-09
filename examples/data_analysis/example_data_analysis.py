@@ -9,8 +9,8 @@ from digitaltwin import Subject, MultiLoadPipeline
 
 
 def main():
-    # subject = Subject('config/20251009_BenchPress_Yuetian.json')
-    subject = Subject('../config/20250409_squat_NCMP001.json')
+    subject = Subject('../config/20251009_BenchPress_Yuetian.json')
+    # subject = Subject('../config/20250409_squat_NCMP001.json')
     pipeline = MultiLoadPipeline(subject)
     pipeline.debug = True
 

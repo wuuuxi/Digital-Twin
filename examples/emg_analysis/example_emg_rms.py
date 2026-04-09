@@ -1,13 +1,13 @@
 """
-EMG 中值频率（MDF）分析示例——固定负载 + 变负载对比
+EMG RMS 分析示例——固定负载 + 变负载对比
 
-图 1：MDF vs Time（运动切片风格）——固定负载 + 变负载
-图 2：MDF vs Position 散点图——固定负载 + 变负载
-图 3：3行×N列 Position-Velocity / EMG / MDF 网格图
-图 4：MDF 均值柱状图（固定负载 + 变负载）
+图 1：RMS vs Time（运动切片风格）——固定负载 + 变负载
+图 2：RMS vs Position 散点图——固定负载 + 变负载
+图 3：3行×N列 Position-Velocity / EMG / RMS 网格图
+图 4：RMS 均值柱状图（固定负载 + 变负载）
 
 用法：
-    python example_emg_frequency_vload.py
+    python example_emg_rms_vload.py
 """
 import matplotlib.pyplot as plt
 from digitaltwin import Subject, MultiLoadPipeline
@@ -18,8 +18,8 @@ from digitaltwin.visualization.emg_feature_plot import (
     plot_feature_bar_combined,
 )
 
-FEATURE = 'mdf'
-LABEL = 'MDF (Hz)'
+FEATURE = 'rms'
+LABEL = 'RMS (mV)'
 
 
 def main():

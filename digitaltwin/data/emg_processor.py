@@ -65,6 +65,8 @@ class EMGProcessor:
             emg_data = {
                 'time': emg_raw[0],
                 'raw_signals': {},
+                'mdf_signals': {},
+                'rms_signals': {},
                 'norm_signals': {},
                 'metadata': {}
             }
@@ -75,15 +77,18 @@ class EMGProcessor:
                     break
 
                 raw_signal = emg_raw[i + 1]
-                rectified = self.rectification(raw_signal, self.fs)
+                filtered = self._bandpass_filter(raw_signal, self.fs)
+                mdf_time, mdf_signal = self.compute_median_frequency(filtered, self.fs)
+                rms_time, rms_signal = self.compute_rms(filtered, self.fs)
 
-                # MVC 归一化
                 if i < len(self.musc_mvc) and self.musc_mvc[i] > 0:
-                    norm_signal = rectified / self.musc_mvc[i]
+                    norm_signal = self.compute_envelope(raw_signal, self.fs, self.musc_mvc[i])
                 else:
-                    norm_signal = rectified
+                    norm_signal = self.compute_envelope(raw_signal, self.fs)
 
                 emg_data['raw_signals'][muscle_name] = raw_signal
+                emg_data['mdf_signals'][muscle_name] = {'time': mdf_time, 'values': mdf_signal}
+                emg_data['rms_signals'][muscle_name] = {'time': rms_time, 'values': rms_signal}
                 emg_data['norm_signals'][muscle_name] = norm_signal
 
             emg_data['metadata'] = {
@@ -99,7 +104,7 @@ class EMGProcessor:
             # 后备简单加载
             try:
                 file_path = self._resolve_file_path(emg_file, emg_folder, folder)
-                return self.load_simple(file_path, load_weight)
+                return None
             except:
                 return None
 
@@ -169,7 +174,7 @@ class EMGProcessor:
         # return raw_data
 
     @staticmethod
-    def rectification(signal, fs, ref=1.0):
+    def compute_envelope(signal, fs, ref=1.0):
         """
         EMG 信号整流流水线：带通滤波 → 全波整流 → 低通包络 → 归一化。
 
@@ -192,8 +197,7 @@ class EMGProcessor:
         high_cutoff = 450 / nyquist
 
         # 带通滤波 (20-450 Hz)
-        b, a = scipy.signal.butter(4, [low_cutoff, high_cutoff],
-                                   btype='band', analog=False)
+        b, a = scipy.signal.butter(4, [low_cutoff, high_cutoff], btype='band', analog=False)
         filtered = scipy.signal.filtfilt(b, a, signal)
 
         # 去均值 + 全波整流
@@ -211,47 +215,16 @@ class EMGProcessor:
         # MVC 归一化
         normalized = envelope / ref
 
-        # 神经激活滤波
-        neural_activation = np.zeros_like(normalized)
-        for i in range(2, len(normalized)):
-            neural_activation[i] = (2.25 * normalized[i]
-                                    - 1.0 * neural_activation[i - 1]
-                                    - 0.25 * neural_activation[i - 2])
-        return neural_activation
-
-    def load_simple(self, file_path, load_weight):
-        """
-        简单的 EMG 数据加载方法（后备）。
-        """
-        try:
-            df = pd.read_csv(file_path)
-            emg_data = {
-                'time': np.arange(len(df)) / self.fs,
-                'raw_signals': {},
-                'norm_signals': {},
-                'metadata': {}
-            }
-            for i, col in enumerate(df.columns):
-                if i == 0 and 'time' in col.lower():
-                    continue
-                signal = df[col].values
-                muscle_name = (self.musc_label[i]
-                               if i < len(self.musc_label)
-                               else f"Muscle_{i}")
-                rectified = np.abs(signal)
-                if i < len(self.musc_mvc) and self.musc_mvc[i] > 0:
-                    norm_signal = rectified / self.musc_mvc[i]
-                else:
-                    norm_signal = rectified / (np.max(rectified) + 1e-10)
-                emg_data['raw_signals'][muscle_name] = signal
-                emg_data['norm_signals'][muscle_name] = norm_signal
-            return emg_data
-        except Exception as e:
-            print(f"简单EMG加载也失败: {e}")
-            return None
+        # # 神经激活滤波
+        # neural_activation = np.zeros_like(normalized)
+        # for i in range(2, len(normalized)):
+        #     neural_activation[i] = (2.25 * normalized[i]
+        #                             - 1.0 * neural_activation[i - 1]
+        #                             - 0.25 * neural_activation[i - 2])
+        return normalized
 
     @staticmethod
-    def compute_median_frequency(signal, fs, window_size=256, overlap=128):
+    def compute_median_frequency(signal, fs, window_size=512, overlap=384, bandpass=True):
         """
         计算 EMG 信号的中值频率（Median Frequency, MDF）时间序列。
 
@@ -268,6 +241,10 @@ class EMGProcessor:
             FFT 窗口大小（样本数），默认 256
         overlap : int
             窗口重叠样本数，默认 128
+        bandpass : bool
+            是否对输入信号进行带通滤波（20-450 Hz）。
+            如果为 False，则对信号进行滤波；如果为 True，则假设信号已经滤波。
+            默认为 True。
 
         Returns
         -------
@@ -276,6 +253,14 @@ class EMGProcessor:
         mdf : np.ndarray
             中值频率序列 (Hz)
         """
+
+        if bandpass is False:
+            nyquist = fs / 2
+            low_cutoff = 20 / nyquist
+            high_cutoff = 450 / nyquist
+            b, a = scipy.signal.butter(4, [low_cutoff, high_cutoff], btype='band')
+            signal = scipy.signal.filtfilt(b, a, signal)
+
         step = window_size - overlap
         n_windows = (len(signal) - window_size) // step + 1
         if n_windows <= 0:
@@ -285,22 +270,16 @@ class EMGProcessor:
         mdf = np.zeros(n_windows)
         window_func = np.hanning(window_size)
 
-        nyquist = fs / 2
-        low_cutoff = 20 / nyquist
-        high_cutoff = 450 / nyquist
-        b, a = scipy.signal.butter(4, [low_cutoff, high_cutoff],
-                                   btype='band', analog=False)
-
         for i in range(n_windows):
             start = i * step
             end = start + window_size
             segment = signal[start:end]
 
-            # 带通滤波（与 rectification 一致的 20-450 Hz 范围）
-            filtered = scipy.signal.filtfilt(b, a, segment)
+            # # 带通滤波（与 rectification 一致的 20-450 Hz 范围）
+            # filtered = scipy.signal.filtfilt(b, a, segment)
 
             # 加汉宁窗
-            windowed = filtered * window_func
+            windowed = segment * window_func
 
             # FFT → 功率谱
             fft_vals = np.fft.rfft(windowed)
@@ -310,16 +289,94 @@ class EMGProcessor:
             # 中值频率：累积功率达到总功率 50% 的频率
             cumulative_power = np.cumsum(power)
             total_power = cumulative_power[-1]
-            if total_power > 0:
-                median_idx = np.searchsorted(cumulative_power,
-                                             total_power / 2)
+            if total_power > 1e-6:
+                median_idx = np.searchsorted(cumulative_power, total_power / 2)
                 mdf[i] = freqs[min(median_idx, len(freqs) - 1)]
             else:
-                mdf[i] = 0.0
+                mdf[i] = np.nan
 
             times[i] = (start + window_size / 2) / fs
 
         return times, mdf
+
+    @staticmethod
+    def compute_rms(signal, fs, window_seconds=0.25, overlap_seconds=0.125, bandpass=True):
+        """
+        计算滑动窗口RMS（用于疲劳分析）
+
+        Parameters
+        ----------
+        signal : np.ndarray
+            原始EMG信号
+        fs : int
+            采样率 (Hz)
+        window_seconds : float
+            窗口长度（秒），默认0.25秒
+        overlap_seconds : float
+            重叠长度（秒），默认0.125秒（50%重叠）
+        bandpass : bool
+            是否对输入信号进行带通滤波（20-450 Hz）。
+            如果为 False，则对信号进行滤波；如果为 True，则假设信号已经滤波。
+            默认为 True。
+
+        Returns
+        -------
+        times : np.ndarray
+            每个窗口中心的时间 (s)
+        rms : np.ndarray
+            RMS值序列（原始幅值，未归一化）
+        """
+        if bandpass is False:
+            nyquist = fs / 2
+            low_cutoff = 20 / nyquist
+            high_cutoff = 450 / nyquist
+            b, a = scipy.signal.butter(4, [low_cutoff, high_cutoff], btype='band')
+            signal = scipy.signal.filtfilt(b, a, signal)
+
+        window_size = int(window_seconds * fs)
+        step = int((window_seconds - overlap_seconds) * fs)
+
+        # if window_size % 2 == 0:
+        #     window_size += 1  # 确保奇数，方便对齐
+
+        n_windows = (len(signal) - window_size) // step + 1
+        if n_windows <= 0:
+            return np.array([]), np.array([])
+
+        times = np.zeros(n_windows)
+        rms_values = np.zeros(n_windows)
+
+        for i in range(n_windows):
+            start = i * step
+            end = start + window_size
+            window = signal[start:end]
+
+            # RMS = sqrt(mean(x^2))
+            rms_values[i] = np.sqrt(np.mean(window ** 2))
+            times[i] = (start + window_size / 2) / fs
+
+        return times, rms_values
+
+    @staticmethod
+    def compute_rms_envelope(signal, fs, window_seconds=0.1):
+        """
+        计算密集RMS（每个样本点一个值，用于与包络对比）
+
+        通过滑动窗口为每个样本点计算RMS值
+        """
+        window_size = int(window_seconds * fs)
+        half_win = window_size // 2
+
+        rms_envelope = np.zeros_like(signal, dtype=float)
+        padded = np.pad(signal, half_win, mode='reflect')
+
+        for i in range(len(signal)):
+            start = i
+            end = i + window_size
+            window = padded[start:end]
+            rms_envelope[i] = np.sqrt(np.mean(window ** 2))
+
+        return rms_envelope
 
     @staticmethod
     def _resolve_file_path(emg_file, emg_folder, folder):
@@ -350,221 +407,9 @@ class EMGProcessor:
             return data, time_delay
         return data, data[0, 0]
 
-
-# class EMGProcessor:
-#     """EMG数据处理器"""
-#
-#     def __init__(self, fs=1000, musc_label=None, musc_mvc=None):
-#         """
-#         初始化EMG处理器
-#
-#         Parameters:
-#         -----------
-#         fs : int
-#             采样率，默认1000Hz
-#         musc_label : list
-#             肌肉名称列表
-#         musc_mvc : list
-#             肌肉MVC值列表
-#         """
-#         self.fs = fs
-#         self.musc_label = musc_label or []
-#         self.musc_mvc = musc_mvc or []
-#         self.emg_data = None
-#         self.processed_data = None
-#
-#     def load_from_csv(self, file_path, motion='all', remove_leading_zeros=True):
-#         """
-#         从CSV文件加载EMG数据
-#
-#         Parameters:
-#         -----------
-#         file_path : str
-#             CSV文件路径
-#         motion : str
-#             运动类型，'all'或'squat'
-#         remove_leading_zeros : bool
-#             是否移除前导零
-#
-#         Returns:
-#         --------
-#         tuple
-#             (emg_raw, start_time)
-#         """
-#         try:
-#             print_debug_info(f"加载EMG文件: {os.path.basename(file_path)}")
-#
-#             # 读取CSV文件
-#             states = pd.read_csv(file_path, low_memory=False, skiprows=2, encoding='GB2312')
-#             raw_data = np.squeeze(np.asarray([states]))
-#
-#             # 根据运动类型选择肌肉
-#             if motion == 'all':
-#                 raw_data = raw_data[3:, 0:25].astype(float)  # 前musc_num个肌肉, 包括第一列时间
-#             elif motion == 'squat':
-#                 # 筛选特定肌肉群
-#                 raw_data = np.concatenate([raw_data[3:, 0:7], raw_data[3:, 13:19]], axis=1).astype(float)
-#
-#             # 移除前导零
-#             if remove_leading_zeros:
-#                 first_nonzero = np.where(np.any(raw_data[1:] != 0, axis=0))[0]
-#                 if len(first_nonzero) > 0:
-#                     raw_data = raw_data[:, first_nonzero[0]:]
-#
-#             emg_raw = raw_data.T
-#             start_time = emg_raw[0, 0]
-#
-#             print_debug_info(f"EMG数据加载成功: {emg_raw.shape[1]}个样本, {emg_raw.shape[0] - 1}个通道")
-#
-#             return emg_raw, start_time
-#
-#         except Exception as e:
-#             print_debug_info(f"EMG加载失败: {e}")
-#             return None, None
-#
-#     def rectify_signal(self, signal, mvc_value=None):
-#         """
-#         EMG信号整流和归一化
-#
-#         Parameters:
-#         -----------
-#         signal : np.array
-#             原始EMG信号
-#         mvc_value : float
-#             MVC值，用于归一化
-#
-#         Returns:
-#         --------
-#         np.array
-#             处理后的信号
-#         """
-#         # 带通滤波
-#         nyquist = self.fs / 2
-#         low_cutoff = 20 / nyquist
-#         high_cutoff = 450 / nyquist
-#         [b, a] = scipy.signal.butter(4, [low_cutoff, high_cutoff], btype='band', analog=False)
-#         x = scipy.signal.filtfilt(b, a, signal)
-#
-#         # 去除直流分量
-#         x_mean = np.mean(x)
-#         raw = x - x_mean
-#
-#         # 全波整流
-#         EMGFWR = np.abs(raw)
-#
-#         # 低通滤波获取包络
-#         NUMPASSES = 3
-#         LOWPASSRATE = 4
-#         Wn = LOWPASSRATE / (self.fs / 2)
-#         [b, a] = scipy.signal.butter(NUMPASSES, Wn, 'low')
-#         EMGLE = scipy.signal.filtfilt(b, a, EMGFWR, padtype='odd',
-#                                       padlen=3 * (max(len(b), len(a)) - 1))
-#
-#         # 归一化
-#         if mvc_value and mvc_value > 0:
-#             normalized_EMG = EMGLE / mvc_value
-#         else:
-#             normalized_EMG = EMGLE
-#
-#         # 神经激活模型
-#         neural_activation = np.zeros_like(normalized_EMG)
-#         for i in range(len(normalized_EMG)):
-#             if i > 1:
-#                 neural_activation[i] = 2.25 * normalized_EMG[i] - 1 * neural_activation[i - 1] - 0.25 * \
-#                                        neural_activation[i - 2]
-#
-#         return neural_activation
-#
-#     def process_emg_data(self, emg_raw, mvc_values=None):
-#         """
-#         处理完整的EMG数据
-#
-#         Parameters:
-#         -----------
-#         emg_raw : np.array
-#             原始EMG数据，第一列为时间
-#         mvc_values : list
-#             MVC值列表
-#
-#         Returns:
-#         --------
-#         dict
-#             处理后的EMG数据
-#         """
-#         if emg_raw is None:
-#             return None
-#
-#         if mvc_values is None:
-#             mvc_values = self.musc_mvc
-#
-#         emg_raw = emg_raw.T
-#         time = emg_raw[0]
-#
-#         emg_data = {
-#             'time': time,
-#             'raw_signals': {},
-#             'norm_signals': {},
-#             'metadata': {
-#                 'fs': self.fs,
-#                 'muscle_labels': self.musc_label.copy(),
-#                 'mvc_values': mvc_values.copy() if mvc_values else []
-#             }
-#         }
-#
-#         # 处理每个肌肉通道
-#         for i, muscle_name in enumerate(self.musc_label):
-#             if i + 1 < emg_raw.shape[0]:
-#                 raw_signal = emg_raw[i + 1]
-#                 mvc = mvc_values[i] if i < len(mvc_values) else None
-#
-#                 # 整流和归一化
-#                 norm_signal = self.rectify_signal(raw_signal, mvc)
-#
-#                 emg_data['raw_signals'][muscle_name] = raw_signal
-#                 emg_data['norm_signals'][muscle_name] = norm_signal
-#
-#         self.processed_data = emg_data
-#         return emg_data
-#
-#     def align_to_robot_time(self, robot_time):
-#         """
-#         将EMG数据对齐到机器人时间
-#
-#         Parameters:
-#         -----------
-#         robot_time : np.array
-#             机器人时间序列
-#
-#         Returns:
-#         --------
-#         dict
-#             对齐后的EMG数据
-#         """
-#         if self.processed_data is None:
-#             return None
-#
-#         emg_time = self.processed_data['time']
-#         aligned_signals = {}
-#
-#         for muscle_name, signal in self.processed_data['norm_signals'].items():
-#             aligned = []
-#             for t in robot_time:
-#                 idx = find_nearest_idx(emg_time, t)
-#                 aligned.append(signal[idx])
-#             aligned_signals[muscle_name] = np.array(aligned)
-#
-#         return aligned_signals
-#
-#     def save_processed_data(self, save_path):
-#         """保存处理后的EMG数据"""
-#         if self.processed_data:
-#             save_pickle(self.processed_data, save_path)
-#             print_debug_info(f"EMG数据已保存到: {save_path}")
-#
-#     def load_processed_data(self, load_path):
-#         """加载处理后的EMG数据"""
-#         data = load_pickle(load_path)
-#         if data:
-#             self.processed_data = data
-#             print_debug_info(f"EMG数据已加载: {load_path}")
-#         return data
+    @staticmethod
+    def _bandpass_filter(signal, fs, lowcut=20, highcut=450, order=4):
+        """带通滤波"""
+        nyquist = fs / 2
+        b, a = scipy.signal.butter(order, [lowcut / nyquist, highcut / nyquist], btype='band')
+        return scipy.signal.filtfilt(b, a, signal)
