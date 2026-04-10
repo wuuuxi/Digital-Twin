@@ -23,7 +23,7 @@ LABEL = 'MDF (Hz)'
 
 
 def main():
-    subject = Subject('../config/20250512_squat_Yuchen.json')
+    subject = Subject('../config/20250409_squat_NCMP001.json')
     pipeline = MultiLoadPipeline(subject)
     pipeline.debug = True
 

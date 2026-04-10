@@ -346,6 +346,16 @@ def plot_feature_vs_position_combined(fixed_results, vload_results, muscles,
     for idx, musc in enumerate(muscles):
         ax = axes[idx // n_cols][idx % n_cols]
         col = _col(feature, musc)
+
+        for j, vk in enumerate(vload_keys):
+            cd = vload_results[vk].get('cutted_data')
+            if cd is None or col not in cd.columns: continue
+            pos, vals = cd['pos_l'].values, cd[col].values
+            v = ~np.isnan(vals)
+            if np.any(v):
+                ax.scatter(pos[v], vals[v], color=VLOAD_COLORS[j % len(VLOAD_COLORS)],
+                           alpha=0.6, s=3, marker='^', label=f'VL: {vk}')
+
         for i, lw in enumerate(fixed_keys):
             cd = fixed_results[lw].get('cutted_data')
             if cd is None or col not in cd.columns: continue
@@ -354,14 +364,7 @@ def plot_feature_vs_position_combined(fixed_results, vload_results, muscles,
             if np.any(v):
                 ax.scatter(pos[v], vals[v], color=LOAD_COLORS[i % len(LOAD_COLORS)],
                            alpha=0.4, s=8, label=f'{lw} kg')
-        for j, vk in enumerate(vload_keys):
-            cd = vload_results[vk].get('cutted_data')
-            if cd is None or col not in cd.columns: continue
-            pos, vals = cd['pos_l'].values, cd[col].values
-            v = ~np.isnan(vals)
-            if np.any(v):
-                ax.scatter(pos[v], vals[v], color=VLOAD_COLORS[j % len(VLOAD_COLORS)],
-                           alpha=0.6, s=15, marker='^', label=f'VL: {vk}')
+
         ax.set_title(musc); ax.set_xlabel('Position (m)'); ax.set_ylabel(feature_label)
         ax.legend(fontsize=7, loc='best'); ax.grid(True, alpha=0.3)
     for idx in range(n_muscles, n_rows * n_cols):
@@ -403,7 +406,7 @@ def plot_pos_vel_emg_feature_grid_combined(fixed_results, vload_results, muscles
                 r = (g[1] - g[0]) * 0.1; g[0] = max(0, g[0] - r); g[1] += r
             else: g[0], g[1] = 0, 1
 
-        fig, axes = plt.subplots(3, n_cols, figsize=(3 * n_cols, 6), squeeze=False)
+        fig, axes = plt.subplots(3, n_cols, figsize=(2 * n_cols, 6), squeeze=False)
         fig.suptitle(f'Pos-Vel / EMG / {feature.upper()} ({muscle_name}) Fixed + VLoad',
                      fontsize=13, fontweight='bold')
         for ci, key in enumerate(all_keys):

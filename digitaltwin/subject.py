@@ -131,6 +131,8 @@ class Subject:
             vload_cfg.get("robot_folder", ""))
         self.vload_load_folder = self._resolve_path(
             vload_cfg.get("load_folder", ""))
+        self.vload_xsens_folder = self._resolve_path(
+            vload_cfg.get("xsens_folder", ""))
         self.read_ori_robot = vload_cfg.get("read_ori_robot", False)
         self.vload_data = vload_cfg.get("data", {})
 

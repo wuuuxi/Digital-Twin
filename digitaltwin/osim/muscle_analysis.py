@@ -8,7 +8,7 @@ import sys
 import os
 import io
 
-from digitaltwin.data.helpers import find_nearest_idx
+from digitaltwin.utils.array_tools import find_nearest_idx
 from contextlib import redirect_stdout
 
 
