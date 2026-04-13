@@ -140,13 +140,25 @@ def inject_xsens_features(aligned, xsens_data, start_time=0):
     aligned_time = aligned['time'].values
     xsens_time = joint_df['time'].values + start_time  # 应用时间偏移
 
+    # Xsens 采样间隔（用于计算角速度）
+    xsens_fs = xsens_data.get('metadata', {}).get('fs', 60.0)
+    dt = 1.0 / xsens_fs
+
     new_cols = {}
     for col in joint_df.columns:
         if col == 'time':
             continue
         vals = joint_df[col].values
+
+        # 关节角度插值
         new_cols[f'xsens_{col}'] = np.interp(
             aligned_time, xsens_time, vals,
+            left=np.nan, right=np.nan)
+
+        # 关节角速度：中心差分 (deg/s)
+        vel = np.gradient(vals, dt)
+        new_cols[f'xsens_vel_{col}'] = np.interp(
+            aligned_time, xsens_time, vel,
             left=np.nan, right=np.nan)
 
     if new_cols:

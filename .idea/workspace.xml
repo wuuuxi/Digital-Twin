@@ -4,23 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e826f58e-80b6-431c-ae55-618990f064b5" name="更改" comment="Added emg median frequency and RMS.&#10;Changed the format of config files.">
-      <change afterPath="$PROJECT_DIR$/digitaltwin/analysis/feature_injector.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/digitaltwin/osim/xsens_to_mot.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/digitaltwin/visualization/xsens_plot.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/digitaltwin/vload_pipeline.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/config/20250409_squat_NCMP001_xsens.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/data_analysis/example_load_xsens.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/data_analysis/example_load_xsens_vload.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/opensim/example_xsens_to_mot.py" afterDir="false" />
+    <list default="true" id="e826f58e-80b6-431c-ae55-618990f064b5" name="更改" comment="Added Xsens data processing.">
+      <change afterPath="$PROJECT_DIR$/digitaltwin/visualization/vload_comparison_plot.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/data_analysis/example_vload_comparison.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/digitaltwin/data/helpers.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/digitaltwin/data/xsens_processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/data/xsens_processor.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/digitaltwin/osim/muscle_analysis.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/osim/muscle_analysis.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/digitaltwin/pipeline.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/pipeline.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/digitaltwin/subject.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/subject.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/digitaltwin/visualization/emg_feature_plot.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/visualization/emg_feature_plot.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/emg_analysis/example_emg_frequency_vload.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/emg_analysis/example_emg_frequency_vload.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/analysis/feature_injector.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/analysis/feature_injector.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/data/robot_processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/data/robot_processor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/visualization/xsens_plot.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/visualization/xsens_plot.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/emg_analysis/example_emg_frequency.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/emg_analysis/example_emg_frequency.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -88,6 +80,7 @@
     "Python.example_load_xsens_vload.executor": "Run",
     "Python.example_variable_load (1).executor": "Run",
     "Python.example_visualize_data.executor": "Run",
+    "Python.example_vload_comparison.executor": "Run",
     "Python.example_xsens_to_mot.executor": "Run",
     "Python.generate_beep_sounds.executor": "Run",
     "Python.main.executor": "Run",
@@ -118,8 +111,8 @@
       <recent name="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\digitaltwin\visualization" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.example_emg_frequency_vload">
-    <configuration name="example_data_analysis" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+  <component name="RunManager" selected="Python.example_vload_comparison">
+    <configuration name="example_emg_frequency" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="Digital Twin" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -128,11 +121,11 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/examples/data_analysis" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/examples/emg_analysis" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/data_analysis/example_data_analysis.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/emg_analysis/example_emg_frequency.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -163,7 +156,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="example_load_xsens" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="example_emg_rms_vload" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="Digital Twin" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -172,11 +165,11 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/examples/data_analysis" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/examples/emg_analysis" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/data_analysis/example_load_xsens.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/emg_analysis/example_emg_rms_vload.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -207,7 +200,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="example_xsens_to_mot" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="example_vload_comparison" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="Digital Twin" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -220,7 +213,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\examples\opensim\example_xsens_to_mot.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/data_analysis/example_vload_comparison.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -230,19 +223,19 @@
       <method v="2" />
     </configuration>
     <list>
-      <item itemvalue="Python.example_data_analysis" />
-      <item itemvalue="Python.example_load_xsens" />
+      <item itemvalue="Python.example_emg_frequency" />
+      <item itemvalue="Python.example_emg_rms_vload" />
+      <item itemvalue="Python.example_vload_comparison" />
       <item itemvalue="Python.example_load_xsens_vload" />
-      <item itemvalue="Python.example_xsens_to_mot" />
       <item itemvalue="Python.example_emg_frequency_vload" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.example_emg_frequency_vload" />
+        <item itemvalue="Python.example_vload_comparison" />
         <item itemvalue="Python.example_load_xsens_vload" />
-        <item itemvalue="Python.example_load_xsens" />
-        <item itemvalue="Python.example_data_analysis" />
-        <item itemvalue="Python.example_xsens_to_mot" />
+        <item itemvalue="Python.example_emg_rms_vload" />
+        <item itemvalue="Python.example_emg_frequency" />
+        <item itemvalue="Python.example_emg_frequency_vload" />
       </list>
     </recent_temporary>
   </component>
@@ -310,7 +303,15 @@
       <option name="project" value="LOCAL" />
       <updated>1775729491355</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="Added Xsens data processing.">
+      <option name="closed" value="true" />
+      <created>1775812536014</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1775812536014</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -331,6 +332,7 @@
     <MESSAGE value="Add heatmap." />
     <MESSAGE value="Add emg median frequency." />
     <MESSAGE value="Added emg median frequency and RMS.&#10;Changed the format of config files." />
-    <option name="LAST_COMMIT_MESSAGE" value="Added emg median frequency and RMS.&#10;Changed the format of config files." />
+    <MESSAGE value="Added Xsens data processing." />
+    <option name="LAST_COMMIT_MESSAGE" value="Added Xsens data processing." />
   </component>
 </project>

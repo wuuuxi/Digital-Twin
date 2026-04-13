@@ -11,14 +11,14 @@ class RobotProcessor:
 
     # 机器人数据列名映射（原始列名 → 标准列名）
     COLUMN_MAP = {
-        'axis4_force': 'pos_l',
-        'axis4_vel': 'force_l',
-        'axis4_pos': 'vel_l',
-        'axis4_accel': 'acc_l',
-        'axis3_force': 'pos_r',
-        'axis3_vel': 'force_r',
-        'axis3_pos': 'vel_r',
-        'axis3_accel': 'acc_r',
+        'axis4_force': 'pos_r',
+        'axis4_vel': 'force_r',
+        'axis4_pos': 'vel_r',
+        'axis4_accel': 'acc_r',
+        'axis3_force': 'pos_l',
+        'axis3_vel': 'force_l',
+        'axis3_pos': 'vel_l',
+        'axis3_accel': 'acc_l',
         'Timestamp': 'time',
         'Time': 'time',
     }
@@ -162,8 +162,13 @@ class RobotOriginProcessor:
     COLUMN_MAP = {
         ' time': 'time',
         ' axis3_force(N)': 'force_l',
+        ' axis4_force(N)': 'force_r',
         ' axis3_pos(m)': 'pos_l',
+        ' axis4_pos(m)': 'pos_r',
         ' axis3_vel(m/s)': 'vel_l',
+        ' axis4_vel(m/s)': 'vel_r',
+        ' axis3_acc(m/s2)': 'acc_l',
+        ' axis4_acc(m/s2)': 'acc_r',
     }
 
     HEADER_ROWS = 17  # 设备头部信息行数

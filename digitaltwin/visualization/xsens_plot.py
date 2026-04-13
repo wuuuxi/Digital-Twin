@@ -330,6 +330,110 @@ def plot_joint_bar_lr(fixed_results, joint_bases, vload_results=None):
     return fig
 
 
+# ==============================================================
+#  图 6: 关节角速度左右散点图
+# ==============================================================
+
+def plot_joint_vel_scatter_lr(fixed_results, joint_bases, vload_results=None):
+    """2行 × N列：上行 Right vel，下行 Left vel。不同负载不同颜色。"""
+    nj = len(joint_bases)
+    fixed_keys = sorted(fixed_results.keys(), key=lambda x: float(x))
+    vload_keys = list(vload_results.keys()) if vload_results else []
+
+    fig, axes = plt.subplots(2, nj, figsize=(3 * nj, 5), squeeze=False)
+    fig.suptitle('Position vs Joint Angular Velocity (Top: Right, Bottom: Left)',
+                 fontsize=14, fontweight='bold')
+
+    for ji, jbase in enumerate(joint_bases):
+        for ri, side in enumerate(['_r', '_l']):
+            ax = axes[ri, ji]; col = f'xsens_vel_{jbase}{side}'
+            for j, vk in enumerate(vload_keys):
+                cd = vload_results[vk].get('cutted_data')
+                if cd is None or 'pos_l' not in cd.columns or col not in cd.columns: continue
+                p, v = cd['pos_l'].values, cd[col].values; m = ~np.isnan(v)
+                if np.any(m): ax.scatter(p[m], v[m], color=VLOAD_COLORS[j % len(VLOAD_COLORS)],
+                    alpha=0.1, s=3, marker='^', label=f'VL: {vk}' if ji == 0 else None)
+            for i, lw in enumerate(fixed_keys):
+                cd = fixed_results[lw].get('cutted_data')
+                if cd is None or 'pos_l' not in cd.columns or col not in cd.columns: continue
+                p, v = cd['pos_l'].values, cd[col].values; m = ~np.isnan(v)
+                if np.any(m): ax.scatter(p[m], v[m], color=LOAD_COLORS[i % len(LOAD_COLORS)],
+                    alpha=0.5, s=10, label=f'{lw} kg' if ji == 0 else None)
+            if ri == 0: ax.set_title(jbase, fontsize=10)
+            ax.set_xlabel('Position (m)', fontsize=8); ax.grid(True, alpha=0.3); ax.tick_params(labelsize=7)
+            if ji == 0:
+                ax.set_ylabel(('Right' if side == '_r' else 'Left') + ' vel (deg/s)', fontsize=9)
+                ax.legend(fontsize=6, loc='best')
+    fig.tight_layout()
+    return fig
+
+
+# ==============================================================
+#  图 7: 关节角速度均值柱状图 + 左右差异
+# ==============================================================
+
+def plot_joint_vel_bar_lr(fixed_results, joint_bases, vload_results=None):
+    """3行 × N列：Row1 Right vel，Row2 Left vel，Row3 |R-L| vel 差异。"""
+    nj = len(joint_bases)
+    fixed_keys = sorted(fixed_results.keys(), key=lambda x: float(x))
+    vload_keys = list(vload_results.keys()) if vload_results else []
+
+    fig, axes = plt.subplots(3, nj, figsize=(3 * nj, 6), squeeze=False)
+    fig.suptitle('Mean Joint Angular Velocity by Load\n'
+                 '(Row 1: Right, Row 2: Left, Row 3: |R-L| Difference)',
+                 fontsize=14, fontweight='bold')
+
+    def _collect(cd, col):
+        if cd is None or col not in cd.columns: return None
+        return cd[col].dropna().values
+
+    for ji, jbase in enumerate(joint_bases):
+        for ri, side in enumerate(['_r', '_l']):
+            ax = axes[ri, ji]; col = f'xsens_vel_{jbase}{side}'
+            bm, bs, bl, bc, bh = [], [], [], [], []
+            for i, lw in enumerate(fixed_keys):
+                v = _collect(fixed_results[lw].get('cutted_data'), col)
+                if v is None or len(v) == 0: continue
+                bm.append(np.mean(np.abs(v))); bs.append(np.std(np.abs(v))); bl.append(f'{lw} kg')
+                bc.append(LOAD_COLORS[i % len(LOAD_COLORS)]); bh.append('')
+            for j, vk in enumerate(vload_keys):
+                v = _collect(vload_results[vk].get('cutted_data'), col)
+                if v is None or len(v) == 0: continue
+                bm.append(np.mean(np.abs(v))); bs.append(np.std(np.abs(v))); bl.append(f'VL:{vk}')
+                bc.append(VLOAD_COLORS[j % len(VLOAD_COLORS)]); bh.append('//')
+            _draw_bar(ax, bm, bs, bl, bc, bh)
+            if ri == 0: ax.set_title(jbase, fontsize=10)
+            if ji == 0: ax.set_ylabel(('Right' if side == '_r' else 'Left') + ' |vel| (deg/s)', fontsize=9)
+
+    for ji, jbase in enumerate(joint_bases):
+        ax = axes[2, ji]; col_r, col_l = f'xsens_vel_{jbase}_r', f'xsens_vel_{jbase}_l'
+        bm, bs, bl, bc, bh = [], [], [], [], []
+        for i, lw in enumerate(fixed_keys):
+            cd = fixed_results[lw].get('cutted_data')
+            if cd is None or col_r not in cd.columns or col_l not in cd.columns: continue
+            rv, lv = cd[col_r].values, cd[col_l].values; m = ~np.isnan(rv) & ~np.isnan(lv)
+            if not np.any(m): continue
+            d = np.abs(np.abs(rv[m]) - np.abs(lv[m]))
+            bm.append(np.mean(d)); bs.append(np.std(d)); bl.append(f'{lw} kg')
+            bc.append(LOAD_COLORS[i % len(LOAD_COLORS)]); bh.append('')
+        for j, vk in enumerate(vload_keys):
+            cd = vload_results[vk].get('cutted_data')
+            if cd is None or col_r not in cd.columns or col_l not in cd.columns: continue
+            rv, lv = cd[col_r].values, cd[col_l].values; m = ~np.isnan(rv) & ~np.isnan(lv)
+            if not np.any(m): continue
+            d = np.abs(np.abs(rv[m]) - np.abs(lv[m]))
+            bm.append(np.mean(d)); bs.append(np.std(d)); bl.append(f'VL:{vk}')
+            bc.append(VLOAD_COLORS[j % len(VLOAD_COLORS)]); bh.append('//')
+        _draw_bar(ax, bm, bs, bl, bc, bh)
+        if ji == 0: ax.set_ylabel('|R-L| vel diff (deg/s)', fontsize=9)
+    fig.tight_layout()
+    return fig
+
+
+# ==============================================================
+#  内部工具
+# ==============================================================
+
 def _draw_bar(ax, bm, bs, bl, bc, bh):
     """柱状图内部工具"""
     if not bm:
