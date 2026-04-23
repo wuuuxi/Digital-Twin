@@ -83,6 +83,51 @@ class Subject:
             return path
         return os.path.join(base, path)
 
+    def _compute_and_cache_mvc(self):
+        """从 mvc_file + modeling_file EMG 文件计算 MVC 并写回 JSON"""
+        from digitaltwin.data.emg_processor import EMGProcessor
+
+        # 收集所有 EMG 文件
+        all_emg_files = list(self.mvc_files)  # mvc_file 列表
+        for load_key, file_info in self.modeling_data.items():
+            ef = file_info.get('emg_file')
+            if ef and ef not in all_emg_files:
+                all_emg_files.append(ef)
+
+        if not all_emg_files:
+            print("警告: 无 EMG 文件可用于 MVC 计算")
+            self.musc_mvc = [1.0] * len(self.musc_label)
+            return
+
+        # 确定 emg_folder（优先 emg_settings.emg_folder，回退 modeling_file.emg_folder）
+        emg_folder = self.emg_emg_folder or self.modeling_emg_folder
+
+        # 确定 motion_flag 和 remove_leading_zeros
+        motion = self.config.get('motion_settings', {})
+        motion_flag = motion.get('motion_flag', 'all')
+        remove_leading_zeros = motion.get('remove_leading_zeros', False)
+
+        print(f"自动计算 MVC: {len(all_emg_files)} 个文件...")
+        result = EMGProcessor.compute_mvc_from_files(
+            emg_files=all_emg_files,
+            emg_folder=emg_folder,
+            folder=self.folder,
+            fs=self.emg_fs,
+            musc_label=self.musc_label,
+            motion_flag=motion_flag,
+            remove_leading_zeros=remove_leading_zeros,
+        )
+
+        self.musc_mvc = result['musc_mvc']
+        print(f"MVC 计算完成: {self.musc_mvc[:6]}...")
+
+        # 写回 JSON
+        base, ext = os.path.splitext(self.config_path)
+        mvc_path = f'{base}_mvc{ext}'
+        self.config.setdefault('emg_settings', {})['musc_mvc'] = self.musc_mvc
+        self.save_config(save_path=mvc_path)
+        print(f"MVC 已保存到新文件: {mvc_path}")
+
     # ------------------------------------------------------------------
     #  配置解析
     # ------------------------------------------------------------------
@@ -99,8 +144,10 @@ class Subject:
         # ---- EMG 设置 ----
         emg = self.config.get("emg_settings", {})
         self.musc_label = emg.get("musc_label", self.DEFAULTS["musc_label"])
-        self.musc_mvc = emg.get("musc_mvc", self.DEFAULTS["musc_mvc"])
+        self.musc_mvc = emg.get("musc_mvc", None)
         self.emg_fs = emg.get("fs", self.DEFAULTS["emg_fs"])
+        self.emg_emg_folder = self._resolve_path(emg.get("emg_folder", ""))
+        self.mvc_files = emg.get("mvc_file", [])
 
         # ---- 运动设置 ----
         motion = self.config.get("motion_settings", {})
@@ -175,6 +222,10 @@ class Subject:
         if self.titles and self.goal:
             assert len(self.titles) == len(self.goal), \
                 f"titles ({len(self.titles)}) 和 goal ({len(self.goal)}) 长度不匹配"
+
+        # ---- 自动计算 MVC（如果 musc_mvc 未在 JSON 中指定） ----
+        if self.musc_mvc is None or len(self.musc_mvc) == 0:
+            self._compute_and_cache_mvc()
 
     # ------------------------------------------------------------------
     #  工具方法

@@ -13,7 +13,6 @@ import pandas as pd
 import scipy.signal
 import os
 
-
 class EMGProcessor:
     """
     EMG数据加载、整流和归一化处理器。
@@ -406,6 +405,109 @@ class EMGProcessor:
             data[:, 0] = data[:, 0] - time_delay
             return data, time_delay
         return data, data[0, 0]
+
+    @staticmethod
+    def compute_mvc_from_files(emg_files, emg_folder, folder, fs, musc_label,
+                               motion_flag='all', remove_leading_zeros=False,
+                               percentile_low=95, percentile_high=99):
+        """
+        从多个 EMG 文件计算每块肌肉的 MVC 值。
+
+        处理流程：
+          1. 对每个文件的每块肌肉：原始信号 → compute_envelope(ref=1.0) → 取包络的
+             第 percentile_low ~ percentile_high 百分位的平均值
+          2. 跨所有文件取每块肌肉的最大值作为 MVC
+
+        Parameters
+        ----------
+        emg_files : list[str]
+            EMG 文件名列表
+        emg_folder : str
+            EMG 文件目录
+        folder : str
+            实验根目录
+        fs : int
+            采样率
+        musc_label : list[str]
+            肌肉名称列表
+        motion_flag : str
+            运动模式 ('all' 或 'squat')
+        remove_leading_zeros : bool
+            是否移除前导零
+        percentile_low : float
+            百分位下限（默认 95）
+        percentile_high : float
+            百分位上限（默认 99）
+
+        Returns
+        -------
+        dict
+            {
+                'musc_mvc': list[float],  # 每块肌肉的 MVC 值
+                'per_file': dict,  # {filename: {musc: {envelope, percentile_avg, raw, filtered, artifact_pct}}}
+            }
+        """
+        processor = EMGProcessor(fs=fs, musc_mvc=[], musc_label=musc_label)
+        n_muscles = len(musc_label)
+        # 每个文件每块肌肉的百分位平均值
+        file_results = {}  # {filename: {musc: {...}}}
+        musc_max = np.zeros(n_muscles)  # 跨文件最大值
+
+        for emg_file in emg_files:
+            file_path = EMGProcessor._resolve_file_path(
+                emg_file, emg_folder, folder)
+            if file_path is None:
+                print(f"MVC 计算跳过: {emg_file}")
+                continue
+
+            try:
+                emg_raw = processor.load_from_csv(
+                    file_path, motion=motion_flag, new=remove_leading_zeros)
+                emg_raw = emg_raw.T
+            except Exception as e:
+                print(f"MVC 加载失败 {emg_file}: {e}")
+                continue
+
+            file_data = {}
+            for i, musc in enumerate(musc_label):
+                if i + 1 >= emg_raw.shape[0]:
+                    break
+
+                raw_signal = emg_raw[i + 1]
+                filtered = EMGProcessor._bandpass_filter(raw_signal, fs)
+                envelope = EMGProcessor.compute_envelope(raw_signal, fs, ref=1.0)
+
+                # 取第 percentile_low ~ percentile_high 百分位的平均值
+                p_low = np.percentile(envelope, percentile_low)
+                p_high = np.percentile(envelope, percentile_high)
+                mask = (envelope >= p_low) & (envelope <= p_high)
+                percentile_avg = np.mean(envelope[mask]) if np.any(mask) else np.max(envelope)
+
+                # 运动伪影百分比：先去均值，再算 |demeaned - filtered| 的能量占 demeaned 能量的比例
+                demeaned = raw_signal - np.mean(raw_signal)
+                artifact = demeaned - filtered
+                demeaned_energy = np.sum(demeaned ** 2)
+                artifact_pct = (np.sum(artifact ** 2) / (demeaned_energy + 1e-15)) * 100
+
+                file_data[musc] = {
+                    'raw': raw_signal,
+                    'filtered': filtered,
+                    'envelope': envelope,
+                    'percentile_avg': percentile_avg,
+                    'artifact_pct': artifact_pct,
+                }
+
+                musc_max[i] = max(musc_max[i], percentile_avg)
+
+            file_results[emg_file] = file_data
+
+        # 保留小数点后四位
+        musc_mvc_rounded = [round(v, 4) for v in musc_max.tolist()]
+
+        return {
+            'musc_mvc': musc_mvc_rounded,
+            'per_file': file_results,
+        }
 
     @staticmethod
     def _bandpass_filter(signal, fs, lowcut=20, highcut=450, order=4):

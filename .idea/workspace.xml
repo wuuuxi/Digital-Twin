@@ -5,14 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e826f58e-80b6-431c-ae55-618990f064b5" name="更改" comment="Added Xsens data processing.">
-      <change afterPath="$PROJECT_DIR$/digitaltwin/visualization/vload_comparison_plot.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/data_analysis/example_vload_comparison.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/config/test.json" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/emg_analysis/example_compute_mvc.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/digitaltwin/analysis/feature_injector.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/analysis/feature_injector.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/digitaltwin/data/robot_processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/data/robot_processor.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/digitaltwin/visualization/xsens_plot.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/visualization/xsens_plot.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/emg_analysis/example_emg_frequency.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/emg_analysis/example_emg_frequency.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/data/emg_processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/data/emg_processor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/subject.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/subject.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/config/20250409_squat_NCMP001.json" beforeDir="false" afterPath="$PROJECT_DIR$/examples/config/20250409_squat_NCMP001.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -66,6 +64,7 @@
     "Python.bp-visualization.executor": "Run",
     "Python.bp.executor": "Run",
     "Python.emg_processor.executor": "Run",
+    "Python.example_compute_mvc.executor": "Run",
     "Python.example_curve_analysis (1).executor": "Run",
     "Python.example_data_analysis (1).executor": "Run",
     "Python.example_data_analysis.executor": "Run",
@@ -111,7 +110,29 @@
       <recent name="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\digitaltwin\visualization" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.example_vload_comparison">
+  <component name="RunManager" selected="Python.example_compute_mvc">
+    <configuration name="example_compute_mvc" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="Digital Twin" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/examples/emg_analysis" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/emg_analysis/example_compute_mvc.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="example_emg_frequency" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="Digital Twin" />
       <option name="ENV_FILES" value="" />
@@ -126,28 +147,6 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/emg_analysis/example_emg_frequency.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="example_emg_frequency_vload" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="Digital Twin" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/examples/emg_analysis" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/emg_analysis/example_emg_frequency_vload.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -223,26 +222,26 @@
       <method v="2" />
     </configuration>
     <list>
+      <item itemvalue="Python.example_compute_mvc" />
       <item itemvalue="Python.example_emg_frequency" />
       <item itemvalue="Python.example_emg_rms_vload" />
       <item itemvalue="Python.example_vload_comparison" />
       <item itemvalue="Python.example_load_xsens_vload" />
-      <item itemvalue="Python.example_emg_frequency_vload" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.example_compute_mvc" />
         <item itemvalue="Python.example_vload_comparison" />
         <item itemvalue="Python.example_load_xsens_vload" />
         <item itemvalue="Python.example_emg_rms_vload" />
         <item itemvalue="Python.example_emg_frequency" />
-        <item itemvalue="Python.example_emg_frequency_vload" />
       </list>
     </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-3944b0c99280-6d6dccd035ac-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-253.30387.127" />
+        <option value="bundled-python-sdk-4f4e415b4190-aa17d162503b-com.jetbrains.pycharm.community.sharedIndexes.bundled-PC-243.26053.29" />
       </set>
     </attachedChunks>
   </component>
