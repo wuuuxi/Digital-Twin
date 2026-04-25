@@ -4,14 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e826f58e-80b6-431c-ae55-618990f064b5" name="更改" comment="Added Xsens data processing.">
-      <change afterPath="$PROJECT_DIR$/examples/config/test.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/emg_analysis/example_compute_mvc.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/digitaltwin/data/emg_processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/data/emg_processor.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/digitaltwin/subject.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/subject.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/config/20250409_squat_NCMP001.json" beforeDir="false" afterPath="$PROJECT_DIR$/examples/config/20250409_squat_NCMP001.json" afterDir="false" />
-    </list>
+    <list default="true" id="e826f58e-80b6-431c-ae55-618990f064b5" name="更改" comment="Added MVC data processing." />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -310,7 +303,15 @@
       <option name="project" value="LOCAL" />
       <updated>1775812536014</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="Added MVC data processing.">
+      <option name="closed" value="true" />
+      <created>1776948445748</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1776948445748</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -332,6 +333,7 @@
     <MESSAGE value="Add emg median frequency." />
     <MESSAGE value="Added emg median frequency and RMS.&#10;Changed the format of config files." />
     <MESSAGE value="Added Xsens data processing." />
-    <option name="LAST_COMMIT_MESSAGE" value="Added Xsens data processing." />
+    <MESSAGE value="Added MVC data processing." />
+    <option name="LAST_COMMIT_MESSAGE" value="Added MVC data processing." />
   </component>
 </project>
