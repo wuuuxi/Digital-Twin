@@ -10,6 +10,8 @@ RBF（径向基函数）拟合模块
 import numpy as np
 import pickle
 import os
+
+os.environ['OMP_NUM_THREADS'] = '2'
 from scipy.spatial.distance import cdist
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.cluster import KMeans
@@ -110,7 +112,8 @@ def rbf_predict(XY, centers, weights, scaler, sigma):
 
 def fit_activation_map(data, pos_col='pos_l', load_col='load', emg_col='emg0',
                        num_centers=DEFAULT_NUM_CENTERS, sigma=DEFAULT_SIGMA,
-                       data_len=DEFAULT_DATA_LEN, random_state=DEFAULT_RANDOM_STATE):
+                       data_len=DEFAULT_DATA_LEN, random_state=DEFAULT_RANDOM_STATE,
+                       height_range=None):
     """
     拟合位置-负载-肌肉激活的 RBF 映射并生成网格预测。
 
@@ -122,6 +125,9 @@ def fit_activation_map(data, pos_col='pos_l', load_col='load', emg_col='emg0',
         对应列名
     num_centers, sigma, data_len, random_state
         RBF 参数
+    height_range : list[float] or None
+        高度范围 [h_min, h_max]。若指定，则用该范围生成网格
+        并过滤超出范围的数据点；若为 None，则使用数据本身的 min/max。
 
     Returns
     -------
@@ -132,7 +138,14 @@ def fit_activation_map(data, pos_col='pos_l', load_col='load', emg_col='emg0',
     y = data[load_col].values
     z = data[emg_col].values
 
-    xi = np.linspace(x.min(), x.max(), data_len)
+    # 如果指定了 height_range，过滤数据并使用指定范围
+    if height_range is not None:
+        h_min, h_max = height_range
+        mask = (x >= h_min) & (x <= h_max)
+        x, y, z = x[mask], y[mask], z[mask]
+        xi = np.linspace(h_min, h_max, data_len)
+    else:
+        xi = np.linspace(x.min(), x.max(), data_len)
     yi = np.linspace(y.min(), y.max(), data_len)
     xi, yi = np.meshgrid(xi, yi)
 

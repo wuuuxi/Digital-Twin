@@ -31,7 +31,8 @@ from digitaltwin.visualization.mvc_plot import (
 
 def main():
     # --- 配置 ---
-    config_path = '../config/20250409_squat_NCMP001.json'
+    # config_path = '../config/20250409_squat_NCMP001.json'
+    config_path = '../config/20250512_squat_Yuchen.json'
     subject = Subject(config_path)
 
     # --- 收集所有 EMG 文件 ---

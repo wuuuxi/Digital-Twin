@@ -35,7 +35,7 @@ from digitaltwin.analysis.variable_load import generate_variable_load
 from digitaltwin.vload_pipeline import VLoadPipeline
 from digitaltwin.visualization.plot_curves import CurvePlotter
 from digitaltwin.visualization.heatmap import (
-    plot_activation_3d, draw_heatmap_2d,
+    plot_activation_3d, draw_heatmap_2d, draw_load_sensitivity_heatmap_2d,
 )
 from digitaltwin.visualization.variable_load_plot import plot_variable_load_result
 
@@ -321,13 +321,92 @@ class MultiLoadPipeline:
         self.run(include_xsens=False)
         return self.aligned_data
 
+    def _collect_cutted_data(self, movement_types=None):
+        """
+        从 self.results 收集切片数据并按运动阶段过滤。
+
+        Parameters
+        ----------
+        movement_types : list[str] or None
+            要保留的运动阶段列表，如 ['upward'], ['downward'],
+            或 ['upward', 'downward']。
+            None 表示不过滤，保留所有阶段。
+
+        Returns
+        -------
+        pd.DataFrame or None
+        """
+        if not self.results:
+            self._log("请先调用 run() 加载数据。")
+            return None
+
+        frames = []
+        for load_weight, result in self.results.items():
+            cd = result.get('cutted_data')
+            if cd is None or (hasattr(cd, '__len__') and len(cd) == 0):
+                continue
+            if isinstance(cd, list):
+                cd = pd.concat(cd, ignore_index=True)
+            df = cd.copy()
+            if 'load' not in df.columns:
+                df['load'] = float(load_weight)
+            frames.append(df)
+
+        if not frames:
+            self._log("没有可用的切片数据。")
+            return None
+
+        combined = pd.concat(frames, ignore_index=True)
+
+        if movement_types is not None and 'movement_type' in combined.columns:
+            before = len(combined)
+            combined = combined[combined['movement_type'].isin(movement_types)]
+            self._log(f"运动阶段过滤 {movement_types}: {before} -> {len(combined)} 行")
+
+        if len(combined) == 0:
+            self._log("过滤后没有剩余数据。")
+            return None
+
+        return combined
+
     def generate_heatmaps(self, muscles=None, save_dir=None,
                           data_len=50, sigma=1.0,
-                          num_centers=20, fit_3d=False):
-        data = self.load_training_robot_data()
+                          num_centers=20, fit_3d=False,
+                          movement_types=None):
+        """
+        生成肌肉激活热力图。
+
+        Parameters
+        ----------
+        muscles : list[str], optional
+            要生成热力图的肌肉列表，默认使用全部。
+        save_dir : str, optional
+            保存路径。
+        data_len, sigma, num_centers : RBF 拟合参数。
+        fit_3d : bool
+            是否额外拟合 3D（含速度维度）。
+        movement_types : list[str] or None
+            使用哪些运动阶段的切片数据。
+            默认 None -> 仅使用上升阶段 ['upward']。
+            传入 ['upward', 'downward'] 可同时使用两个阶段。
+        """
+        if movement_types is None:
+            movement_types = ['upward']
+
+        # 确保已有 results
+        if not self.results:
+            self.run(include_xsens=False)
+
+        data = self._collect_cutted_data(movement_types=movement_types)
         if data is None:
-            self._log("无法加载训练数据，热力图生成终止。")
+            self._log("无法加载切片数据，热力图生成终止。")
             return {}
+
+        # 打印切片数据的高度范围（方便填写 heatmap_settings.height_range）
+        if 'pos_l' in data.columns:
+            h_min = round(float(data['pos_l'].min()), 4)
+            h_max = round(float(data['pos_l'].max()), 4)
+            print(f'height_range: [{h_min}, {h_max}]')
 
         if muscles is None:
             muscles = self.subject.musc_label
@@ -348,13 +427,16 @@ class MultiLoadPipeline:
 
             params = fit_activation_map(
                 data, pos_col='pos_l', load_col=load_col, emg_col=emg_col,
-                num_centers=num_centers, sigma=sigma, data_len=data_len)
+                num_centers=num_centers, sigma=sigma, data_len=data_len,
+                height_range=self.subject.height_range)
             all_params[musc] = params
 
             plot_activation_3d(
                 data, params, pos_col='pos_l', load_col=load_col,
                 emg_col=emg_col, label=musc, result_folder=save_dir)
             draw_heatmap_2d(params, label=musc, result_folder=save_dir)
+            draw_load_sensitivity_heatmap_2d(
+                params, label=musc, result_folder=save_dir)
 
             if fit_3d and 'vel_l' in data.columns:
                 params_3d = fit_activation_map_3d(

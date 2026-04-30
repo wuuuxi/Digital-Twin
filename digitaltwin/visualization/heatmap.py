@@ -185,3 +185,45 @@ def draw_heatmap_2d(params, sigma_smooth=1, label=None, result_folder=None):
                                  f'{label}_RBF_2D.png'))
     plt.close(fig)
     # plt.show()
+
+
+def draw_load_sensitivity_heatmap_2d(params, sigma_smooth=1, label=None,
+                                     result_folder=None):
+    """
+    绘制负载敏感度热力图：∂activation/∂load。
+
+    对 RBF 拟合曲面沿负载轴（y 轴）求数值偏导数，
+    表征在不同高度和不同负载下，肌肉激活对负载变化的敏感程度。
+    值越大说明在该位置-负载组合下，增加负载能更有效地提高激活。
+
+    Parameters
+    ----------
+    params : dict
+        fit_activation_map 返回的参数字典，包含 xi, yi, zi 网格。
+    sigma_smooth : float
+        高斯平滑 sigma。
+    label : str, optional
+        肌肉名称标签。
+    result_folder : str, optional
+        保存路径。
+    """
+    xi, yi, zi = params['xi'], params['yi'], params['zi']
+
+    # yi 沿 axis=0 变化（meshgrid 的行方向）
+    yi_1d = yi[:, 0]  # 一维负载数组
+    dz_dload = np.gradient(zi, yi_1d, axis=0)
+    dz_dload = gaussian_filter(dz_dload, sigma=sigma_smooth)
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    # 使用发散色图，正值=激活随负载增加，负值=激活随负载减少
+    vmax = np.max(np.abs(dz_dload))
+    contour = ax.contourf(xi, yi, dz_dload, levels=100,
+                          cmap='RdBu_r', vmin=-vmax, vmax=vmax)
+    plt.colorbar(contour, ax=ax, label='∂Activation / ∂Load')
+    ax.set_xlabel('Height (m)')
+    ax.set_ylabel('Load (kg)')
+    ax.set_title(f'{label} — Load Sensitivity' if label else 'Load Sensitivity')
+    if result_folder:
+        plt.savefig(os.path.join(result_folder,
+                                 f'{label}_load_sensitivity_2D.png'))
+    plt.close(fig)
