@@ -16,7 +16,7 @@ from scipy.ndimage import gaussian_filter
 import seaborn as sns
 import os
 
-from digitaltwin.analysis.rbf_fitting import rbf_fit, rbf_predict
+from digitaltwin.analysis.rbf_fitting import rbf_fit, rbf_predict, predict_at
 
 DEFAULT_DATA_LEN = 50
 
@@ -58,7 +58,7 @@ def plot_activation_3d(data, params, pos_col='pos_l', load_col='load', emg_col='
     if result_folder:
         plt.savefig(os.path.join(result_folder,
                     f'{label}_original.png'))
-    plt.close(fig)
+    # plt.close(fig)
 
     # ---------- RBF 散点 3D ----------
     fig = plt.figure(figsize=(8, 6))
@@ -74,7 +74,7 @@ def plot_activation_3d(data, params, pos_col='pos_l', load_col='load', emg_col='
     if result_folder:
         plt.savefig(os.path.join(result_folder,
                     f'{label}_RBF_scatter.png'))
-    plt.close(fig)
+    # plt.close(fig)
 
     # ---------- RBF 曲面 3D ----------
     fig = plt.figure(figsize=(8, 6))
@@ -90,7 +90,7 @@ def plot_activation_3d(data, params, pos_col='pos_l', load_col='load', emg_col='
     if result_folder:
         plt.savefig(os.path.join(result_folder,
                     f'{label}_RBF.png'))
-    plt.close(fig)
+    # plt.close(fig)
 
 
 def compare_activation_maps(data_robot, data_smith, pos_col='pos_l',
@@ -137,7 +137,7 @@ def compare_activation_maps(data_robot, data_smith, pos_col='pos_l',
 
     if result_folder and label:
         plt.savefig(os.path.join(result_folder, f'{label}.png'))
-    plt.close(fig)
+    # plt.close(fig)
 
     # RBF 曲面对比
     fig = plt.figure(figsize=(14, 6))
@@ -154,7 +154,7 @@ def compare_activation_maps(data_robot, data_smith, pos_col='pos_l',
     if result_folder and label:
         plt.savefig(os.path.join(result_folder,
                     f'{label}_RBF_pos-load-activation.png'))
-    plt.close(fig)
+    # plt.close(fig)
 
     return [xi, yi, zi_1, c1, w1, s1, sig1]
 
@@ -183,8 +183,98 @@ def draw_heatmap_2d(params, sigma_smooth=1, label=None, result_folder=None):
     if result_folder:
         plt.savefig(os.path.join(result_folder,
                                  f'{label}_RBF_2D.png'))
-    plt.close(fig)
+    # plt.close(fig)
     # plt.show()
+
+
+def plot_load_slices_comparison(data, params_orig, params_mono, muscle,
+                                pos_col='pos_l', load_col='load',
+                                result_folder=None):
+    """
+    绘制每个负载下原始数据散点与两个拟合曲线的对比。
+
+    每个子图对应一个负载：
+    - 灰色散点：该负载下的原始高度-激活数据
+    - 蓝色实线：原始 RBF 拟合在该负载下的预测曲线
+    - 红色虚线：平滑单调投影后的预测曲线
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        原始数据，需包含 pos_col, load_col, emg_<muscle> 列。
+    params_orig : dict
+        原始 RBF 拟合参数 (fit_activation_map 返回值)。
+    params_mono : dict or None
+        平滑单调投影后的参数字典；为 None 时不画。
+    muscle : str
+        肌肉名，emg 列名为 f'emg_{muscle}'。
+    pos_col, load_col : str
+    result_folder : str, optional
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+    """
+    emg_col = f'emg_{muscle}'
+    if emg_col not in data.columns:
+        return None
+
+    loads = sorted(data[load_col].unique())
+    n = len(loads)
+    n_cols = min(3, n)
+    n_rows = (n + n_cols - 1) // n_cols
+
+    fig, axes = plt.subplots(n_rows, n_cols,
+                             figsize=(5 * n_cols, 4 * n_rows),
+                             squeeze=False)
+    fig.suptitle(f'{muscle} — Activation vs Height (per Load)',
+                 fontsize=14, fontweight='bold')
+
+    # 从 params_orig 的 xi 网格提取一维高度序列
+    xi = np.asarray(params_orig['xi'])
+    h_grid = xi[0, :] if xi.ndim == 2 else np.unique(xi)
+
+    # 统一 y 轴范围，便于子图间对比
+    y_min = float(data[emg_col].min())
+    y_max = float(data[emg_col].max())
+    y_pad = (y_max - y_min) * 0.1 if y_max > y_min else 0.05
+
+    for idx, load in enumerate(loads):
+        ax = axes[idx // n_cols][idx % n_cols]
+        subset = data[data[load_col] == load]
+        ax.scatter(subset[pos_col], subset[emg_col], s=8, alpha=0.4,
+                   color='gray', label='Raw data')
+
+        y_fixed = np.full_like(h_grid, float(load), dtype=float)
+
+        # 原始 RBF 预测曲线
+        z_orig = predict_at(params_orig, h_grid, y_fixed)
+        ax.plot(h_grid, z_orig, color='C0', linewidth=2,
+                label='RBF (original)')
+
+        # 平滑单调投影后的预测曲线（来自后处理网格插值）
+        if params_mono is not None:
+            z_mono = predict_at(params_mono, h_grid, y_fixed)
+            ax.plot(h_grid, z_mono, color='C3', linewidth=2,
+                    linestyle='--', label='Smooth monotonic')
+
+        ax.set_xlabel('Height (m)')
+        ax.set_ylabel('Activation')
+        ax.set_title(f'Load = {load} kg')
+        ax.set_ylim(y_min - y_pad, y_max + y_pad)
+        ax.grid(True, alpha=0.3)
+        if idx == 0:
+            ax.legend(fontsize=8, loc='best')
+
+    # 隐藏多余子图
+    for idx in range(n, n_rows * n_cols):
+        axes[idx // n_cols][idx % n_cols].set_visible(False)
+
+    fig.tight_layout(rect=[0, 0, 1, 0.96])
+    if result_folder:
+        plt.savefig(os.path.join(result_folder,
+                                 f'{muscle}_load_slices.png'))
+    return fig
 
 
 def draw_load_sensitivity_heatmap_2d(params, sigma_smooth=1, label=None,
@@ -226,4 +316,4 @@ def draw_load_sensitivity_heatmap_2d(params, sigma_smooth=1, label=None,
     if result_folder:
         plt.savefig(os.path.join(result_folder,
                                  f'{label}_load_sensitivity_2D.png'))
-    plt.close(fig)
+    # plt.close(fig)

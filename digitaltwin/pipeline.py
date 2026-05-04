@@ -30,6 +30,7 @@ from digitaltwin.analysis.rbf_fitting import (
     fit_activation_map, fit_activation_map_3d,
     save_rbf_params, load_rbf_params,
     compute_rmse_percentage, compute_rmse_by_load,
+    predict_at,
 )
 from digitaltwin.analysis.variable_load import generate_variable_load
 from digitaltwin.vload_pipeline import VLoadPipeline
@@ -372,7 +373,14 @@ class MultiLoadPipeline:
     def generate_heatmaps(self, muscles=None, save_dir=None,
                           data_len=50, sigma=1.0,
                           num_centers=20, fit_3d=False,
-                          movement_types=None):
+                          movement_types=None,
+                          monotonic_load=True,
+                          projection_lambda_data=1.0,
+                          projection_lambda_height=0.01,
+                          projection_lambda_load=5.0,
+                          projection_lambda_cross=0.1,
+                          projection_min_slope=0.0,
+                          projection_solver='auto'):
         """
         生成肌肉激活热力图。
 
@@ -389,6 +397,24 @@ class MultiLoadPipeline:
             使用哪些运动阶段的切片数据。
             默认 None -> 仅使用上升阶段 ['upward']。
             传入 ['upward', 'downward'] 可同时使用两个阶段。
+        monotonic_load : bool
+            是否额外生成平滑单调投影后的曲面。
+            True 时会同时保存原始 RBF 曲面和平滑单调曲面，方便对比。
+            修正方法：先正常 RBF 拟合，再在规则网格上求解一个
+            尽量接近原始 RBF、同时沿负载方向单调且平滑的曲面。
+        projection_lambda_data : float
+            保持接近原始 RBF 曲面的权重。越大越贴近原始 RBF。
+        projection_lambda_height : float
+            高度方向二阶平滑强度。越小越能保留高度方向细节。
+        projection_lambda_load : float
+            负载方向二阶平滑强度。越大，敏感度图越连续自然。
+        projection_lambda_cross : float
+            高度-负载交叉平滑强度。越大，曲面扭曲越少。
+        projection_min_slope : float
+            负载方向最小斜率。0 表示非递减；小正数可减少敏感度图
+            中大片接近 0 的区域。
+        projection_solver : {'auto', 'cvxpy', 'penalty'}
+            'auto' 会优先使用 cvxpy 严格约束；若未安装 cvxpy，则回退到 scipy 罚函数。
         """
         if movement_types is None:
             movement_types = ['upward']
@@ -438,6 +464,34 @@ class MultiLoadPipeline:
             draw_load_sensitivity_heatmap_2d(
                 params, label=musc, result_folder=save_dir)
 
+            # 额外生成平滑单调投影曲面，用于和原始 RBF 对比
+            if monotonic_load:
+                mono_params = fit_activation_map(
+                    data, pos_col='pos_l', load_col=load_col,
+                    emg_col=emg_col,
+                    num_centers=num_centers, sigma=sigma,
+                    data_len=data_len,
+                    height_range=self.subject.height_range,
+                    monotonic_load=True,
+                    projection_lambda_data=projection_lambda_data,
+                    projection_lambda_height=projection_lambda_height,
+                    projection_lambda_load=projection_lambda_load,
+                    projection_lambda_cross=projection_lambda_cross,
+                    projection_min_slope=projection_min_slope,
+                    projection_solver=projection_solver)
+                all_params[f'{musc}_monotonic'] = mono_params
+
+                plot_activation_3d(
+                    data, mono_params, pos_col='pos_l', load_col=load_col,
+                    emg_col=emg_col, label=f'{musc}_monotonic',
+                    result_folder=save_dir)
+                draw_heatmap_2d(
+                    mono_params, label=f'{musc}_monotonic',
+                    result_folder=save_dir)
+                draw_load_sensitivity_heatmap_2d(
+                    mono_params, label=f'{musc}_monotonic',
+                    result_folder=save_dir)
+
             if fit_3d and 'vel_l' in data.columns:
                 params_3d = fit_activation_map_3d(
                     data, 'pos_l', load_col, emg_col, 'vel_l',
@@ -450,14 +504,35 @@ class MultiLoadPipeline:
                 params['centers'], params['weights'],
                 params['scaler'], params['sigma'],
                 os.path.join(params_dir, f'{musc}_rbf_params.pkl'))
+            if monotonic_load:
+                # 平滑单调投影后的曲面与原始 RBF 权重不再一致，
+                # 保存完整参数字典（包括修正后的 zi）以便后续复现。
+                with open(os.path.join(
+                          params_dir,
+                          f'{musc}_monotonic_params.pkl'), 'wb') as f:
+                    pickle.dump(mono_params, f)
 
         for musc, p in all_params.items():
-            if '_3d' not in musc:
-                emg_col = f'emg_{musc}'
+            if '_3d' in musc:
+                continue
+            base_musc = musc.replace('_monotonic', '')
+            emg_col = f'emg_{base_musc}'
+            if musc.endswith('_monotonic'):
+                # monotonic 曲面是平滑单调投影后的网格，
+                # 用网格双线性插值评估 RMSE
+                pred = predict_at(
+                    p, data['pos_l'].values, data[load_col].values)
+                actual = data[emg_col].values
+                rmse = float(np.sqrt(np.mean((pred - actual) ** 2)))
+                mean_pred = float(np.mean(pred))
+                rmse_pct = (rmse / mean_pred
+                            if mean_pred != 0 else float('inf'))
+            else:
                 rmse_pct = compute_rmse_percentage(
                     data, 'pos_l', load_col, emg_col,
-                    p['centers'], p['weights'], p['scaler'], p['sigma'])
-                self._log(f"{musc} RMSE%: {rmse_pct:.2f}%")
+                    p['centers'], p['weights'],
+                    p['scaler'], p['sigma'])
+            self._log(f"{musc} RMSE%: {rmse_pct:.2f}%")
 
         self._log(f"热力图已保存至 {save_dir}")
         return all_params

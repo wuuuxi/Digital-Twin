@@ -303,7 +303,7 @@ def generate_variable_load(subject, variable_mode=1, plot_fn=None):
     max_iter = subject.max_iter or [10000] * len(titles)
     epsilons = subject.epsilons or [0.5]
 
-    vload_dir = os.path.join(subject.result_folder, 'vload_analysis')
+    vload_dir = os.path.join(subject.result_folder, 'vload')
     os.makedirs(vload_dir, exist_ok=True)
 
     for i in range(len(titles)):

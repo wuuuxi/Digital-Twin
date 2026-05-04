@@ -13,8 +13,11 @@ import os
 
 os.environ['OMP_NUM_THREADS'] = '2'
 from scipy.spatial.distance import cdist
+from scipy.interpolate import RegularGridInterpolator
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.cluster import KMeans
+
+from digitaltwin.analysis.smooth_monotonic import smooth_monotonic_projection
 
 # ============================================================
 #  默认参数
@@ -85,6 +88,88 @@ def rbf_fit(XY, Z, num_centers=DEFAULT_NUM_CENTERS, sigma=DEFAULT_SIGMA,
     return centers, weights, scaler, sigma
 
 
+def apply_smooth_monotonic_projection(
+    zi,
+    yi,
+    lambda_data=1.0,
+    lambda_height=0.01,
+    lambda_load=5.0,
+    lambda_cross=0.1,
+    min_slope=0.0,
+    solver='auto',
+):
+    """
+    对 RBF 拟合得到的 zi 网格沿负载轴做平滑单调投影。
+
+    该方法不同于 isotonic regression：
+    - isotonic regression 容易产生分段平台；
+    - 平滑单调投影通过二阶平滑项得到连续自然的曲面。
+
+    该方法也不同于在 RBF 权重上加入单调性惩罚：
+    - 约束作用在最终规则网格上；
+    - 高度方向和负载方向的平滑强度可以独立控制；
+    - 不直接修改 RBF 权重，因此更不容易压平高度方向细节。
+    """
+    load_values = np.asarray(yi)[:, 0]
+    return smooth_monotonic_projection(
+        zi,
+        load_values,
+        lambda_data=lambda_data,
+        lambda_height=lambda_height,
+        lambda_load=lambda_load,
+        lambda_cross=lambda_cross,
+        min_slope=min_slope,
+        solver=solver,
+    )
+
+
+def predict_at(params, heights, loads):
+    """
+    在任意 (height, load) 点上评估 fit_activation_map 返回的曲面。
+
+    - 当 params 是普通 RBF 拟合（未做 isotonic 修正）时，直接用 rbf_predict；
+    - 当 params 是 isotonic 修正后的曲面时，centers/weights 与修正后的 zi
+      不再一致，改用网格 (xi, yi, zi) 做双线性插值。
+
+    Parameters
+    ----------
+    params : dict
+        fit_activation_map 返回的字典。
+    heights, loads : array-like
+        相同形状的查询点。
+
+    Returns
+    -------
+    np.ndarray
+        与输入同形的预测值。
+    """
+    heights = np.asarray(heights, dtype=float)
+    loads = np.asarray(loads, dtype=float)
+    shape = heights.shape
+
+    if params.get('monotonic_load'):
+        yi_1d = np.asarray(params['yi'])[:, 0]
+        xi_1d = np.asarray(params['xi'])[0, :]
+        zi = np.asarray(params['zi'])
+        if yi_1d[0] > yi_1d[-1]:
+            yi_1d = yi_1d[::-1]
+            zi = zi[::-1, :]
+        if xi_1d[0] > xi_1d[-1]:
+            xi_1d = xi_1d[::-1]
+            zi = zi[:, ::-1]
+        interp = RegularGridInterpolator(
+            (yi_1d, xi_1d), zi,
+            bounds_error=False, fill_value=None)
+        pts = np.column_stack([loads.ravel(), heights.ravel()])
+        return interp(pts).reshape(shape)
+
+    return rbf_predict(
+        (heights.ravel(), loads.ravel()),
+        params['centers'], params['weights'],
+        params['scaler'], params['sigma']
+    ).reshape(shape)
+
+
 def rbf_predict(XY, centers, weights, scaler, sigma):
     """
     使用已训练的 RBF 模型进行预测。
@@ -113,7 +198,15 @@ def rbf_predict(XY, centers, weights, scaler, sigma):
 def fit_activation_map(data, pos_col='pos_l', load_col='load', emg_col='emg0',
                        num_centers=DEFAULT_NUM_CENTERS, sigma=DEFAULT_SIGMA,
                        data_len=DEFAULT_DATA_LEN, random_state=DEFAULT_RANDOM_STATE,
-                       height_range=None):
+                       height_range=None,
+                       monotonic_load=False,
+                       monotonic_method='smooth_projection',
+                       projection_lambda_data=1.0,
+                       projection_lambda_height=0.01,
+                       projection_lambda_load=5.0,
+                       projection_lambda_cross=0.1,
+                       projection_min_slope=0.0,
+                       projection_solver='auto'):
     """
     拟合位置-负载-肌肉激活的 RBF 映射并生成网格预测。
 
@@ -128,6 +221,23 @@ def fit_activation_map(data, pos_col='pos_l', load_col='load', emg_col='emg0',
     height_range : list[float] or None
         高度范围 [h_min, h_max]。若指定，则用该范围生成网格
         并过滤超出范围的数据点；若为 None，则使用数据本身的 min/max。
+    monotonic_load : bool
+        是否对 RBF 拟合结果沿负载轴做平滑单调投影。
+        该后处理只作用在最终 zi 网格上，不改变 RBF 权重。
+    monotonic_method : str
+        当前支持 'smooth_projection'。
+    projection_lambda_data : float
+        保持接近原始 RBF 曲面的权重。越大越贴近原始 RBF。
+    projection_lambda_height : float
+        高度方向二阶平滑强度。为保留高度细节，建议从较小值开始。
+    projection_lambda_load : float
+        负载方向二阶平滑强度。越大，敏感度图越连续。
+    projection_lambda_cross : float
+        高度-负载交叉平滑强度。越大，曲面扭曲越少。
+    projection_min_slope : float
+        负载方向最小斜率。0 表示非递减；小正数可减少大片 0 敏感度。
+    projection_solver : {'auto', 'cvxpy', 'penalty'}
+        'auto' 会优先使用 cvxpy 严格约束；若未安装 cvxpy，则回退到 scipy 罚函数。
 
     Returns
     -------
@@ -157,11 +267,39 @@ def fit_activation_map(data, pos_col='pos_l', load_col='load', emg_col='emg0',
         (xi.flatten(), yi.flatten()), centers, weights, scaler, sigma_out
     ).reshape(xi.shape)
 
+    if monotonic_load:
+        if monotonic_method != 'smooth_projection':
+            raise ValueError("monotonic_method currently supports only "
+                             "'smooth_projection'.")
+        zi = apply_smooth_monotonic_projection(
+            zi, yi,
+            lambda_data=projection_lambda_data,
+            lambda_height=projection_lambda_height,
+            lambda_load=projection_lambda_load,
+            lambda_cross=projection_lambda_cross,
+            min_slope=projection_min_slope,
+            solver=projection_solver)
+
     return {
         'xi': xi, 'yi': yi, 'zi': zi,
         'centers': centers, 'weights': weights,
         'scaler': scaler, 'sigma': sigma_out,
+        'monotonic_load': monotonic_load,
+        'monotonic_method': monotonic_method if monotonic_load else None,
+        'projection_lambda_data': (
+            projection_lambda_data if monotonic_load else None),
+        'projection_lambda_height': (
+            projection_lambda_height if monotonic_load else None),
+        'projection_lambda_load': (
+            projection_lambda_load if monotonic_load else None),
+        'projection_lambda_cross': (
+            projection_lambda_cross if monotonic_load else None),
+        'projection_min_slope': (
+            projection_min_slope if monotonic_load else None),
     }
+
+
+
 
 
 def fit_activation_map_3d(data, a, b, c, d, num_centers=DEFAULT_NUM_CENTERS,
