@@ -147,6 +147,14 @@ def predict_at(params, heights, loads):
     loads = np.asarray(loads, dtype=float)
     shape = heights.shape
 
+    # 单调 P-spline 模型：解析评估
+    if params.get('model') == 'pspline':
+        from digitaltwin.analysis.monotone_pspline import (
+            predict_monotone_pspline,
+        )
+        return predict_monotone_pspline(params, heights, loads)
+
+    # smooth_projection 修正后的 zi 网格 → 双线性插值
     if params.get('monotonic_load'):
         yi_1d = np.asarray(params['yi'])[:, 0]
         xi_1d = np.asarray(params['xi'])[0, :]
@@ -206,7 +214,15 @@ def fit_activation_map(data, pos_col='pos_l', load_col='load', emg_col='emg0',
                        projection_lambda_load=5.0,
                        projection_lambda_cross=0.1,
                        projection_min_slope=0.0,
-                       projection_solver='auto'):
+                       projection_solver='auto',
+                       # monotone_pspline 专属参数
+                       pspline_n_basis_h=12,
+                       pspline_n_basis_l=10,
+                       pspline_degree=3,
+                       pspline_lambda_h=1.0,
+                       pspline_lambda_l=1.0,
+                       pspline_solver='auto',
+                       pspline_max_iter=2000):
     """
     拟合位置-负载-肌肉激活的 RBF 映射并生成网格预测。
 
@@ -225,7 +241,9 @@ def fit_activation_map(data, pos_col='pos_l', load_col='load', emg_col='emg0',
         是否对 RBF 拟合结果沿负载轴做平滑单调投影。
         该后处理只作用在最终 zi 网格上，不改变 RBF 权重。
     monotonic_method : str
-        当前支持 'smooth_projection'。
+        - 'smooth_projection' (默认): RBF 拟合后对 zi 网格做平滑单调投影后处理。
+        - 'monotone_pspline' : 直接用 2D 张量积 B-spline 拟合，对负载方向
+          加单调约束（不再使用 RBF，从模型结构上保证单调）。
     projection_lambda_data : float
         保持接近原始 RBF 曲面的权重。越大越贴近原始 RBF。
     projection_lambda_height : float
@@ -259,6 +277,45 @@ def fit_activation_map(data, pos_col='pos_l', load_col='load', emg_col='emg0',
     yi = np.linspace(y.min(), y.max(), data_len)
     xi, yi = np.meshgrid(xi, yi)
 
+    # ===== monotone_pspline 路径：直接用 2D 单调 P-spline 拟合 =====
+    if monotonic_load and monotonic_method == 'monotone_pspline':
+        from digitaltwin.analysis.monotone_pspline import (
+            fit_monotone_pspline_2d, predict_monotone_pspline,
+        )
+        spl = fit_monotone_pspline_2d(
+            x, y, z,
+            n_basis_h=pspline_n_basis_h,
+            n_basis_l=pspline_n_basis_l,
+            degree=pspline_degree,
+            lambda_h=pspline_lambda_h,
+            lambda_l=pspline_lambda_l,
+            increasing=True,
+            h_range=(float(xi.min()), float(xi.max())),
+            l_range=(float(yi.min()), float(yi.max())),
+            solver=pspline_solver,
+            max_iter=pspline_max_iter,
+        )
+        zi_pspline = predict_monotone_pspline(spl, xi, yi)
+        return {
+            'xi': xi, 'yi': yi, 'zi': zi_pspline,
+            'monotonic_load': True,
+            'monotonic_method': 'monotone_pspline',
+            'model': 'pspline',
+            'theta': spl['theta'],
+            'knots_h': spl['knots_h'],
+            'knots_l': spl['knots_l'],
+            'degree': spl['degree'],
+            'h_range': spl['h_range'],
+            'l_range': spl['l_range'],
+            'n_basis_h': spl['n_basis_h'],
+            'n_basis_l': spl['n_basis_l'],
+            'increasing': spl['increasing'],
+            # 占位字段，便于下游兼容访问
+            'centers': None, 'weights': None,
+            'scaler': None, 'sigma': None,
+        }
+
+    # ===== RBF 路径：标准 RBF 拟合 + 可选 smooth_projection =====
     centers, weights, scaler, sigma_out = rbf_fit(
         (x, y), z, num_centers=num_centers, sigma=sigma,
         random_state=random_state)
@@ -267,10 +324,7 @@ def fit_activation_map(data, pos_col='pos_l', load_col='load', emg_col='emg0',
         (xi.flatten(), yi.flatten()), centers, weights, scaler, sigma_out
     ).reshape(xi.shape)
 
-    if monotonic_load:
-        if monotonic_method != 'smooth_projection':
-            raise ValueError("monotonic_method currently supports only "
-                             "'smooth_projection'.")
+    if monotonic_load and monotonic_method == 'smooth_projection':
         zi = apply_smooth_monotonic_projection(
             zi, yi,
             lambda_data=projection_lambda_data,
@@ -279,6 +333,10 @@ def fit_activation_map(data, pos_col='pos_l', load_col='load', emg_col='emg0',
             lambda_cross=projection_lambda_cross,
             min_slope=projection_min_slope,
             solver=projection_solver)
+    elif monotonic_load and monotonic_method != 'monotone_pspline':
+        raise ValueError(
+            f"Unknown monotonic_method: {monotonic_method}. "
+            f"Expected 'smooth_projection' or 'monotone_pspline'.")
 
     return {
         'xi': xi, 'yi': yi, 'zi': zi,
@@ -286,16 +344,7 @@ def fit_activation_map(data, pos_col='pos_l', load_col='load', emg_col='emg0',
         'scaler': scaler, 'sigma': sigma_out,
         'monotonic_load': monotonic_load,
         'monotonic_method': monotonic_method if monotonic_load else None,
-        'projection_lambda_data': (
-            projection_lambda_data if monotonic_load else None),
-        'projection_lambda_height': (
-            projection_lambda_height if monotonic_load else None),
-        'projection_lambda_load': (
-            projection_lambda_load if monotonic_load else None),
-        'projection_lambda_cross': (
-            projection_lambda_cross if monotonic_load else None),
-        'projection_min_slope': (
-            projection_min_slope if monotonic_load else None),
+        'model': 'rbf',
     }
 
 

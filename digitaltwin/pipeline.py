@@ -375,12 +375,22 @@ class MultiLoadPipeline:
                           num_centers=20, fit_3d=False,
                           movement_types=None,
                           monotonic_load=True,
+                          monotonic_method='smooth_projection',
+                          # smooth_projection 参数
                           projection_lambda_data=1.0,
                           projection_lambda_height=0.01,
                           projection_lambda_load=5.0,
                           projection_lambda_cross=0.1,
                           projection_min_slope=0.0,
-                          projection_solver='auto'):
+                          projection_solver='auto',
+                          # monotone_pspline 参数
+                          pspline_n_basis_h=12,
+                          pspline_n_basis_l=10,
+                          pspline_degree=3,
+                          pspline_lambda_h=1.0,
+                          pspline_lambda_l=1.0,
+                          pspline_solver='auto',
+                          pspline_max_iter=2000):
         """
         生成肌肉激活热力图。
 
@@ -473,12 +483,20 @@ class MultiLoadPipeline:
                     data_len=data_len,
                     height_range=self.subject.height_range,
                     monotonic_load=True,
+                    monotonic_method=monotonic_method,
                     projection_lambda_data=projection_lambda_data,
                     projection_lambda_height=projection_lambda_height,
                     projection_lambda_load=projection_lambda_load,
                     projection_lambda_cross=projection_lambda_cross,
                     projection_min_slope=projection_min_slope,
-                    projection_solver=projection_solver)
+                    projection_solver=projection_solver,
+                    pspline_n_basis_h=pspline_n_basis_h,
+                    pspline_n_basis_l=pspline_n_basis_l,
+                    pspline_degree=pspline_degree,
+                    pspline_lambda_h=pspline_lambda_h,
+                    pspline_lambda_l=pspline_lambda_l,
+                    pspline_solver=pspline_solver,
+                    pspline_max_iter=pspline_max_iter)
                 all_params[f'{musc}_monotonic'] = mono_params
 
                 plot_activation_3d(

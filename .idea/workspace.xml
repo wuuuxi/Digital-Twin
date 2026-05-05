@@ -4,15 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e826f58e-80b6-431c-ae55-618990f064b5" name="更改" comment="Changed movement types of data used for activation map.">
-      <change afterPath="$PROJECT_DIR$/digitaltwin/analysis/smooth_monotonic.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/vload_analysis/example_vload_result.py" afterDir="false" />
+    <list default="true" id="e826f58e-80b6-431c-ae55-618990f064b5" name="更改" comment="Added monotonic activation maps.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/digitaltwin/analysis/rbf_fitting.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/analysis/rbf_fitting.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/digitaltwin/analysis/variable_load.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/analysis/variable_load.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/digitaltwin/pipeline.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/pipeline.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/digitaltwin/visualization/heatmap.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/visualization/heatmap.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/heatmap/example_heatmap.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/heatmap/example_heatmap.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -139,7 +132,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="example_heatmap" type="PythonConfigurationType" factoryName="Python" singleton="false" temporary="true" nameIsGenerated="true">
+    <configuration name="example_heatmap" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="Digital Twin" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -205,7 +198,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="example_vload_result" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="example_vload_result" type="PythonConfigurationType" factoryName="Python" singleton="false" temporary="true" nameIsGenerated="true">
       <module name="Digital Twin" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -340,7 +333,15 @@
       <option name="project" value="LOCAL" />
       <updated>1777535432140</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="Added monotonic activation maps.">
+      <option name="closed" value="true" />
+      <created>1777884413147</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1777884413147</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -364,6 +365,7 @@
     <MESSAGE value="Added Xsens data processing." />
     <MESSAGE value="Added MVC data processing." />
     <MESSAGE value="Changed movement types of data used for activation map." />
-    <option name="LAST_COMMIT_MESSAGE" value="Changed movement types of data used for activation map." />
+    <MESSAGE value="Added monotonic activation maps." />
+    <option name="LAST_COMMIT_MESSAGE" value="Added monotonic activation maps." />
   </component>
 </project>
