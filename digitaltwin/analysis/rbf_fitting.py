@@ -13,11 +13,8 @@ import os
 
 os.environ['OMP_NUM_THREADS'] = '2'
 from scipy.spatial.distance import cdist
-from scipy.interpolate import RegularGridInterpolator
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.cluster import KMeans
-
-from digitaltwin.analysis.smooth_monotonic import smooth_monotonic_projection
 
 # ============================================================
 #  默认参数
@@ -88,48 +85,12 @@ def rbf_fit(XY, Z, num_centers=DEFAULT_NUM_CENTERS, sigma=DEFAULT_SIGMA,
     return centers, weights, scaler, sigma
 
 
-def apply_smooth_monotonic_projection(
-    zi,
-    yi,
-    lambda_data=1.0,
-    lambda_height=0.01,
-    lambda_load=5.0,
-    lambda_cross=0.1,
-    min_slope=0.0,
-    solver='auto',
-):
-    """
-    对 RBF 拟合得到的 zi 网格沿负载轴做平滑单调投影。
-
-    该方法不同于 isotonic regression：
-    - isotonic regression 容易产生分段平台；
-    - 平滑单调投影通过二阶平滑项得到连续自然的曲面。
-
-    该方法也不同于在 RBF 权重上加入单调性惩罚：
-    - 约束作用在最终规则网格上；
-    - 高度方向和负载方向的平滑强度可以独立控制；
-    - 不直接修改 RBF 权重，因此更不容易压平高度方向细节。
-    """
-    load_values = np.asarray(yi)[:, 0]
-    return smooth_monotonic_projection(
-        zi,
-        load_values,
-        lambda_data=lambda_data,
-        lambda_height=lambda_height,
-        lambda_load=lambda_load,
-        lambda_cross=lambda_cross,
-        min_slope=min_slope,
-        solver=solver,
-    )
-
-
 def predict_at(params, heights, loads):
     """
     在任意 (height, load) 点上评估 fit_activation_map 返回的曲面。
 
-    - 当 params 是普通 RBF 拟合（未做 isotonic 修正）时，直接用 rbf_predict；
-    - 当 params 是 isotonic 修正后的曲面时，centers/weights 与修正后的 zi
-      不再一致，改用网格 (xi, yi, zi) 做双线性插值。
+    - 当 params 是普通 RBF 拟合时，直接用 rbf_predict；
+    - 当 params 是单调 P-spline 模型 (model='pspline') 时，解析评估 B-spline。
 
     Parameters
     ----------
@@ -154,23 +115,7 @@ def predict_at(params, heights, loads):
         )
         return predict_monotone_pspline(params, heights, loads)
 
-    # smooth_projection 修正后的 zi 网格 → 双线性插值
-    if params.get('monotonic_load'):
-        yi_1d = np.asarray(params['yi'])[:, 0]
-        xi_1d = np.asarray(params['xi'])[0, :]
-        zi = np.asarray(params['zi'])
-        if yi_1d[0] > yi_1d[-1]:
-            yi_1d = yi_1d[::-1]
-            zi = zi[::-1, :]
-        if xi_1d[0] > xi_1d[-1]:
-            xi_1d = xi_1d[::-1]
-            zi = zi[:, ::-1]
-        interp = RegularGridInterpolator(
-            (yi_1d, xi_1d), zi,
-            bounds_error=False, fill_value=None)
-        pts = np.column_stack([loads.ravel(), heights.ravel()])
-        return interp(pts).reshape(shape)
-
+    # 默认：原始 RBF 拟合
     return rbf_predict(
         (heights.ravel(), loads.ravel()),
         params['centers'], params['weights'],
@@ -207,15 +152,7 @@ def fit_activation_map(data, pos_col='pos_l', load_col='load', emg_col='emg0',
                        num_centers=DEFAULT_NUM_CENTERS, sigma=DEFAULT_SIGMA,
                        data_len=DEFAULT_DATA_LEN, random_state=DEFAULT_RANDOM_STATE,
                        height_range=None,
-                       monotonic_load=False,
-                       monotonic_method='smooth_projection',
-                       projection_lambda_data=1.0,
-                       projection_lambda_height=0.01,
-                       projection_lambda_load=5.0,
-                       projection_lambda_cross=0.1,
-                       projection_min_slope=0.0,
-                       projection_solver='auto',
-                       # monotone_pspline 专属参数
+                       use_pspline=False,
                        pspline_n_basis_h=12,
                        pspline_n_basis_l=10,
                        pspline_degree=3,
@@ -237,25 +174,20 @@ def fit_activation_map(data, pos_col='pos_l', load_col='load', emg_col='emg0',
     height_range : list[float] or None
         高度范围 [h_min, h_max]。若指定，则用该范围生成网格
         并过滤超出范围的数据点；若为 None，则使用数据本身的 min/max。
-    monotonic_load : bool
-        是否对 RBF 拟合结果沿负载轴做平滑单调投影。
-        该后处理只作用在最终 zi 网格上，不改变 RBF 权重。
-    monotonic_method : str
-        - 'smooth_projection' (默认): RBF 拟合后对 zi 网格做平滑单调投影后处理。
-        - 'monotone_pspline' : 直接用 2D 张量积 B-spline 拟合，对负载方向
-          加单调约束（不再使用 RBF，从模型结构上保证单调）。
-    projection_lambda_data : float
-        保持接近原始 RBF 曲面的权重。越大越贴近原始 RBF。
-    projection_lambda_height : float
-        高度方向二阶平滑强度。为保留高度细节，建议从较小值开始。
-    projection_lambda_load : float
-        负载方向二阶平滑强度。越大，敏感度图越连续。
-    projection_lambda_cross : float
-        高度-负载交叉平滑强度。越大，曲面扭曲越少。
-    projection_min_slope : float
-        负载方向最小斜率。0 表示非递减；小正数可减少大片 0 敏感度。
-    projection_solver : {'auto', 'cvxpy', 'penalty'}
-        'auto' 会优先使用 cvxpy 严格约束；若未安装 cvxpy，则回退到 scipy 罚函数。
+    use_pspline : bool
+        True 时使用 2D 张量积 B-spline 拟合并对负载方向加单调约束
+        （从模型结构上保证单调，不再使用 RBF）。
+        False 时执行普通 RBF 拟合。
+    pspline_n_basis_h, pspline_n_basis_l : int
+        高度 / 负载方向 B-spline basis 个数。
+    pspline_degree : int
+        B-spline 阶数（3=三次）。
+    pspline_lambda_h, pspline_lambda_l : float
+        高度 / 负载方向二阶差分平滑权重。
+    pspline_solver : {'auto', 'cvxpy', 'lbfgs'}
+        'auto' 优先用 cvxpy 严格 QP，缺失时回退 L-BFGS-B。
+    pspline_max_iter : int
+        L-BFGS-B 最大迭代次数。
 
     Returns
     -------
@@ -277,8 +209,8 @@ def fit_activation_map(data, pos_col='pos_l', load_col='load', emg_col='emg0',
     yi = np.linspace(y.min(), y.max(), data_len)
     xi, yi = np.meshgrid(xi, yi)
 
-    # ===== monotone_pspline 路径：直接用 2D 单调 P-spline 拟合 =====
-    if monotonic_load and monotonic_method == 'monotone_pspline':
+    # ===== P-spline 路径：直接用 2D 单调 P-spline 拟合 =====
+    if use_pspline:
         from digitaltwin.analysis.monotone_pspline import (
             fit_monotone_pspline_2d, predict_monotone_pspline,
         )
@@ -298,8 +230,7 @@ def fit_activation_map(data, pos_col='pos_l', load_col='load', emg_col='emg0',
         zi_pspline = predict_monotone_pspline(spl, xi, yi)
         return {
             'xi': xi, 'yi': yi, 'zi': zi_pspline,
-            'monotonic_load': True,
-            'monotonic_method': 'monotone_pspline',
+            'use_pspline': True,
             'model': 'pspline',
             'theta': spl['theta'],
             'knots_h': spl['knots_h'],
@@ -315,7 +246,7 @@ def fit_activation_map(data, pos_col='pos_l', load_col='load', emg_col='emg0',
             'scaler': None, 'sigma': None,
         }
 
-    # ===== RBF 路径：标准 RBF 拟合 + 可选 smooth_projection =====
+    # ===== RBF 路径：标准 RBF 拟合 =====
     centers, weights, scaler, sigma_out = rbf_fit(
         (x, y), z, num_centers=num_centers, sigma=sigma,
         random_state=random_state)
@@ -324,26 +255,11 @@ def fit_activation_map(data, pos_col='pos_l', load_col='load', emg_col='emg0',
         (xi.flatten(), yi.flatten()), centers, weights, scaler, sigma_out
     ).reshape(xi.shape)
 
-    if monotonic_load and monotonic_method == 'smooth_projection':
-        zi = apply_smooth_monotonic_projection(
-            zi, yi,
-            lambda_data=projection_lambda_data,
-            lambda_height=projection_lambda_height,
-            lambda_load=projection_lambda_load,
-            lambda_cross=projection_lambda_cross,
-            min_slope=projection_min_slope,
-            solver=projection_solver)
-    elif monotonic_load and monotonic_method != 'monotone_pspline':
-        raise ValueError(
-            f"Unknown monotonic_method: {monotonic_method}. "
-            f"Expected 'smooth_projection' or 'monotone_pspline'.")
-
     return {
         'xi': xi, 'yi': yi, 'zi': zi,
         'centers': centers, 'weights': weights,
         'scaler': scaler, 'sigma': sigma_out,
-        'monotonic_load': monotonic_load,
-        'monotonic_method': monotonic_method if monotonic_load else None,
+        'use_pspline': False,
         'model': 'rbf',
     }
 

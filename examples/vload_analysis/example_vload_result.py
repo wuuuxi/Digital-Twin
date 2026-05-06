@@ -5,17 +5,17 @@
 （vload_file 中的 Height / Load / Activation 规划值）。
 
 可选：再叠加 heatmap 拟合的曲面对该工况下激活的预测值
-（在每个规划点 (Height, Load) 上用 RBF / 平滑单调投影曲面预测）。
+（在每个规划点 (Height, Load) 上用 RBF / P-spline 曲面预测）。
 
 除了画出各预测曲线与实测散点的对比之外，还会在每个实测数据点上
-计算三种预测方式（Expected / RBF / Monotonic）与实测 EMG 的 RMSE。
+计算三种预测方式（Expected / RBF / P-spline）与实测 EMG 的 RMSE。
 由于实测数据未记录瞬时负载，这里使用规划负载在该高度上的插值
-作为实测点的负载，RBF / Monotonic 预测也在 (h_actual, l_planned) 上评估。
+作为实测点的负载，RBF / P-spline 预测也在 (h_actual, l_planned) 上评估。
 
 选项：
   - MOVEMENT_TYPES: 只用上升 ['upward']、只用下降 ['downward']、或两者
     ['upward', 'downward']；None 表示不过滤。
-  - HEATMAP_MODE: 'both' | 'rbf' | 'monotonic' | 'none'，控制叠加哪种
+  - HEATMAP_MODE: 'both' | 'rbf' | 'pspline' | 'none'，控制叠加哪种
     heatmap 预测曲线。
 
 用法：
@@ -35,7 +35,7 @@ from digitaltwin.analysis.rbf_fitting import predict_at
 # 与 example_heatmap.py 一致：选取实测数据使用的运动阶段
 MOVEMENT_TYPES = ['upward']
 
-# heatmap 预测叠加模式：'both' / 'rbf' / 'monotonic' / 'none'
+# heatmap 预测叠加模式：'both' / 'rbf' / 'pspline' / 'none'
 HEATMAP_MODE = 'both'
 
 
@@ -81,16 +81,16 @@ def load_rbf_params(subject, muscle):
     with open(path, 'rb') as f:
         p = pickle.load(f)
     p = dict(p)
-    p['monotonic_load'] = False
+    p['use_pspline'] = False
     return p
 
 
-def load_monotonic_params(subject, muscle):
-    """加载平滑单调投影后的完整 params ({muscle}_monotonic_params.pkl)。"""
+def load_pspline_params(subject, muscle):
+    """加载 P-spline 拟合后的完整 params ({muscle}_pspline_params.pkl)。"""
     path = os.path.join(_heatmap_param_dir(subject),
-                        f'{muscle}_monotonic_params.pkl')
+                        f'{muscle}_pspline_params.pkl')
     if not os.path.exists(path):
-        print(f'  未找到 {muscle} 的 monotonic 参数: {path}')
+        print(f'  未找到 {muscle} 的 P-spline 参数: {path}')
         return None
     with open(path, 'rb') as f:
         return pickle.load(f)
@@ -103,7 +103,7 @@ def load_heatmap_params_by_mode(subject, muscle, mode):
     Returns
     -------
     list of (key, label, params, color, linestyle)
-        key  -- 'rbf' 或 'monotonic'，用于 RMSE 表中的识别。
+        key  -- 'rbf' 或 'pspline'，用于 RMSE 表中的识别。
         label, params, color, linestyle -- 画图用。
     """
     if mode == 'none' or muscle is None:
@@ -114,11 +114,11 @@ def load_heatmap_params_by_mode(subject, muscle, mode):
         p = load_rbf_params(subject, muscle)
         if p is not None:
             overlays.append(('rbf', 'Heatmap (RBF)', p, 'C3', '--'))
-    if mode in ('monotonic', 'both'):
-        p = load_monotonic_params(subject, muscle)
+    if mode in ('pspline', 'both'):
+        p = load_pspline_params(subject, muscle)
         if p is not None:
             overlays.append(
-                ('monotonic', 'Heatmap (monotonic)', p, 'C2', '-.'))
+                ('pspline', 'Heatmap (P-spline)', p, 'C2', '-.'))
     return overlays
 
 
@@ -152,7 +152,7 @@ def compute_rmse_at_actual_points(cutted, planned_df, heatmap_overlays,
     Returns
     -------
     dict
-        {key: (rmse, n_points)}。key 取值 'expected', 'rbf', 'monotonic'。
+        {key: (rmse, n_points)}。key 取值 'expected', 'rbf', 'pspline'。
     """
     emg_col = f'emg_{target_muscle}'
     rmse_dict = {}
@@ -209,7 +209,7 @@ def plot_one_vload_entry(label, vload_result, planned_df, heatmap_overlays,
     对单组变负载实验绘图。
 
     1×2 子图：
-      - 左：Activation vs Height。三种预测（expected / rbf / monotonic）会在
+      - 左：Activation vs Height。三种预测（expected / rbf / pspline）会在
         legend 中同时展示 RMSE。
       - 右：Planned Load vs Height（规划负载曲线参考）。
 
@@ -310,10 +310,10 @@ def _print_rmse_summary(rmse_summary):
     """打印所有实验、所有预测方式的 RMSE 总表。"""
     if not rmse_summary:
         return
-    keys = ['expected', 'rbf', 'monotonic']
+    keys = ['expected', 'rbf', 'pspline']
     headers = {'expected': 'Expected',
                'rbf': 'Heatmap (RBF)',
-               'monotonic': 'Heatmap (monotonic)'}
+               'pspline': 'Heatmap (P-spline)'}
     col_w = max(20, max(len(label) for label in rmse_summary) + 2)
     print('\n========== RMSE summary (actual EMG vs predictions) ==========')
     head = 'Label'.ljust(col_w) + ''.join(
@@ -379,7 +379,7 @@ def main():
         )
 
         # 控制台详细输出
-        for k in ('expected', 'rbf', 'monotonic'):
+        for k in ('expected', 'rbf', 'pspline'):
             if k in rmse_dict:
                 rmse, n = rmse_dict[k]
                 if np.isfinite(rmse):

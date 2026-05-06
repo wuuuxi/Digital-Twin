@@ -37,6 +37,8 @@ from digitaltwin.vload_pipeline import VLoadPipeline
 from digitaltwin.visualization.plot_curves import CurvePlotter
 from digitaltwin.visualization.heatmap import (
     plot_activation_3d, draw_heatmap_2d, draw_load_sensitivity_heatmap_2d,
+    plot_compare_activation_3d, plot_compare_heatmap_2d,
+    plot_compare_load_sensitivity_2d,
 )
 from digitaltwin.visualization.variable_load_plot import plot_variable_load_result
 
@@ -374,16 +376,6 @@ class MultiLoadPipeline:
                           data_len=50, sigma=1.0,
                           num_centers=20, fit_3d=False,
                           movement_types=None,
-                          monotonic_load=True,
-                          monotonic_method='smooth_projection',
-                          # smooth_projection 参数
-                          projection_lambda_data=1.0,
-                          projection_lambda_height=0.01,
-                          projection_lambda_load=5.0,
-                          projection_lambda_cross=0.1,
-                          projection_min_slope=0.0,
-                          projection_solver='auto',
-                          # monotone_pspline 参数
                           pspline_n_basis_h=12,
                           pspline_n_basis_l=10,
                           pspline_degree=3,
@@ -394,37 +386,32 @@ class MultiLoadPipeline:
         """
         生成肌肉激活热力图。
 
+        默认主曲面使用 2D 张量积单调 P-spline 拟合（保存到 save_dir/）；
+        同时跑一个原始 RBF 基线作为对比（保存到 save_dir/rbf/）。
+        每块肌肉额外生成 3 张 RBF vs P-spline 1×2 对比图：
+          - {musc}_compare_3D.png
+          - {musc}_compare_2D.png
+          - {musc}_compare_load_sensitivity_2D.png
+
         Parameters
         ----------
         muscles : list[str], optional
-            要生成热力图的肌肉列表，默认使用全部。
         save_dir : str, optional
-            保存路径。
         data_len, sigma, num_centers : RBF 拟合参数。
         fit_3d : bool
             是否额外拟合 3D（含速度维度）。
         movement_types : list[str] or None
-            使用哪些运动阶段的切片数据。
-            默认 None -> 仅使用上升阶段 ['upward']。
-            传入 ['upward', 'downward'] 可同时使用两个阶段。
-        monotonic_load : bool
-            是否额外生成平滑单调投影后的曲面。
-            True 时会同时保存原始 RBF 曲面和平滑单调曲面，方便对比。
-            修正方法：先正常 RBF 拟合，再在规则网格上求解一个
-            尽量接近原始 RBF、同时沿负载方向单调且平滑的曲面。
-        projection_lambda_data : float
-            保持接近原始 RBF 曲面的权重。越大越贴近原始 RBF。
-        projection_lambda_height : float
-            高度方向二阶平滑强度。越小越能保留高度方向细节。
-        projection_lambda_load : float
-            负载方向二阶平滑强度。越大，敏感度图越连续自然。
-        projection_lambda_cross : float
-            高度-负载交叉平滑强度。越大，曲面扭曲越少。
-        projection_min_slope : float
-            负载方向最小斜率。0 表示非递减；小正数可减少敏感度图
-            中大片接近 0 的区域。
-        projection_solver : {'auto', 'cvxpy', 'penalty'}
-            'auto' 会优先使用 cvxpy 严格约束；若未安装 cvxpy，则回退到 scipy 罚函数。
+            使用哪些运动阶段的切片数据。默认 ['upward']。
+        pspline_n_basis_h, pspline_n_basis_l : int
+            高度 / 负载方向 B-spline basis 个数。
+        pspline_degree : int
+            B-spline 阶数（3=三次）。
+        pspline_lambda_h, pspline_lambda_l : float
+            高度 / 负载方向二阶差分平滑权重。
+        pspline_solver : {'auto', 'cvxpy', 'lbfgs'}
+            'auto' 优先用 cvxpy 严格 QP，缺失时回退 L-BFGS-B。
+        pspline_max_iter : int
+            L-BFGS-B 最大迭代次数。
         """
         if movement_types is None:
             movement_types = ['upward']
@@ -449,6 +436,10 @@ class MultiLoadPipeline:
         if save_dir is None:
             save_dir = os.path.join(self.subject.result_folder, 'heatmap')
         os.makedirs(save_dir, exist_ok=True)
+        rbf_dir = os.path.join(save_dir, 'rbf')
+        os.makedirs(rbf_dir, exist_ok=True)
+        params_dir = os.path.join(save_dir, 'params')
+        os.makedirs(params_dir, exist_ok=True)
 
         load_col = 'load' if 'load' in data.columns else 'load_value'
 
@@ -461,83 +452,78 @@ class MultiLoadPipeline:
 
             self._log(f"拟合肌肉 {musc} 的激活热力图...")
 
-            params = fit_activation_map(
+            # ---- RBF 基线（用于对比）----
+            params_rbf = fit_activation_map(
                 data, pos_col='pos_l', load_col=load_col, emg_col=emg_col,
                 num_centers=num_centers, sigma=sigma, data_len=data_len,
                 height_range=self.subject.height_range)
-            all_params[musc] = params
+            all_params[f'{musc}_rbf'] = params_rbf
 
             plot_activation_3d(
-                data, params, pos_col='pos_l', load_col=load_col,
-                emg_col=emg_col, label=musc, result_folder=save_dir)
-            draw_heatmap_2d(params, label=musc, result_folder=save_dir)
+                data, params_rbf, pos_col='pos_l', load_col=load_col,
+                emg_col=emg_col, label=musc, result_folder=rbf_dir)
+            draw_heatmap_2d(params_rbf, label=musc, result_folder=rbf_dir)
             draw_load_sensitivity_heatmap_2d(
-                params, label=musc, result_folder=save_dir)
+                params_rbf, label=musc, result_folder=rbf_dir)
+            save_rbf_params(
+                params_rbf['centers'], params_rbf['weights'],
+                params_rbf['scaler'], params_rbf['sigma'],
+                os.path.join(params_dir, f'{musc}_rbf_params.pkl'))
 
-            # 额外生成平滑单调投影曲面，用于和原始 RBF 对比
-            if monotonic_load:
-                mono_params = fit_activation_map(
-                    data, pos_col='pos_l', load_col=load_col,
-                    emg_col=emg_col,
-                    num_centers=num_centers, sigma=sigma,
-                    data_len=data_len,
-                    height_range=self.subject.height_range,
-                    monotonic_load=True,
-                    monotonic_method=monotonic_method,
-                    projection_lambda_data=projection_lambda_data,
-                    projection_lambda_height=projection_lambda_height,
-                    projection_lambda_load=projection_lambda_load,
-                    projection_lambda_cross=projection_lambda_cross,
-                    projection_min_slope=projection_min_slope,
-                    projection_solver=projection_solver,
-                    pspline_n_basis_h=pspline_n_basis_h,
-                    pspline_n_basis_l=pspline_n_basis_l,
-                    pspline_degree=pspline_degree,
-                    pspline_lambda_h=pspline_lambda_h,
-                    pspline_lambda_l=pspline_lambda_l,
-                    pspline_solver=pspline_solver,
-                    pspline_max_iter=pspline_max_iter)
-                all_params[f'{musc}_monotonic'] = mono_params
+            # ---- P-spline 主曲面（默认）----
+            params_psp = fit_activation_map(
+                data, pos_col='pos_l', load_col=load_col, emg_col=emg_col,
+                num_centers=num_centers, sigma=sigma, data_len=data_len,
+                height_range=self.subject.height_range,
+                use_pspline=True,
+                pspline_n_basis_h=pspline_n_basis_h,
+                pspline_n_basis_l=pspline_n_basis_l,
+                pspline_degree=pspline_degree,
+                pspline_lambda_h=pspline_lambda_h,
+                pspline_lambda_l=pspline_lambda_l,
+                pspline_solver=pspline_solver,
+                pspline_max_iter=pspline_max_iter)
+            all_params[musc] = params_psp
 
-                plot_activation_3d(
-                    data, mono_params, pos_col='pos_l', load_col=load_col,
-                    emg_col=emg_col, label=f'{musc}_monotonic',
-                    result_folder=save_dir)
-                draw_heatmap_2d(
-                    mono_params, label=f'{musc}_monotonic',
-                    result_folder=save_dir)
-                draw_load_sensitivity_heatmap_2d(
-                    mono_params, label=f'{musc}_monotonic',
-                    result_folder=save_dir)
+            plot_activation_3d(
+                data, params_psp, pos_col='pos_l', load_col=load_col,
+                emg_col=emg_col, label=musc, result_folder=save_dir)
+            draw_heatmap_2d(params_psp, label=musc, result_folder=save_dir)
+            draw_load_sensitivity_heatmap_2d(
+                params_psp, label=musc, result_folder=save_dir)
+            with open(os.path.join(
+                      params_dir, f'{musc}_pspline_params.pkl'), 'wb') as f:
+                pickle.dump(params_psp, f)
 
+            # ---- 1×2 对比图：RBF (左) vs P-spline (右) ----
+            plot_compare_activation_3d(
+                data, params_rbf, params_psp, pos_col='pos_l',
+                load_col=load_col, emg_col=emg_col, label=musc,
+                result_folder=save_dir)
+            plot_compare_heatmap_2d(
+                params_rbf, params_psp, label=musc, result_folder=save_dir)
+            plot_compare_load_sensitivity_2d(
+                params_rbf, params_psp, label=musc, result_folder=save_dir)
+
+            # ---- 可选 3D（速度维）----
             if fit_3d and 'vel_l' in data.columns:
                 params_3d = fit_activation_map_3d(
                     data, 'pos_l', load_col, emg_col, 'vel_l',
                     num_centers=num_centers, sigma=sigma, data_len=data_len)
                 all_params[f'{musc}_3d'] = params_3d
 
-            params_dir = os.path.join(save_dir, 'params')
-            os.makedirs(params_dir, exist_ok=True)
-            save_rbf_params(
-                params['centers'], params['weights'],
-                params['scaler'], params['sigma'],
-                os.path.join(params_dir, f'{musc}_rbf_params.pkl'))
-            if monotonic_load:
-                # 平滑单调投影后的曲面与原始 RBF 权重不再一致，
-                # 保存完整参数字典（包括修正后的 zi）以便后续复现。
-                with open(os.path.join(
-                          params_dir,
-                          f'{musc}_monotonic_params.pkl'), 'wb') as f:
-                    pickle.dump(mono_params, f)
-
+        # ---- RMSE 报告 ----
         for musc, p in all_params.items():
             if '_3d' in musc:
                 continue
-            base_musc = musc.replace('_monotonic', '')
+            if musc.endswith('_rbf'):
+                base_musc = musc[:-len('_rbf')]
+                tag = 'RBF'
+            else:
+                base_musc = musc
+                tag = 'P-spline'
             emg_col = f'emg_{base_musc}'
-            if musc.endswith('_monotonic'):
-                # monotonic 曲面是平滑单调投影后的网格，
-                # 用网格双线性插值评估 RMSE
+            if p.get('model') == 'pspline':
                 pred = predict_at(
                     p, data['pos_l'].values, data[load_col].values)
                 actual = data[emg_col].values
@@ -550,7 +536,7 @@ class MultiLoadPipeline:
                     data, 'pos_l', load_col, emg_col,
                     p['centers'], p['weights'],
                     p['scaler'], p['sigma'])
-            self._log(f"{musc} RMSE%: {rmse_pct:.2f}%")
+            self._log(f"{base_musc} [{tag}] RMSE%: {rmse_pct:.2f}%")
 
         self._log(f"热力图已保存至 {save_dir}")
         return all_params

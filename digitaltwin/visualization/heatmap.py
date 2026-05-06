@@ -58,7 +58,7 @@ def plot_activation_3d(data, params, pos_col='pos_l', load_col='load', emg_col='
     if result_folder:
         plt.savefig(os.path.join(result_folder,
                     f'{label}_original.png'))
-    # plt.close(fig)
+    plt.close(fig)
 
     # ---------- RBF 散点 3D ----------
     fig = plt.figure(figsize=(8, 6))
@@ -73,8 +73,8 @@ def plot_activation_3d(data, params, pos_col='pos_l', load_col='load', emg_col='
     fig.colorbar(scatter, cax=cax, label='Activation')
     if result_folder:
         plt.savefig(os.path.join(result_folder,
-                    f'{label}_RBF_scatter.png'))
-    # plt.close(fig)
+                    f'{label}_scatter.png'))
+    plt.close(fig)
 
     # ---------- RBF 曲面 3D ----------
     fig = plt.figure(figsize=(8, 6))
@@ -89,8 +89,8 @@ def plot_activation_3d(data, params, pos_col='pos_l', load_col='load', emg_col='
     fig.colorbar(surf, cax=cax, label='Activation')
     if result_folder:
         plt.savefig(os.path.join(result_folder,
-                    f'{label}_RBF.png'))
-    # plt.close(fig)
+                    f'{label}_3D.png'))
+    plt.close(fig)
 
 
 def compare_activation_maps(data_robot, data_smith, pos_col='pos_l',
@@ -137,7 +137,7 @@ def compare_activation_maps(data_robot, data_smith, pos_col='pos_l',
 
     if result_folder and label:
         plt.savefig(os.path.join(result_folder, f'{label}.png'))
-    # plt.close(fig)
+    plt.close(fig)
 
     # RBF 曲面对比
     fig = plt.figure(figsize=(14, 6))
@@ -154,7 +154,7 @@ def compare_activation_maps(data_robot, data_smith, pos_col='pos_l',
     if result_folder and label:
         plt.savefig(os.path.join(result_folder,
                     f'{label}_RBF_pos-load-activation.png'))
-    # plt.close(fig)
+    plt.close(fig)
 
     return [xi, yi, zi_1, c1, w1, s1, sig1]
 
@@ -182,8 +182,8 @@ def draw_heatmap_2d(params, sigma_smooth=1, label=None, result_folder=None):
     ax.set_title(label)
     if result_folder:
         plt.savefig(os.path.join(result_folder,
-                                 f'{label}_RBF_2D.png'))
-    # plt.close(fig)
+                                 f'{label}_2D.png'))
+    plt.close(fig)
     # plt.show()
 
 
@@ -250,13 +250,13 @@ def plot_load_slices_comparison(data, params_orig, params_mono, muscle,
         # 原始 RBF 预测曲线
         z_orig = predict_at(params_orig, h_grid, y_fixed)
         ax.plot(h_grid, z_orig, color='C0', linewidth=2,
-                label='RBF (original)')
+                label='RBF')
 
         # 平滑单调投影后的预测曲线（来自后处理网格插值）
         if params_mono is not None:
             z_mono = predict_at(params_mono, h_grid, y_fixed)
             ax.plot(h_grid, z_mono, color='C3', linewidth=2,
-                    linestyle='--', label='Smooth monotonic')
+                    linestyle='--', label='P-spline')
 
         ax.set_xlabel('Height (m)')
         ax.set_ylabel('Activation')
@@ -316,4 +316,126 @@ def draw_load_sensitivity_heatmap_2d(params, sigma_smooth=1, label=None,
     if result_folder:
         plt.savefig(os.path.join(result_folder,
                                  f'{label}_load_sensitivity_2D.png'))
-    # plt.close(fig)
+    plt.close(fig)
+
+
+# ============================================================
+#  RBF vs P-spline 1×2 对比图
+# ============================================================
+
+def plot_compare_activation_3d(data, params_rbf, params_pspline,
+                               pos_col='pos_l', load_col='load',
+                               emg_col='emg0', label=None,
+                               cmap='hot', result_folder=None):
+    """RBF vs P-spline 3D 曲面对比 (1×2)。保存为 {label}_compare_3D.png。"""
+    fig = plt.figure(figsize=(14, 6))
+    if label:
+        fig.suptitle(label, fontweight='bold')
+    z_min = float(data[emg_col].min())
+    z_max = float(data[emg_col].max())
+    pairs = [(params_rbf, 'RBF'), (params_pspline, 'P-spline')]
+    for idx, (params, title) in enumerate(pairs):
+        if params is None:
+            continue
+        xi, yi, zi = params['xi'], params['yi'], params['zi']
+        ax = fig.add_subplot(1, 2, idx + 1, projection='3d')
+        surf = ax.plot_surface(xi, yi, zi, cmap=cmap,
+                               vmin=z_min, vmax=z_max,
+                               edgecolor='none')
+        ax.scatter(data[pos_col], data[load_col], data[emg_col],
+                   c=data[emg_col], cmap=cmap, s=8,
+                   vmin=z_min, vmax=z_max, alpha=0.5)
+        plt.colorbar(surf, ax=ax, shrink=0.6, label='Activation')
+        ax.set_xlabel('Height (m)')
+        ax.set_ylabel('Load (kg)')
+        ax.set_zlabel('Activation')
+        ax.set_title(title)
+        ax.view_init(elev=30, azim=-135)
+    if result_folder and label:
+        plt.savefig(os.path.join(result_folder,
+                                 f'{label}_compare_3D.png'))
+    plt.close(fig)
+
+
+def plot_compare_heatmap_2d(params_rbf, params_pspline, label=None,
+                            sigma_smooth=1, cmap='hot',
+                            result_folder=None):
+    """RBF vs P-spline 2D 热力图对比 (1×2)。保存为 {label}_compare_2D.png。"""
+    fig, axes = plt.subplots(1, 2, figsize=(11, 5))
+    if label:
+        fig.suptitle(label, fontweight='bold')
+    zis = []
+    for params in [params_rbf, params_pspline]:
+        if params is None:
+            zis.append(None)
+        else:
+            zis.append(gaussian_filter(params['zi'], sigma=sigma_smooth))
+    valid = [z for z in zis if z is not None]
+    if not valid:
+        plt.close(fig)
+        return
+    vmin = float(min(z.min() for z in valid))
+    vmax = float(max(z.max() for z in valid))
+    pairs = [(axes[0], params_rbf, zis[0], 'RBF'),
+             (axes[1], params_pspline, zis[1], 'P-spline')]
+    for ax, params, zi, title in pairs:
+        if params is None or zi is None:
+            ax.set_axis_off()
+            continue
+        xi, yi = params['xi'], params['yi']
+        contour = ax.contourf(xi, yi, zi, levels=100, cmap=cmap,
+                              vmin=vmin, vmax=vmax)
+        plt.colorbar(contour, ax=ax)
+        ax.set_xlabel('Height (m)')
+        ax.set_ylabel('Load (kg)')
+        ax.set_title(title)
+    fig.tight_layout(rect=[0, 0, 1, 0.95])
+    if result_folder and label:
+        plt.savefig(os.path.join(result_folder,
+                                 f'{label}_compare_2D.png'))
+    plt.close(fig)
+
+
+def plot_compare_load_sensitivity_2d(params_rbf, params_pspline, label=None,
+                                     sigma_smooth=1, result_folder=None):
+    """RBF vs P-spline 负载敏感度 2D 对比 (1×2)。
+
+    保存为 {label}_compare_load_sensitivity_2D.png。
+    """
+    fig, axes = plt.subplots(1, 2, figsize=(11, 5))
+    if label:
+        fig.suptitle(f'{label} — Load Sensitivity', fontweight='bold')
+    grads = []
+    for params in [params_rbf, params_pspline]:
+        if params is None:
+            grads.append(None)
+            continue
+        xi, yi, zi = params['xi'], params['yi'], params['zi']
+        yi_1d = yi[:, 0]
+        dz = np.gradient(zi, yi_1d, axis=0)
+        dz = gaussian_filter(dz, sigma=sigma_smooth)
+        grads.append((xi, yi, dz))
+    valid = [g for g in grads if g is not None]
+    if not valid:
+        plt.close(fig)
+        return
+    vmax = float(max(np.max(np.abs(g[2])) for g in valid))
+    pairs = [(axes[0], grads[0], 'RBF'),
+             (axes[1], grads[1], 'P-spline')]
+    for ax, g, title in pairs:
+        if g is None:
+            ax.set_axis_off()
+            continue
+        xi, yi, dz = g
+        contour = ax.contourf(xi, yi, dz, levels=100, cmap='RdBu_r',
+                              vmin=-vmax, vmax=vmax)
+        plt.colorbar(contour, ax=ax, label='∂Activation / ∂Load')
+        ax.set_xlabel('Height (m)')
+        ax.set_ylabel('Load (kg)')
+        ax.set_title(title)
+    fig.tight_layout(rect=[0, 0, 1, 0.95])
+    if result_folder and label:
+        plt.savefig(os.path.join(
+            result_folder,
+            f'{label}_compare_load_sensitivity_2D.png'))
+    plt.close(fig)
