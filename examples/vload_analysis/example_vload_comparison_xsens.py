@@ -12,7 +12,7 @@
   图 8: 肌肉激活均值柱状图（固定 + 变负载）
 
 用法：
-    python example_vload_comparison_xsens.py
+    python example_vload_comparison.py
 """
 import matplotlib.pyplot as plt
 from digitaltwin import Subject, MultiLoadPipeline
@@ -23,7 +23,7 @@ from digitaltwin.visualization.xsens_plot import (
     plot_joint_vel_scatter_lr,
     plot_joint_vel_bar_lr,
 )
-from digitaltwin.visualization.vload_comparison_plot import (
+from digitaltwin.visualization.vload.vload_comparison_plot import (
     plot_robot_kinematics_bar,
     plot_emg_activation_bar,
 )

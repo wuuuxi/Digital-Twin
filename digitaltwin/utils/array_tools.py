@@ -103,3 +103,43 @@ def select_longest_segment(data, segments, min_length=10):
         return None
 
     return data.iloc[longest_segment].reset_index(drop=True)
+
+
+def interp_sorted(x_query, x_known, y_known):
+    """
+    对 (x_known, y_known) 按 x_known 排序后做 1D 线性插值，返回在 x_query 处的值。
+
+    Parameters
+    ----------
+    x_query : array_like
+        查询点。
+    x_known, y_known : array_like
+        已知点 (可乱序)。
+
+    Returns
+    -------
+    np.ndarray
+        与 x_query 同形的插值结果。
+    """
+    x_known = np.asarray(x_known, dtype=float)
+    y_known = np.asarray(y_known, dtype=float)
+    order = np.argsort(x_known)
+    return np.interp(x_query, x_known[order], y_known[order])
+
+
+def rmse_with_count(pred, actual):
+    """
+    NaN 安全版 RMSE：过滤 NaN 后计算 RMSE，同时返回有效点个数。
+
+    Returns
+    -------
+    (rmse, n_valid) : (float, int)
+        无有效点时返回 (nan, 0)。
+    """
+    pred = np.asarray(pred, dtype=float)
+    actual = np.asarray(actual, dtype=float)
+    mask = np.isfinite(pred) & np.isfinite(actual)
+    if mask.sum() == 0:
+        return float('nan'), 0
+    diff = pred[mask] - actual[mask]
+    return float(np.sqrt(np.mean(diff ** 2))), int(mask.sum())

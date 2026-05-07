@@ -16,7 +16,7 @@ from scipy.ndimage import gaussian_filter
 import seaborn as sns
 import os
 
-from digitaltwin.analysis.rbf_fitting import rbf_fit, rbf_predict, predict_at
+from digitaltwin.analysis.heatmap.rbf_fitting import rbf_fit, rbf_predict, predict_at
 
 DEFAULT_DATA_LEN = 50
 

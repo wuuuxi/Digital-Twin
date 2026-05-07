@@ -1,7 +1,7 @@
 """
 变负载综合对比分析示例（无 Xsens 数据版）
 
-与 example_vload_comparison_xsens.py 类似，但适用于没有 Xsens 数据的情况。
+与 example_vload_comparison.py 类似，但适用于没有 Xsens 数据的情况。
 跳过所有关节角相关分析（图 1-4），仅保留 Robot 运动学和 EMG 相关分析。
 
   图 1: Robot 位置/速度/加速度均值柱状图
@@ -10,11 +10,11 @@
   图 4: 肌肉激活均值柱状图（固定 + 变负载）
 
 用法：
-    python example_vload_comparison.py
+    python example_vload_comparison_no_xsens.py
 """
 import matplotlib.pyplot as plt
 from digitaltwin import Subject, MultiLoadPipeline
-from digitaltwin.visualization.vload_comparison_plot import (
+from digitaltwin.visualization.vload.vload_comparison_plot import (
     plot_robot_kinematics_bar,
     plot_emg_activation_bar,
 )
@@ -25,8 +25,7 @@ from digitaltwin.visualization.emg_feature_plot import (
 
 def main():
     # --- 配置（不含 Xsens 的 config） ---
-    # subject = Subject('../config/20250409_squat_NCMP001.json')
-    subject = Subject('../config/20250512_squat_Yuchen.json')
+    subject = Subject('../config/20250409_squat_NCMP001.json')
     pipeline = MultiLoadPipeline(subject)
     pipeline.debug = True
 
@@ -35,8 +34,6 @@ def main():
     vload_results = pipeline.run_vload()
 
     muscles = subject.musc_label[:6]
-    # muscles = ['TA', 'GL', 'SOL', 'FibLon', 'VL', 'RF', "VM", "Addl", "BF", "ST", "GlutMax", "GlutMed"]
-    # target_muscles = ['GL', 'SOL', 'FibLon', 'VL', 'RF', "GlutMax"]
 
     # ==================================================================
     #  图 1: Robot 位置/速度/加速度均值柱状图

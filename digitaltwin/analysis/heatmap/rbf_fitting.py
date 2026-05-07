@@ -110,7 +110,7 @@ def predict_at(params, heights, loads):
 
     # 单调 P-spline 模型：解析评估
     if params.get('model') == 'pspline':
-        from digitaltwin.analysis.monotone_pspline import (
+        from digitaltwin.analysis.heatmap.monotone_pspline import (
             predict_monotone_pspline,
         )
         return predict_monotone_pspline(params, heights, loads)
@@ -211,7 +211,7 @@ def fit_activation_map(data, pos_col='pos_l', load_col='load', emg_col='emg0',
 
     # ===== P-spline 路径：直接用 2D 单调 P-spline 拟合 =====
     if use_pspline:
-        from digitaltwin.analysis.monotone_pspline import (
+        from digitaltwin.analysis.heatmap.monotone_pspline import (
             fit_monotone_pspline_2d, predict_monotone_pspline,
         )
         spl = fit_monotone_pspline_2d(

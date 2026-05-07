@@ -2,6 +2,29 @@ import numpy as np
 import pandas as pd
 
 
+def filter_movement_types(df, movement_types):
+    """按 movement_type 列过滤切片数据。
+
+    Parameters
+    ----------
+    df : pd.DataFrame or None
+        通常来自 DataAligner.cut_aligned_data() 或
+        pipeline._collect_cutted_data()。
+    movement_types : list[str] or None
+        例如 ['upward'], ['downward'], ['upward', 'downward']。
+        None 表示不过滤。
+
+    Returns
+    -------
+    pd.DataFrame or None
+    """
+    if df is None or movement_types is None:
+        return df
+    if 'movement_type' not in df.columns:
+        return df
+    return df[df['movement_type'].isin(movement_types)]
+
+
 class DataAligner:
     """
     数据对齐器

@@ -226,7 +226,7 @@ def one_muscle_variable_load(subject, title, muscle_files, goal, epsilons,
     rbf_predict_fn : callable, optional
         RBF 预测函数
     """
-    from digitaltwin.analysis.rbf_fitting import rbf_predict as _rbf_predict
+    from digitaltwin.analysis.heatmap.rbf_fitting import rbf_predict as _rbf_predict
     rbf_predict_fn = rbf_predict_fn or _rbf_predict
 
     height_min, height_max = subject.height_range

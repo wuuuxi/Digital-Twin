@@ -5,7 +5,30 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e826f58e-80b6-431c-ae55-618990f064b5" name="更改" comment="Added monotonic activation maps.">
+      <change afterPath="$PROJECT_DIR$/digitaltwin/analysis/heatmap/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/digitaltwin/analysis/heatmap/heatmap_io.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/digitaltwin/analysis/vload/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/digitaltwin/analysis/vload/vload_metrics.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/digitaltwin/analysis/vload/vload_planning.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/digitaltwin/visualization/vload/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/digitaltwin/visualization/vload/vload_result_plot.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/opensim/example_scaling.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/analysis/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/analysis/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/analysis/alignment.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/analysis/alignment.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/analysis/monotone_pspline.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/analysis/heatmap/monotone_pspline.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/analysis/rbf_fitting.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/analysis/heatmap/rbf_fitting.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/analysis/variable_load.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/analysis/vload/variable_load.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/pipeline.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/pipeline.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/utils/array_tools.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/utils/array_tools.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/visualization/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/visualization/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/visualization/heatmap.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/visualization/heatmap.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/visualization/variable_load_plot.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/visualization/vload/variable_load_plot.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/visualization/vload_comparison_plot.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/visualization/vload/vload_comparison_plot.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/heatmap/example_rbf_and_pspline.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/heatmap/example_rbf_and_pspline.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/vload_analysis/example_vload_comparison.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/vload_analysis/example_vload_comparison.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/vload_analysis/example_vload_comparison_xsens.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/vload_analysis/example_vload_comparison_xsens.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/vload_analysis/example_vload_result.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/vload_analysis/example_vload_result.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -72,12 +95,16 @@
     "Python.example_heatmap.executor": "Run",
     "Python.example_load_xsens.executor": "Run",
     "Python.example_load_xsens_vload.executor": "Run",
+    "Python.example_rbf_and_monotonic.executor": "Run",
+    "Python.example_rbf_and_pspline (1).executor": "Run",
+    "Python.example_scaling.executor": "Run",
     "Python.example_variable_load (1).executor": "Run",
     "Python.example_variable_load.executor": "Run",
     "Python.example_visualize_data.executor": "Run",
     "Python.example_vload_comparison (1).executor": "Run",
     "Python.example_vload_comparison.executor": "Run",
     "Python.example_vload_comparison_no_xsens.executor": "Run",
+    "Python.example_vload_comparison_xsens.executor": "Run",
     "Python.example_vload_result.executor": "Run",
     "Python.example_xsens_to_mot.executor": "Run",
     "Python.generate_beep_sounds.executor": "Run",
@@ -96,43 +123,21 @@
     "RunOnceActivity.git.unshallow": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "git-widget-placeholder": "master",
-    "last_opened_file_path": "C:/Users/PC/OneDrive/CUHK/github project/compare",
+    "last_opened_file_path": "C:/Users/PC/OneDrive/CUHK/courses/TA-ROSE5720/test/all material",
     "settings.editor.selected.configurable": "inlay.hints"
   }
 }]]></component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\digitaltwin\visualization\vload" />
+      <recent name="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\digitaltwin\analysis\vload" />
+      <recent name="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\digitaltwin\analysis\heatmap" />
       <recent name="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\examples\opensim" />
       <recent name="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\examples\emg_analysis" />
-      <recent name="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\examples\heatmap" />
-      <recent name="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\examples" />
-      <recent name="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\digitaltwin\visualization" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.example_heatmap">
-    <configuration name="example_compute_mvc" type="PythonConfigurationType" factoryName="Python" singleton="false" temporary="true" nameIsGenerated="true">
-      <module name="Digital Twin" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/examples/emg_analysis" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/emg_analysis/example_compute_mvc.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="example_heatmap" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+  <component name="RunManager" selected="Python.example_vload_result">
+    <configuration name="example_rbf_and_pspline (1)" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="Digital Twin" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -145,7 +150,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/heatmap/example_heatmap.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/heatmap/example_rbf_and_pspline.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -154,7 +159,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="example_variable_load" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="example_scaling" type="PythonConfigurationType" factoryName="Python" singleton="false" temporary="true" nameIsGenerated="true">
       <module name="Digital Twin" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -163,11 +168,11 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/examples/heatmap" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/examples/opensim" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/heatmap/example_variable_load.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/opensim/example_scaling.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -185,11 +190,11 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/examples/vload" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/examples/vload_analysis" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\examples\vload\example_vload_comparison.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/vload_analysis/example_vload_comparison.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -198,7 +203,29 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="example_vload_result" type="PythonConfigurationType" factoryName="Python" singleton="false" temporary="true" nameIsGenerated="true">
+    <configuration name="example_vload_comparison_xsens" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="Digital Twin" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/examples/vload_analysis" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/vload_analysis/example_vload_comparison_xsens.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="example_vload_result" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="Digital Twin" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -221,19 +248,19 @@
       <method v="2" />
     </configuration>
     <list>
-      <item itemvalue="Python.example_heatmap" />
-      <item itemvalue="Python.example_variable_load" />
+      <item itemvalue="Python.example_vload_comparison" />
+      <item itemvalue="Python.example_vload_comparison_xsens" />
+      <item itemvalue="Python.example_rbf_and_pspline (1)" />
+      <item itemvalue="Python.example_scaling" />
       <item itemvalue="Python.example_vload_result" />
-      <item itemvalue="Python.example_compute_mvc" />
-      <item itemvalue="Python.example_vload_comparison_no_xsens" />
     </list>
     <recent_temporary>
       <list>
         <item itemvalue="Python.example_vload_result" />
-        <item itemvalue="Python.example_heatmap" />
-        <item itemvalue="Python.example_variable_load" />
-        <item itemvalue="Python.example_compute_mvc" />
-        <item itemvalue="Python.example_vload_comparison_no_xsens" />
+        <item itemvalue="Python.example_rbf_and_pspline (1)" />
+        <item itemvalue="Python.example_vload_comparison_xsens" />
+        <item itemvalue="Python.example_vload_comparison" />
+        <item itemvalue="Python.example_scaling" />
       </list>
     </recent_temporary>
   </component>
@@ -341,7 +368,23 @@
       <option name="project" value="LOCAL" />
       <updated>1777884413147</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="Added monotonic activation maps.">
+      <option name="closed" value="true" />
+      <created>1777962273755</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1777962273755</updated>
+    </task>
+    <task id="LOCAL-00013" summary="Added monotonic activation maps.">
+      <option name="closed" value="true" />
+      <created>1778049059319</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1778049059319</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">

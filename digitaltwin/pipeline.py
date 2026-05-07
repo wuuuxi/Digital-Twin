@@ -26,13 +26,13 @@ from digitaltwin.analysis.feature_injector import (
     inject_emg_features, inject_xsens_features,
     compute_mdf_for_results, compute_segmented_mdf_for_results,
 )
-from digitaltwin.analysis.rbf_fitting import (
+from digitaltwin.analysis.heatmap.rbf_fitting import (
     fit_activation_map, fit_activation_map_3d,
     save_rbf_params, load_rbf_params,
     compute_rmse_percentage, compute_rmse_by_load,
     predict_at,
 )
-from digitaltwin.analysis.variable_load import generate_variable_load
+from digitaltwin.analysis.vload.variable_load import generate_variable_load
 from digitaltwin.vload_pipeline import VLoadPipeline
 from digitaltwin.visualization.plot_curves import CurvePlotter
 from digitaltwin.visualization.heatmap import (
@@ -40,7 +40,7 @@ from digitaltwin.visualization.heatmap import (
     plot_compare_activation_3d, plot_compare_heatmap_2d,
     plot_compare_load_sensitivity_2d,
 )
-from digitaltwin.visualization.variable_load_plot import plot_variable_load_result
+from digitaltwin.visualization.vload.variable_load_plot import plot_variable_load_result
 
 
 class MultiLoadPipeline:

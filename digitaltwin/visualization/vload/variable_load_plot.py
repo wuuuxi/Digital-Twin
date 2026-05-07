@@ -208,7 +208,7 @@ def plot_danger_area(subject, xi, yi, zi, heights, opti_loads, activations,
     training_th : list of float, optional
         低效阈值
     """
-    from digitaltwin.analysis.rbf_fitting import rbf_predict as _rbf_predict
+    from digitaltwin.analysis.heatmap.rbf_fitting import rbf_predict as _rbf_predict
 
     line_styles = ['-', '--', '-.', ':']
     color = ['#1f77b4', '#2ca02c', '#9467bd']
