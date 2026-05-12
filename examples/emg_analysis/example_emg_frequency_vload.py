@@ -35,11 +35,11 @@ def main():
     plot_feature_vs_time_combined(pipeline.results, vload_results, muscles,
                                   feature=FEATURE, feature_label=LABEL)
     plot_feature_vs_position_combined(pipeline.results, vload_results, muscles,
-                                     feature=FEATURE, feature_label=LABEL)
+                                      feature=FEATURE, feature_label=LABEL)
     plot_pos_vel_emg_feature_grid_combined(pipeline.results, vload_results, ['VL', 'RF'],
                                            subject=subject, feature=FEATURE, feature_label=LABEL)
     plot_feature_bar_combined(pipeline.results, vload_results, muscles,
-                             feature=FEATURE, feature_label=LABEL)
+                              feature=FEATURE, feature_label=LABEL)
 
     plt.show()
 

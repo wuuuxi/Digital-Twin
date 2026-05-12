@@ -56,7 +56,7 @@ def plot_variable_load_result(subject, xi, yi, zi, heights, opti_loads,
     ax1 = fig.add_subplot(gs[0, :])
     contour = ax1.contourf(xi, yi, zi, levels=100, cmap='hot')
     plt.colorbar(contour, ax=ax1)
-    ax1.contour(xi, yi, zi, levels=[goal], colors='white',
+    ax1.contour(xi, yi, zi, levels=[goal], colors='black',
                 linewidths=1.5, linestyles='--')
     for i in range(len(epsilons)):
         ax1.plot(heights[i], opti_loads[i], color='#1f77b4',

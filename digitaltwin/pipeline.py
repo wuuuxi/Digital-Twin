@@ -376,10 +376,10 @@ class MultiLoadPipeline:
                           data_len=50, sigma=1.0,
                           num_centers=20, fit_3d=False,
                           movement_types=None,
-                          pspline_n_basis_h=12,
+                          pspline_n_basis_h=20,
                           pspline_n_basis_l=10,
                           pspline_degree=3,
-                          pspline_lambda_h=1.0,
+                          pspline_lambda_h=0.1,
                           pspline_lambda_l=1.0,
                           pspline_solver='auto',
                           pspline_max_iter=2000):
@@ -543,12 +543,31 @@ class MultiLoadPipeline:
 
     # ==================== 变负载优化 ====================
 
-    def run_variable_load_optimization(self, variable_mode=1):
-        self._log("开始变负载优化...")
+    def run_variable_load_optimization(self, variable_mode=1,
+                                       use_pspline=True, tee=None):
+        """
+        Parameters
+        ----------
+        variable_mode : int
+            1=目标跟踪, 2=最小化, 3=效率（仅 RBF 路径）。
+        use_pspline : bool, default True
+            True 时使用 P-spline 曲面（由 generate_heatmaps 自动产出的
+            {musc}_pspline_params.pkl），在 Pyomo 中通过截断幂次基作
+            C² 光滑的符号求值；False 时回退到 RBF 路径。
+        tee : bool or None, default None
+            是否把 ipopt 的求解日志打到 stdout。None 时随 self.debug 自动开关，
+            方便出现“bad status: error”之类问题时直接看到 ipopt 的退出原因。
+        """
+        # if tee is None:
+        #     tee = bool(self.debug)
+        self._log(
+            f"开始变负载优化 (use_pspline={use_pspline}, tee={tee})...")
         generate_variable_load(
             self.subject,
             variable_mode=variable_mode,
             plot_fn=plot_variable_load_result,
+            use_pspline=use_pspline,
+            tee=tee,
         )
         self._log("变负载优化完成。")
 

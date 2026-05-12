@@ -342,9 +342,9 @@ def plot_compare_activation_3d(data, params_rbf, params_pspline,
         surf = ax.plot_surface(xi, yi, zi, cmap=cmap,
                                vmin=z_min, vmax=z_max,
                                edgecolor='none')
-        ax.scatter(data[pos_col], data[load_col], data[emg_col],
-                   c=data[emg_col], cmap=cmap, s=8,
-                   vmin=z_min, vmax=z_max, alpha=0.5)
+        # ax.scatter(data[pos_col], data[load_col], data[emg_col],
+        #            c=data[emg_col], cmap=cmap, s=8,
+        #            vmin=z_min, vmax=z_max, alpha=0.5)
         plt.colorbar(surf, ax=ax, shrink=0.6, label='Activation')
         ax.set_xlabel('Height (m)')
         ax.set_ylabel('Load (kg)')
@@ -427,8 +427,7 @@ def plot_compare_load_sensitivity_2d(params_rbf, params_pspline, label=None,
             ax.set_axis_off()
             continue
         xi, yi, dz = g
-        contour = ax.contourf(xi, yi, dz, levels=100, cmap='RdBu_r',
-                              vmin=-vmax, vmax=vmax)
+        contour = ax.contourf(xi, yi, dz, levels=100, cmap='RdBu_r', vmin=-vmax, vmax=vmax)
         plt.colorbar(contour, ax=ax, label='∂Activation / ∂Load')
         ax.set_xlabel('Height (m)')
         ax.set_ylabel('Load (kg)')

@@ -22,6 +22,6 @@ dependencies:
     - GPUtil>=1.4.0
 
 
-
+conda install conda-forge::ipopt
 conda install opensim-org::opensim
 opensim==4.5

@@ -184,8 +184,10 @@ def _fit_cvxpy(Phi, z, n_h, n_l, D2_h, D2_l,
                lambda_h, lambda_l, increasing):
     import cvxpy as cp
     theta = cp.Variable((n_h, n_l))
-    # row-major flatten via transpose trick：vec(theta^T) = row-major(theta)
-    theta_flat = cp.reshape(cp.transpose(theta), (n_h * n_l,))
+    # 显式 row-major (C order) flatten，匹配 Phi[k, i*n_l + j] = Bh[k,i]*Bl[k,j]
+    # 旧写法 cp.reshape(cp.transpose(theta), (n_h*n_l,)) 依赖 CVXPY 默认 'F' order，
+    # 未来版本默认将改为 'C'，因此显式声明 order='C' 以避免 FutureWarning。
+    theta_flat = cp.reshape(theta, (n_h * n_l,), order='C')
     pred = Phi @ theta_flat
     objective = cp.sum_squares(pred - z) / max(1, len(z))
     if D2_h.shape[0] > 0 and lambda_h > 0:
