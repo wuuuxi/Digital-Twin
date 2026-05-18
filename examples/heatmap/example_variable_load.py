@@ -15,8 +15,8 @@ from digitaltwin import Subject, MultiLoadPipeline
 
 
 def main():
-    subject = Subject('../config/20250409_squat_NCMP001_mvc.json')
-    # subject = Subject('../config/20250409_squat_NCMP001.json')
+    # subject = Subject('../config/20250409_squat_NCMP001_mvc.json')
+    subject = Subject('../config/20260513_squat_FTS09_mvc.json')
     pipeline = MultiLoadPipeline(subject)
     pipeline.debug = True
 

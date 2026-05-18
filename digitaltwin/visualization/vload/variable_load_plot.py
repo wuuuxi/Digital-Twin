@@ -14,15 +14,34 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.patheffects as pe
 from matplotlib.gridspec import GridSpec
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 import os
 
 
+# 白色虚线在 'hot' colormap 的亮端会与背景同化，加一圈黑色描边保证可见性
+_GOAL_LINE_HALO = [pe.withStroke(linewidth=3, foreground='black')]
+
+
+def _apply_goal_halo(cs):
+    """给 contour 返回的 QuadContourSet 加黑色描边。
+
+    兼容 matplotlib 版本：
+      - < 3.10：QuadContourSet.collections 是 LineCollection 列表。
+      - >= 3.10：QuadContourSet 本身是 Collection，没有 .collections 属性。
+    """
+    if hasattr(cs, 'collections'):
+        for coll in cs.collections:
+            coll.set_path_effects(_GOAL_LINE_HALO)
+    else:
+        cs.set_path_effects(_GOAL_LINE_HALO)
+
+
 def plot_variable_load_result(subject, xi, yi, zi, heights, opti_loads,
                               activations, epsilons, idx, goal, title,
-                              result_folder=None):
+                              result_folder=None, over_activate_th=None):
     """
     绘制单肌肉变负载优化结果（热力图 + 优化曲线 + 激活曲线 + 负载曲线）。
 
@@ -45,6 +64,10 @@ def plot_variable_load_result(subject, xi, yi, zi, heights, opti_loads,
         目标激活值
     title : str
     result_folder : str, optional
+    over_activate_th : float, optional
+        过激活阈值。若提供且热力图中存在 zi > over_activate_th 的区域，
+        在 ax1 上用半透明灰色 + 红色等值线把该区域标出，
+        提示规划时不应进入该区域。
     """
     fig = plt.figure(figsize=(5, 7.5))
     plt.subplots_adjust(left=0.152, bottom=0.102, right=0.905, top=0.93)
@@ -56,8 +79,21 @@ def plot_variable_load_result(subject, xi, yi, zi, heights, opti_loads,
     ax1 = fig.add_subplot(gs[0, :])
     contour = ax1.contourf(xi, yi, zi, levels=100, cmap='hot')
     plt.colorbar(contour, ax=ax1)
-    ax1.contour(xi, yi, zi, levels=[goal], colors='black',
-                linewidths=1.5, linestyles='--')
+    cs_goal = ax1.contour(xi, yi, zi, levels=[goal], colors='white',
+                          linewidths=1.5, linestyles='--')
+    _apply_goal_halo(cs_goal)
+
+    # 过激活阴影：zi > over_activate_th 的区域
+    if over_activate_th is not None:
+        th = float(over_activate_th)
+        zmax = float(np.nanmax(zi))
+        if zmax > th:
+            ax1.contourf(xi, yi, zi,
+                         levels=[th, zmax + 1e-3],
+                         colors=['#00000066'])
+            ax1.contour(xi, yi, zi, levels=[th],
+                        colors='red', linewidths=1.5, linestyles='-')
+
     for i in range(len(epsilons)):
         ax1.plot(heights[i], opti_loads[i], color='#1f77b4',
                  linestyle=line_styles[i % 4], label='Optimization')
@@ -263,11 +299,13 @@ def plot_danger_area(subject, xi, yi, zi, heights, opti_loads, activations,
                 Patch(facecolor='none', edgecolor='white',
                       hatch='\\\\', label='Inefficient Area'))
 
-    ax1.contour(xi, yi, zi, levels=[goal], colors='white',
-                linewidths=1.5, linestyles='--')
+    cs_goal = ax1.contour(xi, yi, zi, levels=[goal], colors='white',
+                          linewidths=1.5, linestyles='--')
+    _apply_goal_halo(cs_goal)
     legend_elements.append(
         Line2D([0], [0], color='white', linestyle='--',
-               linewidth=1.5, label='Goal'))
+               linewidth=1.5, label='Goal',
+               path_effects=_GOAL_LINE_HALO))
 
     for i in range(len(epsilons)):
         line, = ax1.plot(heights[i], opti_loads[i], color='#1f77b4',

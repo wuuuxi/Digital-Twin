@@ -4,18 +4,18 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e826f58e-80b6-431c-ae55-618990f064b5" name="更改" comment="Added monotonic and RBF activation map comparison.">
+    <list default="true" id="44977361-f79e-4137-b8be-2fb435dbd7f5" name="Changes" comment="">
       <change afterPath="$PROJECT_DIR$/examples/opensim/example_scaling.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/digitaltwin/analysis/heatmap/monotone_pspline.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/analysis/heatmap/monotone_pspline.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/digitaltwin/analysis/vload/variable_load.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/analysis/vload/variable_load.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/digitaltwin/pipeline.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/pipeline.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/digitaltwin/visualization/heatmap.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/visualization/heatmap.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/subject.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/subject.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/digitaltwin/visualization/vload/variable_load_plot.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/visualization/vload/variable_load_plot.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/examples/config/20250409_squat_NCMP001.json" beforeDir="false" afterPath="$PROJECT_DIR$/examples/config/20250409_squat_NCMP001.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/examples/config/20250409_squat_NCMP001_mvc.json" beforeDir="false" afterPath="$PROJECT_DIR$/examples/config/20250409_squat_NCMP001_mvc.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/data_analysis/example_data_analysis.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/data_analysis/example_data_analysis.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/examples/emg_analysis/example_compute_mvc.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/emg_analysis/example_compute_mvc.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/emg_analysis/example_emg_frequency_vload.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/emg_analysis/example_emg_frequency_vload.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/emg_analysis/example_emg_frequency.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/emg_analysis/example_emg_frequency.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/heatmap/example_heatmap.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/heatmap/example_heatmap.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/examples/heatmap/example_variable_load.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/heatmap/example_variable_load.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
     </list>
@@ -27,13 +27,6 @@
   <component name="ChangesViewManager">
     <option name="groupingKeys">
       <option value="directory" />
-    </option>
-  </component>
-  <component name="FileTemplateManagerImpl">
-    <option name="RECENT_TEMPLATES">
-      <list>
-        <option value="Python Script" />
-      </list>
     </option>
   </component>
   <component name="Git.Settings">
@@ -64,56 +57,13 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
-    "Python.1.executor": "Run",
-    "Python.benchpress_set_beat_vel.executor": "Run",
-    "Python.bp (1).executor": "Run",
-    "Python.bp-metronome.executor": "Run",
-    "Python.bp-visualization.executor": "Run",
-    "Python.bp.executor": "Run",
-    "Python.emg_processor.executor": "Run",
     "Python.example_compute_mvc.executor": "Run",
-    "Python.example_curve_analysis (1).executor": "Run",
-    "Python.example_data_analysis (1).executor": "Run",
     "Python.example_data_analysis.executor": "Run",
-    "Python.example_emg_frequency (1).executor": "Run",
     "Python.example_emg_frequency.executor": "Run",
-    "Python.example_emg_frequency_vload (1).executor": "Run",
-    "Python.example_emg_frequency_vload.executor": "Run",
-    "Python.example_emg_rms.executor": "Run",
-    "Python.example_emg_rms_vload.executor": "Run",
     "Python.example_heatmap.executor": "Run",
-    "Python.example_load_xsens.executor": "Run",
-    "Python.example_load_xsens_vload.executor": "Run",
-    "Python.example_rbf_and_monotonic.executor": "Run",
-    "Python.example_rbf_and_pspline (1).executor": "Run",
-    "Python.example_scaling.executor": "Run",
-    "Python.example_variable_load (1).executor": "Run",
     "Python.example_variable_load.executor": "Run",
-    "Python.example_visualize_data.executor": "Run",
-    "Python.example_vload_comparison (1).executor": "Run",
-    "Python.example_vload_comparison.executor": "Run",
-    "Python.example_vload_comparison_no_xsens.executor": "Run",
-    "Python.example_vload_comparison_xsens.executor": "Run",
-    "Python.example_vload_result.executor": "Run",
-    "Python.example_xsens_to_mot.executor": "Run",
-    "Python.generate_beep_sounds.executor": "Run",
-    "Python.main.executor": "Run",
-    "Python.run (1).executor": "Run",
-    "Python.run.executor": "Run",
-    "Python.run1.executor": "Run",
-    "Python.sq (1).executor": "Run",
-    "Python.sq-metronome (1).executor": "Run",
-    "Python.sq-metronome.executor": "Run",
-    "Python.sq-visualization.executor": "Run",
-    "Python.sq.executor": "Run",
-    "Python.test.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "git-widget-placeholder": "master",
-    "last_opened_file_path": "C:/Users/PC/OneDrive/CUHK/courses/TA-ROSE5720/test/all material",
-    "settings.editor.selected.configurable": "inlay.hints"
+    "git-widget-placeholder": "master"
   }
 }]]></component>
   <component name="RecentsManager">
@@ -148,6 +98,28 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="example_data_analysis" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="Digital Twin" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/examples/data_analysis" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/data_analysis/example_data_analysis.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="example_emg_frequency" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="Digital Twin" />
       <option name="ENV_FILES" value="" />
@@ -162,28 +134,6 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/emg_analysis/example_emg_frequency.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="example_emg_frequency_vload" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="Digital Twin" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/examples/emg_analysis" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/emg_analysis/example_emg_frequency_vload.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -237,19 +187,19 @@
       <method v="2" />
     </configuration>
     <list>
-      <item itemvalue="Python.example_variable_load" />
       <item itemvalue="Python.example_compute_mvc" />
       <item itemvalue="Python.example_emg_frequency" />
-      <item itemvalue="Python.example_emg_frequency_vload" />
+      <item itemvalue="Python.example_data_analysis" />
+      <item itemvalue="Python.example_variable_load" />
       <item itemvalue="Python.example_heatmap" />
     </list>
     <recent_temporary>
       <list>
         <item itemvalue="Python.example_variable_load" />
-        <item itemvalue="Python.example_compute_mvc" />
         <item itemvalue="Python.example_heatmap" />
-        <item itemvalue="Python.example_emg_frequency_vload" />
+        <item itemvalue="Python.example_compute_mvc" />
         <item itemvalue="Python.example_emg_frequency" />
+        <item itemvalue="Python.example_data_analysis" />
       </list>
     </recent_temporary>
   </component>
@@ -263,150 +213,15 @@
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="应用程序级" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="默认任务">
-      <changelist id="e826f58e-80b6-431c-ae55-618990f064b5" name="更改" comment="" />
-      <created>1769674644471</created>
+      <created>1779076245125</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1769674644471</updated>
+      <updated>1779076245125</updated>
     </task>
-    <task id="LOCAL-00001" summary="Initial commit">
-      <option name="closed" value="true" />
-      <created>1772620376332</created>
-      <option name="number" value="00001" />
-      <option name="presentableId" value="LOCAL-00001" />
-      <option name="project" value="LOCAL" />
-      <updated>1772620376332</updated>
-    </task>
-    <task id="LOCAL-00002" summary="Add code about data processing.">
-      <option name="closed" value="true" />
-      <created>1773913054301</created>
-      <option name="number" value="00002" />
-      <option name="presentableId" value="LOCAL-00002" />
-      <option name="project" value="LOCAL" />
-      <updated>1773913054301</updated>
-    </task>
-    <task id="LOCAL-00003" summary="Integrated data processing program.">
-      <option name="closed" value="true" />
-      <created>1773922947348</created>
-      <option name="number" value="00003" />
-      <option name="presentableId" value="LOCAL-00003" />
-      <option name="project" value="LOCAL" />
-      <updated>1773922947348</updated>
-    </task>
-    <task id="LOCAL-00004" summary="Add heatmap.">
-      <option name="closed" value="true" />
-      <created>1775115328318</created>
-      <option name="number" value="00004" />
-      <option name="presentableId" value="LOCAL-00004" />
-      <option name="project" value="LOCAL" />
-      <updated>1775115328318</updated>
-    </task>
-    <task id="LOCAL-00005" summary="Add emg median frequency.">
-      <option name="closed" value="true" />
-      <created>1775658658907</created>
-      <option name="number" value="00005" />
-      <option name="presentableId" value="LOCAL-00005" />
-      <option name="project" value="LOCAL" />
-      <updated>1775658658907</updated>
-    </task>
-    <task id="LOCAL-00006" summary="Added emg median frequency and RMS.&#10;Changed the format of config files.">
-      <option name="closed" value="true" />
-      <created>1775729491355</created>
-      <option name="number" value="00006" />
-      <option name="presentableId" value="LOCAL-00006" />
-      <option name="project" value="LOCAL" />
-      <updated>1775729491355</updated>
-    </task>
-    <task id="LOCAL-00007" summary="Added Xsens data processing.">
-      <option name="closed" value="true" />
-      <created>1775812536014</created>
-      <option name="number" value="00007" />
-      <option name="presentableId" value="LOCAL-00007" />
-      <option name="project" value="LOCAL" />
-      <updated>1775812536014</updated>
-    </task>
-    <task id="LOCAL-00008" summary="Added MVC data processing.">
-      <option name="closed" value="true" />
-      <created>1776948445748</created>
-      <option name="number" value="00008" />
-      <option name="presentableId" value="LOCAL-00008" />
-      <option name="project" value="LOCAL" />
-      <updated>1776948445748</updated>
-    </task>
-    <task id="LOCAL-00009" summary="Added MVC data processing.">
-      <option name="closed" value="true" />
-      <created>1777117815581</created>
-      <option name="number" value="00009" />
-      <option name="presentableId" value="LOCAL-00009" />
-      <option name="project" value="LOCAL" />
-      <updated>1777117815581</updated>
-    </task>
-    <task id="LOCAL-00010" summary="Changed movement types of data used for activation map.">
-      <option name="closed" value="true" />
-      <created>1777535432140</created>
-      <option name="number" value="00010" />
-      <option name="presentableId" value="LOCAL-00010" />
-      <option name="project" value="LOCAL" />
-      <updated>1777535432140</updated>
-    </task>
-    <task id="LOCAL-00011" summary="Added monotonic activation maps.">
-      <option name="closed" value="true" />
-      <created>1777884413147</created>
-      <option name="number" value="00011" />
-      <option name="presentableId" value="LOCAL-00011" />
-      <option name="project" value="LOCAL" />
-      <updated>1777884413147</updated>
-    </task>
-    <task id="LOCAL-00012" summary="Added monotonic activation maps.">
-      <option name="closed" value="true" />
-      <created>1777962273755</created>
-      <option name="number" value="00012" />
-      <option name="presentableId" value="LOCAL-00012" />
-      <option name="project" value="LOCAL" />
-      <updated>1777962273755</updated>
-    </task>
-    <task id="LOCAL-00013" summary="Added monotonic activation maps.">
-      <option name="closed" value="true" />
-      <created>1778049059319</created>
-      <option name="number" value="00013" />
-      <option name="presentableId" value="LOCAL-00013" />
-      <option name="project" value="LOCAL" />
-      <updated>1778049059319</updated>
-    </task>
-    <task id="LOCAL-00014" summary="Added monotonic and RBF activation map comparison.">
-      <option name="closed" value="true" />
-      <created>1778161029451</created>
-      <option name="number" value="00014" />
-      <option name="presentableId" value="LOCAL-00014" />
-      <option name="project" value="LOCAL" />
-      <updated>1778161029451</updated>
-    </task>
-    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
-  <component name="Vcs.Log.Tabs.Properties">
-    <option name="TAB_STATES">
-      <map>
-        <entry key="MAIN">
-          <value>
-            <State />
-          </value>
-        </entry>
-      </map>
-    </option>
-  </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Initial commit" />
-    <MESSAGE value="Add code about data processing." />
-    <MESSAGE value="Integrated data processing program." />
-    <MESSAGE value="Add heatmap." />
-    <MESSAGE value="Add emg median frequency." />
-    <MESSAGE value="Added emg median frequency and RMS.&#10;Changed the format of config files." />
-    <MESSAGE value="Added Xsens data processing." />
-    <MESSAGE value="Added MVC data processing." />
-    <MESSAGE value="Changed movement types of data used for activation map." />
-    <MESSAGE value="Added monotonic activation maps." />
-    <MESSAGE value="Added monotonic and RBF activation map comparison." />
-    <option name="LAST_COMMIT_MESSAGE" value="Added monotonic and RBF activation map comparison." />
+    <MESSAGE value="Added basic variable load planning." />
+    <option name="LAST_COMMIT_MESSAGE" value="Added basic variable load planning." />
   </component>
 </project>

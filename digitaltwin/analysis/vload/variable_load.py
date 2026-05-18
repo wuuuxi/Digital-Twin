@@ -46,7 +46,7 @@ def _rbf_predict_pyomo(x, y, centers, weights, scaler, sigma):
 #
 # 思路：张量积 2D B-spline 在固定高度 h 处退化为关于负载 l 的
 # 1D 三次 B-spline，即 f(l) = Σ_m c_m * B^l_m(l)。任何 C^2 三次样条都
-# 可以等价写成“截断幂次基”形式：
+# 可以等价写成"截断幂次基"形式：
 #     f(l) = A + B*l + C*l^2 + D*l^3
 #          + Σ_k jump_k * max(0, l - break_k)^3
 # 而 max(0, u)^3 本身就是 C^2 光滑的，用 sqrt(u^2 + eps) 做一个极小
@@ -150,7 +150,7 @@ def _warm_start_from_pspline(pspline_list, w, g, xi, l_min, l_max,
       2. 对每个高度 xi\[i\]，计算所有肌肉在 grid 上的加权偏差
          dev\[i, k\] = Σ_j w_j \* |a_j(xi\[i\], l_grid\[k\]) - g_j|
          取 argmin 作为 l_init\[i\]。
-      3. 把 dev_min\[i\] < tol 的点标为“匹配成功”，取最长一段连续
+      3. 把 dev_min\[i\] < tol 的点标为"匹配成功"，取最长一段连续
          匹配区间 \[i_start, i_end\]；其以前用 l_init\[i_start\] 填充，
          其以后用 l_init\[i_end\] 填充（避免初始值跳变冲撞 epsilon 约束）。
       4. 同时返回 a_init\[i, j\] = a_j(xi\[i\], l_init\[i\])，以保证等式约束
@@ -179,7 +179,7 @@ def _warm_start_from_pspline(pspline_list, w, g, xi, l_min, l_max,
     l_init = l_grid[k_best]
     dev_min = dev[np.arange(timestep_num), k_best]
 
-    # “匹配成功”阈值：相对于加权目标幅度
+    # "匹配成功"阈值：相对于加权目标幅度
     target_scale = sum(float(w[j]) * max(float(g[j]), 1e-3)
                        for j in range(muscle_num))
     tol = match_tol_ratio * max(target_scale, 1e-6)
@@ -374,12 +374,14 @@ def variable_load_optimization_pspline(pspline_params_list, w, g=0.0, s=1, c=0,
                                         epsilon=0.5, max_iter=20000,
                                         h_min=1.35, h_max=2.05,
                                         timestep_num=100,
-                                        l_min=20, l_max=70, tee=False):
+                                        l_min=20, l_max=70, tee=False,
+                                        safety_pspline_params_list=None,
+                                        safety_s=None):
     """
     变负载优化（P-spline 版）：用 monotone P-spline 拟合曲面作为 Pyomo 符号约束。
 
     实现路径：对每个时间步 i，高度 xi[i] 是常量，曲面 a(xi[i], ·) 退化为
-    关于 l 的 1D 三次 B-spline。先数值地转为“截断幂次基”表示：
+    关于 l 的 1D 三次 B-spline。先数值地转为"截断幂次基"表示：
         a(xi[i], l) = A + B*l + C*l^2 + D*l^3
                     + Σ_k jump_k * max(0, l - break_k)^3
     在 Pyomo 中用 ((u + sqrt(u^2 + eps))/2)^3 实现 max(0, u)^3 的 C^∞ 光滑版本，
@@ -388,8 +390,18 @@ def variable_load_optimization_pspline(pspline_params_list, w, g=0.0, s=1, c=0,
     Parameters
     ----------
     pspline_params_list : list of dict
-        每块肌肉的 P-spline 参数（来自 monotone_pspline.fit_monotone_pspline_2d
-        的返回字典，含 'theta', 'knots_h', 'knots_l', 'degree' 等键）。
+        目标肌肉的 P-spline 参数列表（参与目标函数）。
+    w : list
+        目标肌肉权重。
+    g : float or list
+        目标激活值。
+    s : float or list
+        目标肌肉激活上限阈值。
+    safety_pspline_params_list : list of dict, optional
+        安全约束肌肉的 P-spline 参数列表（不参与目标函数，只施加激活上限约束）。
+        在优化目标肌肉时，这些肌肉的激活也会被计算并限制在 safety_s 以内。
+    safety_s : list of float, optional
+        与 safety_pspline_params_list 对应的激活上限阈值。
     其它参数同 variable_load_optimization。
     """
     muscle_num = len(pspline_params_list)
@@ -404,12 +416,23 @@ def variable_load_optimization_pspline(pspline_params_list, w, g=0.0, s=1, c=0,
 
     xi = np.linspace(h_min, h_max, timestep_num)
 
-    # 预算每个 (时间步 i, 肌肉 j) 处曲面在 l 上的截断幂次系数
+    # 预算每个 (时间步 i, 目标肌肉 j) 处曲面在 l 上的截断幂次系数
     coefs_table = [[None] * muscle_num for _ in range(timestep_num)]
     for i in range(timestep_num):
         for j in range(muscle_num):
             coefs_table[i][j] = _pspline_to_trunc_power(
                 pspline_params_list[j], float(xi[i]))
+
+    # 预算安全约束肌肉的截断幂次系数
+    safety_num = len(safety_pspline_params_list) if safety_pspline_params_list else 0
+    if safety_num > 0:
+        if safety_s is None:
+            safety_s = [1.0] * safety_num
+        safety_coefs = [[None] * safety_num for _ in range(timestep_num)]
+        for i in range(timestep_num):
+            for k in range(safety_num):
+                safety_coefs[i][k] = _pspline_to_trunc_power(
+                    safety_pspline_params_list[k], float(xi[i]))
 
     # 从曲面上查 a ≈ g 的负载作为 warm start；并 clip 到 [0, s_j] 内
     # 避免 a_init 负值或超上限导致 ipopt 起步就不可行。
@@ -438,6 +461,22 @@ def variable_load_optimization_pspline(pspline_params_list, w, g=0.0, s=1, c=0,
             if i > 0:
                 model.constr.add(model.l[i] <= model.l[i - 1] + epsilon)
                 model.constr.add(model.l[i] >= model.l[i - 1] - epsilon)
+
+    # ---- 安全约束肌肉：不参与目标函数，只施加激活上限 ----
+    # 对于每个安全肌肉 k，在每个时间步 i 处：
+    #   a_safety[i, k] = P-spline_k(h_i, l_i)   （激活等式约束）
+    #   a_safety[i, k] <= safety_s[k]             （过激活上限）
+    if safety_num > 0:
+        model.K = RangeSet(0, safety_num - 1)
+        model.a_safety = Var(model.I, model.K, within=NonNegativeReals,
+                             initialize=0.0)
+        for i in model.I:
+            for k in model.K:
+                base_s, breaks_s, jumps_s = safety_coefs[i][k]
+                model.constr.add(
+                    model.a_safety[i, k] == _pspline_predict_pyomo(
+                        model.l[i], base_s, breaks_s, jumps_s))
+                model.constr.add(model.a_safety[i, k] <= float(safety_s[k]))
 
     # 目标函数：用松弛变量 dev[i, j] 把 |a[i, j] - g[j]| 拆掉，
     # 让 ipopt 看到的全是 C^∞ 光滑表达式、避免 abs 带来的 kink。
@@ -475,7 +514,10 @@ def variable_load_optimization_pspline(pspline_params_list, w, g=0.0, s=1, c=0,
 def one_muscle_variable_load(subject, title, muscle_files, goal, epsilons,
                               max_iter, vload_dir, variable_mode=1,
                               plot_fn=None, rbf_predict_fn=None,
-                              use_pspline=False, tee=False):
+                              use_pspline=False, tee=False,
+                              over_activate_th=None,
+                              safety_muscle_files=None,
+                              safety_thresholds=None):
     """
     单肌肉（或肌肉组合）的变负载优化 + 绘图 + CSV 导出。
 
@@ -505,6 +547,16 @@ def one_muscle_variable_load(subject, title, muscle_files, goal, epsilons,
     use_pspline : bool, default False
         True 时使用 P-spline 曲面（从 {musc}_pspline_params.pkl 加载并在
         Pyomo 中以截断幂次基作 C² 光滑的符号求值）；False 时使用 RBF。
+    over_activate_th : float or list of float, optional
+        目标肌肉的过激活上限。标量 → 应用到组内所有肌肉；列表 → 与 muscle_files 一一对应。
+        在优化中作为 a[i, j] <= s[j] 的硬约束；在绘图中作为阴影区的下界。
+        默认 None → 退化为 s=1（即不施加额外上限）。
+    safety_muscle_files : list of str, optional
+        安全约束肌肉的 RBF 参数文件名列表（use_pspline=True 时自动转换为 pspline）。
+        这些肌肉不参与目标函数，但在优化过程中其激活被计算并限制在
+        safety_thresholds 以内，防止在追踪目标肌肉时使其他肌肉过激活。
+    safety_thresholds : list of float, optional
+        与 safety_muscle_files 一一对应的激活上限阈值。
     """
     from digitaltwin.analysis.heatmap.rbf_fitting import rbf_predict as _rbf_predict
     rbf_predict_fn = rbf_predict_fn or _rbf_predict
@@ -513,7 +565,7 @@ def one_muscle_variable_load(subject, title, muscle_files, goal, epsilons,
     base = (subject.muscle_folder if subject.load_previous_data
             else os.path.join(subject.result_folder, 'heatmap/params'))
 
-    # ---- 加载曲面参数 ----
+    # ---- 加载目标肌肉曲面参数 ----
     if use_pspline:
         psp_files = [
             f.replace('_rbf_params.pkl', '_pspline_params.pkl')
@@ -534,11 +586,38 @@ def one_muscle_variable_load(subject, title, muscle_files, goal, epsilons,
                 sigma.append(p['sigma'])
         rbf_params = [centers, weights, scaler, sigma]
 
+    # ---- 加载安全约束肌肉曲面参数（use_pspline=True 时有效）----
+    # 安全肌肉仅在 P-spline 路径下加载，因为 RBF 路径暂不支持多肌肉安全约束。
+    safety_pspline_list = None
+    safety_s_vals = None
+    if use_pspline and safety_muscle_files:
+        safety_pspline_list = []
+        for file in safety_muscle_files:
+            sp_file = file.replace('_rbf_params.pkl', '_pspline_params.pkl')
+            with open(os.path.join(base, sp_file), 'rb') as f:
+                safety_pspline_list.append(pickle.load(f))
+        safety_s_vals = (list(safety_thresholds)
+                         if safety_thresholds else [1.0] * len(safety_muscle_files))
+
+    # ---- 整理 over_activate 阈值 → s ----
+    if over_activate_th is None:
+        s_val = 1
+    elif isinstance(over_activate_th, (int, float)):
+        s_val = [float(over_activate_th)] * len(muscle_files)
+    else:
+        assert len(over_activate_th) == len(muscle_files), (
+            f"over_activate_th 长度 {len(over_activate_th)} 与 muscle_files "
+            f"长度 {len(muscle_files)} 不匹配")
+        s_val = [float(x) for x in over_activate_th]
+
     # ---- 执行优化 ----
     heights, opti_loads, activations = [], [], []
     for eps in epsilons:
+        load_min, load_max = _get_load_range(subject)
         kw = dict(w=[1] * len(muscle_files), epsilon=eps,
-                  max_iter=max_iter, h_min=height_min, h_max=height_max)
+                  max_iter=max_iter, h_min=height_min, h_max=height_max,
+                  l_min=load_min, l_max=load_max,
+                  s=s_val)
         if variable_mode != 2:
             kw['g'] = goal
 
@@ -547,7 +626,10 @@ def one_muscle_variable_load(subject, title, muscle_files, goal, epsilons,
                 raise NotImplementedError(
                     'variable_mode=3 (效率最大化) 当前仅在 RBF 路径上实现。')
             h, l, a = variable_load_optimization_pspline(
-                pspline_list, tee=tee, **kw)
+                pspline_list, tee=tee,
+                safety_pspline_params_list=safety_pspline_list,
+                safety_s=safety_s_vals,
+                **kw)
         else:
             opt_fn = (variable_load_optimization_max if variable_mode == 3
                       else variable_load_optimization)
@@ -583,16 +665,16 @@ def one_muscle_variable_load(subject, title, muscle_files, goal, epsilons,
                     (xi.flatten(), yi.flatten()),
                     centers[j], weights[j], scaler[j], sigma[j]
                 ).reshape(xi.shape)
-            # 诊断用：检查 goal 是否落在曲面取值范围内，
-            # 否则 ax1.contour(levels=[goal]) 会静默不画白色虚线。
-            zi_min = float(np.nanmin(zi))
-            zi_max = float(np.nanmax(zi))
-            in_range = zi_min <= goal <= zi_max
-            print(f'[vload-plot] {title}[m{j}] '
-                  f'zi.min={zi_min:.3f}, zi.max={zi_max:.3f}, '
-                  f'goal={goal} -> goal_in_range={in_range}')
+            # 当前肌肉对应的过激活阈值（标量 / 列表都展开成单值）
+            if isinstance(s_val, list):
+                th_j = s_val[j]
+            elif isinstance(s_val, (int, float)) and s_val < 1:
+                th_j = float(s_val)
+            else:
+                th_j = None
             plot_fn(subject, xi, yi, zi, heights, opti_loads,
-                    activations, epsilons, j, goal, title, vload_dir)
+                    activations, epsilons, j, goal, title, vload_dir,
+                    over_activate_th=th_j)
 
     return heights, opti_loads, activations
 
@@ -601,6 +683,10 @@ def generate_variable_load(subject, variable_mode=1, plot_fn=None,
                             use_pspline=False, tee=False):
     """
     批量生成变负载优化结果（对 subject.titles 中的所有肌肉）。
+
+    每块目标肌肉单独优化时，其余所有 titles 中的肌肉会同时作为安全约束
+    加入优化模型（use_pspline=True 路径），确保追踪一块肌肉的目标激活时
+    不会导致其他肌肉过激活（超过各自的 over_activate_threshold）。
 
     Parameters
     ----------
@@ -616,6 +702,7 @@ def generate_variable_load(subject, variable_mode=1, plot_fn=None,
     goals = subject.goal
     max_iter = subject.max_iter or [10000] * len(titles)
     epsilons = subject.epsilons or [0.5]
+    over_th_list = getattr(subject, 'over_activate_threshold', None)
 
     vload_dir = os.path.join(subject.result_folder, 'vload')
     os.makedirs(vload_dir, exist_ok=True)
@@ -628,10 +715,53 @@ def generate_variable_load(subject, variable_mode=1, plot_fn=None,
             title = titles[i]
             muscle_files = [f'{titles[i]}_rbf_params.pkl']
 
+        # 当前 title 对应的过激活阈值：标量 → 组内广播；列表 → 一一对应
+        if over_th_list is not None:
+            th_i = over_th_list[i]
+            if isinstance(titles[i], list):
+                if isinstance(th_i, (int, float)):
+                    th_for_title = [float(th_i)] * len(titles[i])
+                else:
+                    assert len(th_i) == len(titles[i]), (
+                        f"over_activate_threshold[{i}] 长度与 titles[{i}] "
+                        f"不匹配")
+                    th_for_title = [float(x) for x in th_i]
+            else:
+                th_for_title = [float(th_i)]
+        else:
+            th_for_title = None
+
+        # ---- 构建安全约束肌肉列表（当前目标以外的其他所有 titles 肌肉）----
+        # 仅在 P-spline 路径下传入，RBF 路径暂不支持多肌肉安全约束。
+        safety_files = []
+        safety_ths = []
+        if use_pspline:
+            for k in range(len(titles)):
+                if k == i:
+                    continue  # 跳过当前目标肌肉（已在主优化中约束）
+                if isinstance(titles[k], list):
+                    for mk, t in enumerate(titles[k]):
+                        safety_files.append(f'{t}_rbf_params.pkl')
+                        th_k = over_th_list[k] if over_th_list else None
+                        if th_k is None:
+                            safety_ths.append(1.0)
+                        elif isinstance(th_k, (int, float)):
+                            safety_ths.append(float(th_k))
+                        else:
+                            safety_ths.append(float(th_k[mk]))
+                else:
+                    safety_files.append(f'{titles[k]}_rbf_params.pkl')
+                    th_k = over_th_list[k] if over_th_list else None
+                    safety_ths.append(
+                        float(th_k) if th_k is not None else 1.0)
+
         one_muscle_variable_load(
             subject, title, muscle_files, goals[i], epsilons,
             max_iter[i], vload_dir, variable_mode, plot_fn=plot_fn,
-            use_pspline=use_pspline, tee=tee)
+            use_pspline=use_pspline, tee=tee,
+            over_activate_th=th_for_title,
+            safety_muscle_files=safety_files if safety_files else None,
+            safety_thresholds=safety_ths if safety_ths else None)
 
 
 # ============================================================

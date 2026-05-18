@@ -9,7 +9,8 @@ from digitaltwin import Subject, MultiLoadPipeline
 
 
 def main():
-    subject = Subject('../config/20251009_BenchPress_Yuetian.json')
+    # subject = Subject('../config/20251009_BenchPress_Yuetian.json')
+    subject = Subject('../config/20260513_squat_FTS09.json')
     # subject = Subject('../config/20250409_squat_NCMP001.json')
     pipeline = MultiLoadPipeline(subject)
     pipeline.debug = True
@@ -18,11 +19,11 @@ def main():
 
     # 调试可视化
     pipeline.visualize_alignment()            # 对齐可视化
-    pipeline.visualize_movement_segments()    # 运动切片
+    # pipeline.visualize_movement_segments()    # 运动切片
     pipeline.visualize_test_3d_scatter()      # 3D散点图
 
-    # # 曲线与肌肉分析
-    # pipeline.plot()                                               # 平均曲线
+    # 曲线与肌肉分析
+    pipeline.plot()                                               # 平均曲线
     # pipeline.visualize_muscle_analysis()                          # 肌肉分析
     # pipeline.visualize_analyze_kinematic_emg_errors_by_position() # 位置误差
     # pipeline.analyze_muscle_kinematic_errors_individual()         # 单肌肉误差

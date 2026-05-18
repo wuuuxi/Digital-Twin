@@ -31,8 +31,8 @@ from digitaltwin.visualization.mvc_plot import (
 
 def main():
     # --- 配置 ---
-    config_path = '../config/20250409_squat_NCMP001.json'
-    # config_path = '../config/20250512_squat_Yuchen.json'
+    # config_path = '../config/20250409_squat_NCMP001.json'
+    config_path = '../config/20260513_squat_FTS09.json'
     subject = Subject(config_path)
 
     # --- 收集所有 EMG 文件 ---
@@ -78,7 +78,7 @@ def main():
     print(f'MVC 已保存到新文件: {mvc_config_path}')
 
     # --- 可视化参数 ---
-    muscles_to_plot = subject.musc_label[:6]  # 前 6 块肌肉
+    muscles_to_plot = subject.musc_label[:12]  # 前 6 块肌肉
     file_names = [f for f in all_emg_files if f in per_file]
 
     if not file_names or not muscles_to_plot:

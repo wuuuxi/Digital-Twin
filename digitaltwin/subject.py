@@ -122,11 +122,9 @@ class Subject:
         print(f"MVC 计算完成: {self.musc_mvc[:6]}...")
 
         # 写回 JSON
-        base, ext = os.path.splitext(self.config_path)
-        mvc_path = f'{base}_mvc{ext}'
         self.config.setdefault('emg_settings', {})['musc_mvc'] = self.musc_mvc
-        self.save_config(save_path=mvc_path)
-        print(f"MVC 已保存到新文件: {mvc_path}")
+        self.save_config()
+        print(f"MVC 已写回 JSON: {self.config_path}")
 
     # ------------------------------------------------------------------
     #  配置解析
@@ -200,6 +198,11 @@ class Subject:
         self.load_range = heatmap.get("load_range", None)
         self.titles = heatmap.get("titles", None)
         self.goal = heatmap.get("goal", None)
+        # 每条 title 对应的过激活阈值（标量或与 titles[i] 子列表等长的列表）
+        # 变负载优化时强制 a[i, j] <= over_activate_threshold[j]，
+        # 可视化时把热力图中超过该阈值的区域加阴影。
+        self.over_activate_threshold = heatmap.get(
+            "over_activate_threshold", None)
         self.epsilons = heatmap.get("epsilons", None)
         self.max_iter = heatmap.get("max_iter", None)
         self.plot_muscle_idx = heatmap.get("plot_muscle_idx", [])
@@ -222,6 +225,10 @@ class Subject:
         if self.titles and self.goal:
             assert len(self.titles) == len(self.goal), \
                 f"titles ({len(self.titles)}) 和 goal ({len(self.goal)}) 长度不匹配"
+        if self.titles and self.over_activate_threshold is not None:
+            assert len(self.titles) == len(self.over_activate_threshold), (
+                f"titles ({len(self.titles)}) 和 over_activate_threshold "
+                f"({len(self.over_activate_threshold)}) 长度不匹配")
 
         # ---- 自动计算 MVC（如果 musc_mvc 未在 JSON 中指定） ----
         if self.musc_mvc is None or len(self.musc_mvc) == 0:
