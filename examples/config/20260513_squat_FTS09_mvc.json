@@ -1,0 +1,110 @@
+{
+  "experiment_label": "20260513_squat_FTS09",
+  "folder": "C:/Users/PC/OneDrive/Experiment/20260513_HKSI_squat/",
+  "emg_settings": {
+    "fs": 1000,
+    "emg_folder": "EMG",
+    "mvc_file": [
+      "EMG_FTS09_Squat_IK0.3_1_2026-05-13_05-25-52.csv",
+      "EMG_FTS09_Squat_IK0.15_1_2026-05-13_05-29-20.csv",
+      "EMG_FTS09_Squat_IM_1_2026-05-13_05-34-13.csv"
+    ],
+    "musc_label": [
+      "LTA",
+      "LGL",
+      "LSOL",
+      "LFibLon",
+      "LVL",
+      "LRF",
+      "LVM",
+      "LAddl",
+      "LBF",
+      "LST",
+      "LGlutMax",
+      "LGlutMed",
+      "LTA",
+      "LGL",
+      "LSOL",
+      "LFibLon",
+      "LVL",
+      "LRF",
+      "LVM",
+      "LAddl",
+      "LBF",
+      "LST",
+      "LGlutMax",
+      "LGlutMed"
+    ],
+    "musc_mvc": [
+      0.1144,
+      0.0461,
+      0.0619,
+      0.0342,
+      0.2673,
+      0.1798,
+      0.3053,
+      0.0463,
+      0.0459,
+      0.0297,
+      0.1071,
+      0.0335,
+      0.1123,
+      0.06,
+      0.0549,
+      0.0466,
+      0.0287,
+      0.1565,
+      0.2789,
+      0.0684,
+      0.0578,
+      0.0874,
+      0.0657,
+      0.1126
+    ]
+  },
+  "motion_settings": {
+    "motion_flag": "all",
+    "target_motion": "squat",
+    "remove_leading_zeros": true,
+    "turn_position": true
+  },
+  "modeling_file": {
+    "emg_folder": "emg",
+    "data": {
+      "20": {
+        "robot_file": "robot/RobotUdp_FTS09_Squat_15p_3_20260513_165830.csv",
+        "emg_file": "EMG_FTS09_Squat_15p_1_2026-05-13_04-58-13.csv"
+      },
+      "38": {
+        "robot_file": "robot/RobotUdp_FTS09_Squat_30p_20260513_170034.csv",
+        "emg_file": "EMG_FTS09_Squat_30p_1_2026-05-13_05-00-23.csv"
+      },
+      "56": {
+        "robot_file": "robot/RobotUdp_FTS09_Squat_45p_20260513_170310.csv",
+        "emg_file": "EMG_FTS09_Squat_45p_1_2026-05-13_05-02-42.csv"
+      },
+      "75": {
+        "robot_file": "robot/RobotUdp_FTS09_Squat_60p_20260513_170907.csv",
+        "emg_file": "EMG_FTS09_Squat_60p_1_2026-05-13_05-08-52.csv"
+      },
+      "94": {
+        "robot_file": "robot/RobotUdp_FTS09_Squat_75p_20260513_171545.csv",
+        "emg_file": "EMG_FTS09_Squat_75p_1_2026-05-13_05-15-37.csv"
+      },
+      "106": {
+        "robot_file": "robot/RobotUdp_FTS09_Squat_85p_20260513_171938.csv",
+        "emg_file": "EMG_FTS09_Squat_85p_1_2026-05-13_05-19-31.csv"
+      }
+    }
+  },
+  "heatmap_settings": {
+    "muscle_folder": "result/20250409_squat_NCMP001/20250409_164021",
+    "height_range": [1.41, 1.909],
+    "load_range": [20, 100],
+    "titles": ["LFibLon", "LGL", "LVL"],
+    "goal": [0.44, 0.46, 0.49],
+    "over_activate_threshold": [0.7, 0.7, 0.7],
+    "epsilons": [2],
+    "max_iter": [10000, 10000, 10000]
+  }
+}
