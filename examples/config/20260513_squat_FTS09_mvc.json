@@ -5,8 +5,6 @@
     "fs": 1000,
     "emg_folder": "EMG",
     "mvc_file": [
-      "EMG_FTS09_Squat_IK0.3_1_2026-05-13_05-25-52.csv",
-      "EMG_FTS09_Squat_IK0.15_1_2026-05-13_05-29-20.csv",
       "EMG_FTS09_Squat_IM_1_2026-05-13_05-34-13.csv"
     ],
     "musc_label": [
@@ -22,18 +20,18 @@
       "LST",
       "LGlutMax",
       "LGlutMed",
-      "LTA",
-      "LGL",
-      "LSOL",
-      "LFibLon",
-      "LVL",
-      "LRF",
-      "LVM",
-      "LAddl",
-      "LBF",
-      "LST",
-      "LGlutMax",
-      "LGlutMed"
+      "RTA",
+      "RGL",
+      "RSOL",
+      "RFibLon",
+      "RVL",
+      "RRF",
+      "RVM",
+      "RAddl",
+      "RBF",
+      "RST",
+      "RGlutMax",
+      "RGlutMed"
     ],
     "musc_mvc": [
       0.1144,
@@ -71,6 +69,14 @@
   "modeling_file": {
     "emg_folder": "emg",
     "data": {
+      "0.3": {
+        "robot_file": "robot/RobotUdp_FTS09_Squat_IK0.3_20260513_172556.csv",
+        "emg_file": "EMG_FTS09_Squat_IK0.3_1_2026-05-13_05-25-52.csv"
+      },
+      "0.15": {
+        "robot_file": "robot/RobotUdp_FTS09_Squat_IK0.15_20260513_172927.csv",
+        "emg_file": "EMG_FTS09_Squat_IK0.15_1_2026-05-13_05-29-20.csv"
+      },
       "20": {
         "robot_file": "robot/RobotUdp_FTS09_Squat_15p_3_20260513_165830.csv",
         "emg_file": "EMG_FTS09_Squat_15p_1_2026-05-13_04-58-13.csv"
@@ -99,12 +105,36 @@
   },
   "heatmap_settings": {
     "muscle_folder": "result/20250409_squat_NCMP001/20250409_164021",
-    "height_range": [1.41, 1.909],
-    "load_range": [20, 100],
-    "titles": ["LFibLon", "LGL", "LVL"],
-    "goal": [0.44, 0.46, 0.49],
-    "over_activate_threshold": [0.7, 0.7, 0.7],
-    "epsilons": [2],
-    "max_iter": [10000, 10000, 10000]
+    "height_range": [
+      1.41,
+      1.909
+    ],
+    "load_range": [
+      20,
+      100
+    ],
+    "titles": [
+      "LFibLon",
+      "LGL",
+      "LVL"
+    ],
+    "goal": [
+      0.62,
+      0.48,
+      0.68
+    ],
+    "over_activate_threshold": [
+      0.8,
+      0.8,
+      0.8
+    ],
+    "epsilons": [
+      1
+    ],
+    "max_iter": [
+      10000,
+      10000,
+      10000
+    ]
   }
 }

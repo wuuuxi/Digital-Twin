@@ -263,6 +263,17 @@ class MultiLoadPipeline:
         return self.plotter.analyze_muscle_kinematic_errors_individual(
             results=self.results, subject=self.subject, **kwargs)
 
+    def visualize_load_estimation(self, movement_types=None, **kwargs):
+        """可视化估算负载（三联图）：位置-速度 / 位置-估算负载 / 位置-交互力均值。"""
+        if movement_types is None:
+            movement_types = ['upward']
+        cutted = self._collect_cutted_data(movement_types=movement_types)
+        if cutted is not None:
+            cutted = cutted.copy()
+            cutted['estimated_load'] = MultiLoadPipeline.estimate_load_from_df(cutted)
+        self.plotter.plot_load_estimation(
+            cutted=cutted, subject=self.subject, **kwargs)
+
     # ==================== 数据访问 ====================
 
     def get_muscle_data(self, muscle_name, load_weights=None):
@@ -541,6 +552,152 @@ class MultiLoadPipeline:
         self._log(f"热力图已保存至 {save_dir}")
         return all_params
 
+    # ==================== 以估算负载生成热力图 ====================
+
+    def generate_heatmaps_with_estimated_load(self, muscles=None, save_dir=None,
+                                               movement_types=None, g=9.81,
+                                               data_len=50, sigma=1.0,
+                                               num_centers=20,
+                                               pspline_n_basis_h=20,
+                                               pspline_n_basis_l=10,
+                                               pspline_degree=3,
+                                               pspline_lambda_h=0.1,
+                                               pspline_lambda_l=1.0,
+                                               pspline_solver='auto',
+                                               pspline_max_iter=2000):
+        """
+        以逐样本估算负载替代 JSON 固定负载，生成肌肉激活热力图。
+
+        估算公式：
+            estimated_load (kg) = (force_l + force_r) / ((acc_l + acc_r) / 2 + g)
+
+        每块肌肉生成：
+          - RBF vs P-spline 原始散点 + 拟合曲面对比图 (1×3)
+          - 2D 热力图对比图
+
+        Parameters
+        ----------
+        muscles : list[str], optional
+        save_dir : str, optional
+            默认保存至 result_folder/heatmap_estimated_load/
+        movement_types : list[str], optional
+            默认 ['upward']
+        g : float
+            重力加速度 (m/s²)
+        其余参数同 generate_heatmaps()
+        """
+        if movement_types is None:
+            movement_types = ['upward']
+        if not self.results:
+            self.run(include_xsens=False)
+
+        data = self._collect_cutted_data(movement_types=movement_types)
+        if data is None:
+            self._log('无切片数据，热力图生成终止。')
+            return {}
+
+        # 逐样本估算负载，替换 load 列
+        data = data.copy()
+        data['load'] = self.estimate_load_from_df(data, g=g)
+        data = data.dropna(subset=['load'])
+        if len(data) == 0:
+            self._log('估算负载后数据为空（缺少 force/acc 列？），终止。')
+            return {}
+
+        if 'pos_l' in data.columns:
+            self.subject.height_range = [
+                float(data['pos_l'].min()), float(data['pos_l'].max())]
+            h_min = round(float(data['pos_l'].min()), 4)
+            h_max = round(float(data['pos_l'].max()), 4)
+            print(f'height_range (estimated load): [{h_min}, {h_max}]')
+
+        if muscles is None:
+            muscles = self.subject.musc_label
+        if save_dir is None:
+            save_dir = os.path.join(
+                self.subject.result_folder, 'heatmap_estimated_load')
+        os.makedirs(save_dir, exist_ok=True)
+        rbf_dir = os.path.join(save_dir, 'rbf')
+        os.makedirs(rbf_dir, exist_ok=True)
+        params_dir = os.path.join(save_dir, 'params')
+        os.makedirs(params_dir, exist_ok=True)
+
+        common_kw = dict(num_centers=num_centers, sigma=sigma, data_len=data_len,
+                         height_range=self.subject.height_range)
+        psp_kw = dict(**common_kw, use_pspline=True,
+                      pspline_n_basis_h=pspline_n_basis_h,
+                      pspline_n_basis_l=pspline_n_basis_l,
+                      pspline_degree=pspline_degree,
+                      pspline_lambda_h=pspline_lambda_h,
+                      pspline_lambda_l=pspline_lambda_l,
+                      pspline_solver=pspline_solver,
+                      pspline_max_iter=pspline_max_iter)
+
+        all_params = {}
+        for musc in muscles:
+            emg_col = f'emg_{musc}'
+            if emg_col not in data.columns:
+                self._log(f'跳过肌肉 {musc}：列 {emg_col} 不存在')
+                continue
+            self._log(f'拟合肌肉 {musc}（估算负载）...')
+
+            params_rbf = fit_activation_map(
+                data, pos_col='pos_l', load_col='load',
+                emg_col=emg_col, **common_kw)
+            all_params[f'{musc}_rbf'] = params_rbf
+
+            params_psp = fit_activation_map(
+                data, pos_col='pos_l', load_col='load',
+                emg_col=emg_col, **psp_kw)
+            all_params[musc] = params_psp
+
+            # RBF vs P-spline 1×3 对比图（原始散点 + RBF + P-spline）
+            plot_compare_activation_3d(
+                data, params_rbf, params_psp,
+                pos_col='pos_l', load_col='load', emg_col=emg_col,
+                label=musc, result_folder=save_dir)
+            plot_compare_heatmap_2d(
+                params_rbf, params_psp, label=musc, result_folder=save_dir)
+
+            # 单独保存 RBF 基线
+            plot_activation_3d(
+                data, params_rbf, pos_col='pos_l', load_col='load',
+                emg_col=emg_col, label=musc, result_folder=rbf_dir)
+            draw_heatmap_2d(params_rbf, label=musc, result_folder=rbf_dir)
+
+            with open(os.path.join(
+                      params_dir, f'{musc}_est_pspline_params.pkl'), 'wb') as f:
+                pickle.dump(params_psp, f)
+
+        # ---- RMSE 报告 ----
+        for musc, p in all_params.items():
+            if musc.endswith('_rbf'):
+                base_musc = musc[:-len('_rbf')]
+                tag = 'RBF'
+            else:
+                base_musc = musc
+                tag = 'P-spline'
+            emg_col = f'emg_{base_musc}'
+            if emg_col not in data.columns:
+                continue
+            if p.get('model') == 'pspline':
+                pred = predict_at(p, data['pos_l'].values, data['load'].values)
+                actual = data[emg_col].values
+                rmse = float(np.sqrt(np.nanmean((pred - actual) ** 2)))
+                mean_pred = float(np.nanmean(np.abs(pred)))
+                rmse_pct = (rmse / mean_pred * 100
+                            if mean_pred > 1e-8 else float('inf'))
+            else:
+                rmse_pct = compute_rmse_percentage(
+                    data, 'pos_l', 'load', emg_col,
+                    p['centers'], p['weights'],
+                    p['scaler'], p['sigma'])
+            # print(f'{base_musc} [{tag}] RMSE%: {rmse_pct:.2f}%')
+            self._log(f'{base_musc} [{tag}] RMSE%: {rmse_pct:.2f}%')
+
+        self._log(f'估算负载热力图已保存至 {save_dir}')
+        return all_params
+
     # ==================== 变负载优化 ====================
 
     def run_variable_load_optimization(self, variable_mode=1,
@@ -558,8 +715,8 @@ class MultiLoadPipeline:
             是否把 ipopt 的求解日志打到 stdout。None 时随 self.debug 自动开关，
             方便出现“bad status: error”之类问题时直接看到 ipopt 的退出原因。
         """
-        # if tee is None:
-        #     tee = bool(self.debug)
+        if tee is None:
+            tee = bool(self.debug)
         self._log(
             f"开始变负载优化 (use_pspline={use_pspline}, tee={tee})...")
         generate_variable_load(
@@ -570,6 +727,37 @@ class MultiLoadPipeline:
             tee=tee,
         )
         self._log("变负载优化完成。")
+
+    # ==================== 负载估算 ====================
+
+    @staticmethod
+    def estimate_load_from_df(df, g=9.81):
+        """
+        根据左右交互力与加速度逐样本估算实际负载。
+
+        公式：(force_l + force_r) / ((acc_l + acc_r) / 2 + g)
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            需包含 force_l, force_r, acc_l, acc_r 列。
+        g : float
+            重力加速度 (m/s²)，默认 9.81。
+
+        Returns
+        -------
+        pd.Series
+            逐样本估算负载 (kg)。
+        """
+        required = ['force_l', 'force_r', 'acc_l', 'acc_r']
+        missing = [c for c in required if c not in df.columns]
+        if missing:
+            raise KeyError(f'estimate_load_from_df: 缺少列 {missing}')
+        force_total = df['force_l'] + df['force_r']
+        acc_avg = (df['acc_l'] + df['acc_r']) / 2.0
+        denominator = acc_avg + g
+        denominator = denominator.where(denominator.abs() > 1e-3, other=np.nan)
+        return force_total / denominator
 
     # ==================== 日志 ====================
 

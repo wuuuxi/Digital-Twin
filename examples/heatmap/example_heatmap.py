@@ -70,13 +70,15 @@ def print_mean_activations(pipeline, target_muscles, movement_types):
 
 
 def main():
+    subject = Subject('../config/20250514_squat_RCT009.json')
     # subject = Subject('../config/20250409_squat_NCMP001_mvc.json')
-    subject = Subject('../config/20260513_squat_FTS09_mvc.json')
+    # subject = Subject('../config/20260513_squat_FTS09_mvc.json')
     pipeline = MultiLoadPipeline(subject)
     pipeline.debug = True
 
-    target_muscles = ['LGL', 'LSOL', 'LFibLon', 'LVL', 'LRF', "LGlutMax"]
-    # target_muscles = ['GL', 'FibLon', 'VL']
+    # target_muscles = ["LTA", "LGL", "LFibLon", "LVL", "LRF", "LVM", "LAddl", "LBF", "LGlutMax", "LGlutMed"]
+    # target_muscles = ['LGL', 'LSOL', 'LFibLon', 'LVL', 'LRF', "LGlutMax"]
+    target_muscles = ['GL', 'FibLon', 'VL', 'RF']
     # target_muscles = ['LGL', 'LFibLon', 'LVL']
     movement_types = ['upward']
 

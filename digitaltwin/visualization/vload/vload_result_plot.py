@@ -297,6 +297,366 @@ def plot_vload_per_muscle_compare(target_label, vload_result,
     return fig, rmse_at_actual_target, groups
 
 
+def plot_vload_overlay_est_load(label, vload_result, planned_df,
+                                heatmap_overlays, est_load_params,
+                                target_muscle, target_activation,
+                                movement_types=None, g=9.81, n_bins=40):
+    """
+    与 plot_vload_overlay 相同的 1×2 图，额外支持：
+
+    左图新增一条预测曲线：
+        使用 heatmap_estimated_load 参数对参數，
+        以变负载实测数据中逻样本估算负载（交互力 / 加速度 + g）
+        对每个样本进行预测，再按位置分筱平均后画出曲线。
+
+    右图新增一组散点：
+        变负载实测数据中逻样本估算负载 vs 高度。
+
+    Parameters
+    ----------
+    est_load_params : dict or None
+        由 generate_heatmaps_with_estimated_load() 产出的 P-spline（或 RBF）
+        参数字典，通常加载自
+        result_folder/heatmap_estimated_load/params/{musc}_est_pspline_params.pkl。
+    g : float
+        重力加速度 (m/s²)。
+    n_bins : int
+        左图预测曲线按位置分筱的筱数。
+
+    Returns
+    -------
+    (fig, rmse_dict)
+        rmse_dict 新增 key 'est_load':(rmse, n)。
+    """
+    cutted = filter_movement_types(
+        vload_result.get('cutted_data'), movement_types)
+    emg_col = f'emg_{target_muscle}'
+
+    rmse_dict = compute_rmse_at_actual_points(
+        cutted, planned_df, heatmap_overlays, target_muscle)
+
+    # --- 逻样本估算负载 ---
+    est_load_series = None
+    est_pred_series = None
+    rmse_est = None
+    if (cutted is not None
+            and all(c in cutted.columns
+                    for c in ['force_l', 'force_r', 'acc_l', 'acc_r'])
+            and est_load_params is not None):
+        force_total = cutted['force_l'] + cutted['force_r']
+        acc_avg = (cutted['acc_l'] + cutted['acc_r']) / 2.0
+        denom = acc_avg + g
+        denom = denom.where(denom.abs() > 1e-3, other=np.nan)
+        est_load_series = force_total / denom
+
+        try:
+            pos_vals = cutted['pos_l'].values
+            est_vals = est_load_series.values
+            valid_mask = np.isfinite(est_vals) & np.isfinite(pos_vals)
+            if valid_mask.sum() > 0:
+                pred_all = predict_at(est_load_params, pos_vals, est_vals)
+                est_pred_series = pred_all
+                if emg_col in cutted.columns:
+                    actual = cutted[emg_col].values
+                    valid = (valid_mask
+                             & np.isfinite(actual)
+                             & np.isfinite(pred_all))
+                    if valid.sum() > 0:
+                        rmse_est = float(np.sqrt(
+                            np.mean((pred_all[valid] - actual[valid]) ** 2)))
+                        rmse_dict['est_load'] = (rmse_est, int(valid.sum()))
+        except Exception as e:
+            print(f'  est_load 预测失败: {e}')
+
+    fig, axes = plt.subplots(1, 2, figsize=(12, 4.5))
+    mt_label = '+'.join(movement_types) if movement_types else 'all'
+    fig.suptitle(
+        f'{label}  (target muscle: {target_muscle}, '
+        f'goal: {target_activation}, movement: {mt_label})',
+        fontsize=12, fontweight='bold')
+
+    # -------- 左图 --------
+    ax = axes[0]
+    if (cutted is not None
+            and emg_col in cutted.columns
+            and 'pos_l' in cutted.columns):
+        ax.scatter(cutted['pos_l'], cutted[emg_col], s=8, alpha=0.35,
+                   color='gray', label='Actual EMG')
+
+    if (planned_df is not None
+            and {'Height', 'Activation'}.issubset(planned_df.columns)):
+        h = planned_df['Height'].values
+        a = planned_df['Activation'].values
+        order = np.argsort(h)
+        ax.plot(h[order], a[order], color='C0', linewidth=2,
+                label='Expected (vload_file)' + format_rmse_for_legend(
+                    rmse_dict, 'expected', with_n=True))
+
+    if target_activation is not None:
+        ax.axhline(target_activation, color='C1', linestyle=':',
+                   linewidth=1.5, label=f'Goal = {target_activation}')
+
+    if (heatmap_overlays
+            and planned_df is not None
+            and {'Height', 'Load'}.issubset(planned_df.columns)):
+        h = planned_df['Height'].values
+        l = planned_df['Load'].values
+        order = np.argsort(h)
+        for key, ov_label, ov_params, ov_color, ov_ls in heatmap_overlays:
+            if ov_params is None:
+                continue
+            try:
+                pred = predict_at(ov_params, h, l)
+                ax.plot(h[order], pred[order], color=ov_color, linewidth=2,
+                        linestyle=ov_ls,
+                        label=ov_label + format_rmse_for_legend(
+                            rmse_dict, key, with_n=True))
+            except Exception as e:
+                print(f'  {ov_label} 画图预测失败: {e}')
+
+    # 基于估算负载的预测曲线（分筱平均）
+    if (est_pred_series is not None
+            and cutted is not None
+            and 'pos_l' in cutted.columns):
+        pos_vals = cutted['pos_l'].values
+        valid = np.isfinite(est_pred_series) & np.isfinite(pos_vals)
+        if valid.sum() > 0:
+            pv = pos_vals[valid]
+            prv = est_pred_series[valid]
+            bins = np.linspace(pv.min(), pv.max(), n_bins + 1)
+            bin_centers, bin_means = [], []
+            for i in range(n_bins):
+                mask = (pv >= bins[i]) & (pv < bins[i + 1])
+                if mask.sum() > 0:
+                    bin_centers.append((bins[i] + bins[i + 1]) / 2)
+                    bin_means.append(float(np.mean(prv[mask])))
+            if bin_centers:
+                bc = np.array(bin_centers)
+                bm = np.array(bin_means)
+                rmse_str = (f'  RMSE={rmse_est:.4f}'
+                            if rmse_est is not None else '')
+                ax.plot(bc, bm, color='C3', linewidth=2, linestyle='-.',
+                        label=f'Est.Load Heatmap{rmse_str}')
+
+    ax.set_xlabel('Height (m)')
+    ax.set_ylabel(f'{target_muscle} activation')
+    ax.set_title('Activation vs Height')
+    ax.legend(fontsize=8, loc='best')
+    ax.grid(True, alpha=0.3)
+
+    # -------- 右图 --------
+    ax = axes[1]
+    if (planned_df is not None
+            and {'Height', 'Load'}.issubset(planned_df.columns)):
+        h = planned_df['Height'].values
+        l = planned_df['Load'].values
+        order = np.argsort(h)
+        ax.plot(h[order], l[order], color='C0', linewidth=2,
+                label='Planned load')
+
+    # 实际估算负载散点
+    if (est_load_series is not None
+            and cutted is not None
+            and 'pos_l' in cutted.columns):
+        pos_vals = cutted['pos_l'].values
+        est_vals = est_load_series.values
+        valid = np.isfinite(est_vals) & np.isfinite(pos_vals)
+        if valid.sum() > 0:
+            ax.scatter(pos_vals[valid], est_vals[valid],
+                       s=6, alpha=0.35, color='C3',
+                       label='Estimated load (actual)')
+
+    ax.set_xlabel('Height (m)')
+    ax.set_ylabel('Load (kg)')
+    ax.set_title('Planned & Estimated Load vs Height')
+    ax.legend(fontsize=8, loc='best')
+    ax.grid(True, alpha=0.3)
+
+    fig.tight_layout(rect=[0, 0, 1, 0.94])
+    return fig, rmse_dict
+
+
+def plot_vload_overlay_est_load(label, vload_result, planned_df,
+                                heatmap_overlays, est_load_params,
+                                target_muscle, target_activation,
+                                movement_types=None, g=9.81, n_bins=40):
+    """
+    与 plot_vload_overlay 相同的 1×2 图，额外支持：
+
+    左图新增一条预测曲线：
+        使用 heatmap_estimated_load 参数，
+        以变负载实测数据中逻样本估算负载（交互力 / 加速度 + g）
+        对每个样本进行预测，再按位置分筱平均后画出曲线。
+        颜色使用 C4（紫色），与 RBF (C3/红) 、P-spline (C2/绿) 区分。
+
+    右图新增一组散点：
+        变负载实测数据中逻样本估算负载 vs 高度（C4/紫色）。
+
+    Parameters
+    ----------
+    est_load_params : dict or None
+        由 generate_heatmaps_with_estimated_load() 产出的 P-spline 参数，
+        通常加载自
+        result_folder/heatmap_estimated_load/params/{musc}_est_pspline_params.pkl。
+    g : float
+        重力加速度 (m/s²)。
+    n_bins : int
+        左图预测曲线按位置分筱的筱数。
+
+    Returns
+    -------
+    (fig, rmse_dict)
+        rmse_dict 新增 key 'est_load': (rmse, n)。
+    """
+    EST_COLOR = 'C4'   # 紫色，区别于 RBF(C3) 、P-spline(C2) 、Expected(C0) 、Goal(C1)
+
+    cutted = filter_movement_types(
+        vload_result.get('cutted_data'), movement_types)
+    emg_col = f'emg_{target_muscle}'
+
+    rmse_dict = compute_rmse_at_actual_points(
+        cutted, planned_df, heatmap_overlays, target_muscle)
+
+    # --- 逻样本估算负载 ---
+    est_load_series = None
+    est_pred_series = None
+    rmse_est = None
+    if (cutted is not None
+            and all(c in cutted.columns
+                    for c in ['force_l', 'force_r', 'acc_l', 'acc_r'])
+            and est_load_params is not None):
+        force_total = cutted['force_l'] + cutted['force_r']
+        acc_avg = (cutted['acc_l'] + cutted['acc_r']) / 2.0
+        denom = acc_avg + g
+        denom = denom.where(denom.abs() > 1e-3, other=np.nan)
+        est_load_series = force_total / denom
+
+        try:
+            pos_vals = cutted['pos_l'].values
+            est_vals = est_load_series.values
+            valid_mask = np.isfinite(est_vals) & np.isfinite(pos_vals)
+            if valid_mask.sum() > 0:
+                pred_all = predict_at(est_load_params, pos_vals, est_vals)
+                est_pred_series = pred_all
+                if emg_col in cutted.columns:
+                    actual = cutted[emg_col].values
+                    valid = (valid_mask
+                             & np.isfinite(actual)
+                             & np.isfinite(pred_all))
+                    if valid.sum() > 0:
+                        rmse_est = float(np.sqrt(
+                            np.mean((pred_all[valid] - actual[valid]) ** 2)))
+                        rmse_dict['est_load'] = (rmse_est, int(valid.sum()))
+        except Exception as e:
+            print(f'  est_load 预测失败: {e}')
+
+    fig, axes = plt.subplots(1, 2, figsize=(12, 4.5))
+    mt_label = '+'.join(movement_types) if movement_types else 'all'
+    fig.suptitle(
+        f'{label}  (target muscle: {target_muscle}, '
+        f'goal: {target_activation}, movement: {mt_label})',
+        fontsize=12, fontweight='bold')
+
+    # -------- 左图 --------
+    ax = axes[0]
+    if (cutted is not None
+            and emg_col in cutted.columns
+            and 'pos_l' in cutted.columns):
+        ax.scatter(cutted['pos_l'], cutted[emg_col], s=8, alpha=0.35,
+                   color='gray', label='Actual EMG')
+
+    if (planned_df is not None
+            and {'Height', 'Activation'}.issubset(planned_df.columns)):
+        h = planned_df['Height'].values
+        a = planned_df['Activation'].values
+        order = np.argsort(h)
+        ax.plot(h[order], a[order], color='C0', linewidth=2,
+                label='Expected (vload_file)' + format_rmse_for_legend(
+                    rmse_dict, 'expected', with_n=True))
+
+    if target_activation is not None:
+        ax.axhline(target_activation, color='C1', linestyle=':',
+                   linewidth=1.5, label=f'Goal = {target_activation}')
+
+    if (heatmap_overlays
+            and planned_df is not None
+            and {'Height', 'Load'}.issubset(planned_df.columns)):
+        h = planned_df['Height'].values
+        l = planned_df['Load'].values
+        order = np.argsort(h)
+        for key, ov_label, ov_params, ov_color, ov_ls in heatmap_overlays:
+            if ov_params is None:
+                continue
+            try:
+                pred = predict_at(ov_params, h, l)
+                ax.plot(h[order], pred[order], color=ov_color, linewidth=2,
+                        linestyle=ov_ls,
+                        label=ov_label + format_rmse_for_legend(
+                            rmse_dict, key, with_n=True))
+            except Exception as e:
+                print(f'  {ov_label} 画图预测失败: {e}')
+
+    # 基于估算负载的预测曲线（分筱平均）
+    if (est_pred_series is not None
+            and cutted is not None
+            and 'pos_l' in cutted.columns):
+        pos_vals = cutted['pos_l'].values
+        valid = np.isfinite(est_pred_series) & np.isfinite(pos_vals)
+        if valid.sum() > 0:
+            pv = pos_vals[valid]
+            prv = est_pred_series[valid]
+            bins = np.linspace(pv.min(), pv.max(), n_bins + 1)
+            bin_centers, bin_means = [], []
+            for i in range(n_bins):
+                mask = (pv >= bins[i]) & (pv < bins[i + 1])
+                if mask.sum() > 0:
+                    bin_centers.append((bins[i] + bins[i + 1]) / 2)
+                    bin_means.append(float(np.mean(prv[mask])))
+            if bin_centers:
+                bc = np.array(bin_centers)
+                bm = np.array(bin_means)
+                rmse_str = (f'  RMSE={rmse_est:.4f}'
+                            if rmse_est is not None else '')
+                ax.plot(bc, bm, color=EST_COLOR, linewidth=2, linestyle='-.',
+                        label=f'Est.Load Heatmap{rmse_str}')
+
+    ax.set_xlabel('Height (m)')
+    ax.set_ylabel(f'{target_muscle} activation')
+    ax.set_title('Activation vs Height')
+    ax.legend(fontsize=8, loc='best')
+    ax.grid(True, alpha=0.3)
+
+    # -------- 右图 --------
+    ax = axes[1]
+    if (planned_df is not None
+            and {'Height', 'Load'}.issubset(planned_df.columns)):
+        h = planned_df['Height'].values
+        l = planned_df['Load'].values
+        order = np.argsort(h)
+        ax.plot(h[order], l[order], color='C0', linewidth=2,
+                label='Planned load')
+
+    if (est_load_series is not None
+            and cutted is not None
+            and 'pos_l' in cutted.columns):
+        pos_vals = cutted['pos_l'].values
+        est_vals = est_load_series.values
+        valid = np.isfinite(est_vals) & np.isfinite(pos_vals)
+        if valid.sum() > 0:
+            ax.scatter(pos_vals[valid], est_vals[valid],
+                       s=6, alpha=0.35, color=EST_COLOR,
+                       label='Estimated load (actual)')
+
+    ax.set_xlabel('Height (m)')
+    ax.set_ylabel('Load (kg)')
+    ax.set_title('Planned & Estimated Load vs Height')
+    ax.legend(fontsize=8, loc='best')
+    ax.grid(True, alpha=0.3)
+
+    fig.tight_layout(rect=[0, 0, 1, 0.94])
+    return fig, rmse_dict
+
+
 def print_vload_rmse_summary(rmse_summary,
                              keys=('expected', 'rbf', 'pspline'),
                              header_map=None,

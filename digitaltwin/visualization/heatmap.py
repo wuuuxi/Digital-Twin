@@ -221,11 +221,11 @@ def plot_load_slices_comparison(data, params_orig, params_mono, muscle,
 
     loads = sorted(data[load_col].unique())
     n = len(loads)
-    n_cols = min(3, n)
-    n_rows = (n + n_cols - 1) // n_cols
+    n_cols = n
+    n_rows = 1
 
     fig, axes = plt.subplots(n_rows, n_cols,
-                             figsize=(5 * n_cols, 4 * n_rows),
+                             figsize=(3 * n_cols, 4 * n_rows),
                              squeeze=False)
     fig.suptitle(f'{muscle} — Activation vs Height (per Load)',
                  fontsize=14, fontweight='bold')
@@ -266,9 +266,7 @@ def plot_load_slices_comparison(data, params_orig, params_mono, muscle,
         if idx == 0:
             ax.legend(fontsize=8, loc='best')
 
-    # 隐藏多余子图
-    for idx in range(n, n_rows * n_cols):
-        axes[idx // n_cols][idx % n_cols].set_visible(False)
+    # 无多余子图（单行排列，列数等于负载数）
 
     fig.tight_layout(rect=[0, 0, 1, 0.96])
     if result_folder:
@@ -327,18 +325,40 @@ def plot_compare_activation_3d(data, params_rbf, params_pspline,
                                pos_col='pos_l', load_col='load',
                                emg_col='emg0', label=None,
                                cmap='hot', result_folder=None):
-    """RBF vs P-spline 3D 曲面对比 (1×2)。保存为 {label}_compare_3D.png。"""
-    fig = plt.figure(figsize=(14, 6))
+    """原始数据 + RBF vs P-spline 3D 曲面对比 (1×3)。保存为 {label}_compare_3D.png。"""
+    fig = plt.figure(figsize=(18, 5))
     if label:
         fig.suptitle(label, fontweight='bold')
+
+    # 统一 Z 轴范围：原始数据范围与两个拟合曲面范围取并集
     z_min = float(data[emg_col].min())
     z_max = float(data[emg_col].max())
+    for params in [params_rbf, params_pspline]:
+        if params is not None:
+            zi = params['zi']
+            z_min = min(z_min, float(zi.min()))
+            z_max = max(z_max, float(zi.max()))
+
+    # 第 1 子图：原始 3D 散点
+    ax0 = fig.add_subplot(1, 3, 1, projection='3d')
+    sc = ax0.scatter(data[pos_col], data[load_col], data[emg_col],
+                     c=data[emg_col], cmap=cmap, s=8,
+                     vmin=z_min, vmax=z_max)
+    plt.colorbar(sc, ax=ax0, shrink=0.6, label='Activation')
+    ax0.set_zlim(z_min, z_max)
+    ax0.set_xlabel('Height (m)')
+    ax0.set_ylabel('Load (kg)')
+    ax0.set_zlabel('Activation')
+    ax0.set_title('Raw Data')
+    ax0.view_init(elev=30, azim=-135)
+
+    # 第 2、3 子图：RBF / P-spline 拟合曲面
     pairs = [(params_rbf, 'RBF'), (params_pspline, 'P-spline')]
     for idx, (params, title) in enumerate(pairs):
         if params is None:
             continue
         xi, yi, zi = params['xi'], params['yi'], params['zi']
-        ax = fig.add_subplot(1, 2, idx + 1, projection='3d')
+        ax = fig.add_subplot(1, 3, idx + 2, projection='3d')
         surf = ax.plot_surface(xi, yi, zi, cmap=cmap,
                                vmin=z_min, vmax=z_max,
                                edgecolor='none')
@@ -346,6 +366,7 @@ def plot_compare_activation_3d(data, params_rbf, params_pspline,
         #            c=data[emg_col], cmap=cmap, s=8,
         #            vmin=z_min, vmax=z_max, alpha=0.5)
         plt.colorbar(surf, ax=ax, shrink=0.6, label='Activation')
+        ax.set_zlim(z_min, z_max)
         ax.set_xlabel('Height (m)')
         ax.set_ylabel('Load (kg)')
         ax.set_zlabel('Activation')
@@ -354,7 +375,7 @@ def plot_compare_activation_3d(data, params_rbf, params_pspline,
     if result_folder and label:
         plt.savefig(os.path.join(result_folder,
                                  f'{label}_compare_3D.png'))
-    plt.close(fig)
+    # plt.close(fig)
 
 
 def plot_compare_heatmap_2d(params_rbf, params_pspline, label=None,
@@ -427,7 +448,8 @@ def plot_compare_load_sensitivity_2d(params_rbf, params_pspline, label=None,
             ax.set_axis_off()
             continue
         xi, yi, dz = g
-        contour = ax.contourf(xi, yi, dz, levels=100, cmap='RdBu_r', vmin=-vmax, vmax=vmax)
+        contour = ax.contourf(xi, yi, dz, levels=100, cmap='RdBu_r',
+                              vmin=-vmax, vmax=vmax)
         plt.colorbar(contour, ax=ax, label='∂Activation / ∂Load')
         ax.set_xlabel('Height (m)')
         ax.set_ylabel('Load (kg)')

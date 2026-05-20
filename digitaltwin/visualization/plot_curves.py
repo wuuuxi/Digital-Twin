@@ -31,6 +31,37 @@ class CurvePlotter:
             return ['emg_TriLat', 'emg_PMSte', 'emg_DelAnt', 'emg_Bic']
         return ['emg_FibLon', 'emg_VL', 'emg_RF']
 
+    def _resolve_muscle_cols(self, candidates, available_cols):
+        """将候选肌肉列名解析为数据中实际存在的列名。
+
+        对每个候选名（如 'emg_FibLon'），依次尝试：
+        1. 精确匹配
+        2. 以 base name 为后缀的模糊匹配（如 'emg_LFibLon', 'emg_RFibLon'）
+        未匹配到则保留原始名称（后续逻辑会跳过该列并使用 fallback 范围）。
+
+        Parameters
+        ----------
+        candidates : list of str
+            候选列名，形如 'emg_FibLon'。
+        available_cols : iterable of str
+            实际数据中存在的所有列名。
+
+        Returns
+        -------
+        list of str
+        """
+        avail = set(available_cols)
+        resolved = []
+        for col in candidates:
+            if col in avail:
+                resolved.append(col)
+            else:
+                base = col[len('emg_'):] if col.startswith('emg_') else col
+                matches = [c for c in avail
+                           if c.startswith('emg_') and c.endswith(base)]
+                resolved.append(matches[0] if matches else col)
+        return resolved
+
     def plot_average_curves(self, results_dict, save_path=None, figsize=(15, 10),
                             emg_channels=None):
         """
@@ -228,7 +259,7 @@ class CurvePlotter:
         n_loads = len(load_weights)
         if n_loads == 0: return
 
-        fig, axes = plt.subplots(n_loads, 1, figsize=(10, 3 * n_loads))
+        fig, axes = plt.subplots(n_loads, 1, figsize=(12, 4 * n_loads))
         if n_loads == 1: axes = [axes]
 
         for i, lw in enumerate(load_weights):
@@ -291,6 +322,17 @@ class CurvePlotter:
 
         if target_muscles is None:
             target_muscles = self._get_default_muscles(subject)[:1]
+
+        # 从第一个可用结果中收集列名，将候选肌肉名解析为实际存在的列
+        _avail = set()
+        for _lw in load_weights:
+            _cd = results.get(_lw, {}).get('cutted_data')
+            if _cd is not None:
+                _avail.update(_cd.columns)
+                break
+        if _avail:
+            target_muscles = self._resolve_muscle_cols(target_muscles, _avail)
+
         muscle_col = target_muscles[0]
 
         fig, axes = plt.subplots(4, load_num, figsize=(17, 8))
@@ -308,9 +350,12 @@ class CurvePlotter:
                     gy[k][0] = min(gy[k][0], np.min(cd[c]))
                     gy[k][1] = max(gy[k][1], np.max(cd[c]))
         for k in gy:
-            if gy[k][0] != float('inf'):
+            if gy[k][0] != float('inf') and gy[k][1] != float('-inf'):
                 r = (gy[k][1] - gy[k][0]) * 0.1
                 gy[k][0] -= r; gy[k][1] += r
+            else:
+                # 该列在所有 cutted_data 中均不存在，使用安全默认范围
+                gy[k] = [0.0, 1.0]
 
         for li, lw in enumerate(load_weights):
             if lw not in results: continue
@@ -357,6 +402,101 @@ class CurvePlotter:
             plt.savefig(fp, dpi=300)
             self._log(f"运动切片可视化已保存到: {fp}")
 
+    # ==================== 估算负载可视化 ====================
+
+    def plot_load_estimation(self, cutted, subject=None, save_fig=True):
+        """
+        可视化估算负载结果（三联图）。
+
+        左图：位置 vs 速度
+        中图：位置 vs 估算负载（含各参考负载水平虚线）
+        右图：位置 vs 交互力均值 = (force_l + force_r) / 2
+
+        每组负载用不同颜色区分，同时打印各组估算负载均值。
+
+        Parameters
+        ----------
+        cutted : pd.DataFrame or None
+            已按运动阶段过滤的切片数据。需包含 load（或 load_weight）、
+            estimated_load、pos_l、vel_l、force_l、force_r 列。
+        subject : Subject, optional
+        save_fig : bool
+        """
+        subject = subject or self.subject
+        if cutted is None or len(cutted) == 0:
+            print('plot_load_estimation: 无可用切片数据。')
+            return
+
+        load_col = 'load' if 'load' in cutted.columns else 'load_weight'
+        load_weights = sorted(cutted[load_col].unique())
+        colors = plt.cm.tab10.colors
+
+        fig, axes = plt.subplots(1, 3, figsize=(21, 6))
+        ax_vel   = axes[0]
+        ax_load  = axes[1]
+        ax_force = axes[2]
+
+        for i, lw in enumerate(load_weights):
+            ad = cutted[cutted[load_col] == lw]
+            if len(ad) == 0:
+                continue
+
+            required = ['pos_l', 'vel_l', 'force_l', 'force_r', 'estimated_load']
+            missing = [c for c in required if c not in ad.columns]
+            if missing:
+                self._log(f'负载 {lw}kg：缺少列 {missing}，跳过')
+                continue
+
+            clr       = colors[i % len(colors)]
+            label     = f'{lw} kg'
+            pos       = ad['pos_l'].values
+            vel       = ad['vel_l'].values
+            est_load  = ad['estimated_load'].values
+            force_avg = ((ad['force_l'] + ad['force_r']) / 2.0).values
+
+            mean_est = float(np.nanmean(est_load))
+            print(f'[{label}] 估算负载均值: {mean_est:.2f} kg')
+
+            ax_vel.scatter(pos, vel, s=10, alpha=0.6, color=clr, label=label)
+            ax_load.scatter(pos, est_load, s=10, alpha=0.6, color=clr, label=label)
+            ax_force.scatter(pos, force_avg, s=10, alpha=0.6, color=clr, label=label)
+
+        # 左图
+        ax_vel.set_xlabel('Position (m)', fontsize=12)
+        ax_vel.set_ylabel('Velocity (m/s)', fontsize=12)
+        ax_vel.set_title('Position vs Velocity', fontsize=13, fontweight='bold')
+        ax_vel.legend(fontsize=9, loc='best')
+        ax_vel.grid(True, alpha=0.3)
+
+        # 中图：含参考负载水平虚线
+        ax_load.set_xlabel('Position (m)', fontsize=12)
+        ax_load.set_ylabel('Estimated Load (kg)', fontsize=12)
+        ax_load.set_title('Position vs Estimated Load', fontsize=13, fontweight='bold')
+        ax_load.grid(True, alpha=0.3)
+        ax_load.axhline(y=0, color='k', linewidth=0.8, alpha=0.5, linestyle='--')
+        for j, lw in enumerate(load_weights):
+            ax_load.axhline(y=float(lw), color=colors[j % len(colors)],
+                            linewidth=1.2, linestyle='--', alpha=0.8,
+                            label=f'ref {lw} kg')
+        ax_load.legend(fontsize=8, loc='best')
+
+        # 右图
+        ax_force.set_xlabel('Position (m)', fontsize=12)
+        ax_force.set_ylabel('Mean Interaction Force (N)', fontsize=12)
+        ax_force.set_title('Position vs Mean Force', fontsize=13, fontweight='bold')
+        ax_force.legend(fontsize=9, loc='best')
+        ax_force.grid(True, alpha=0.3)
+
+        fig.suptitle(
+            r'Load Estimation: $(F_L + F_R)\;/\;(\bar{a} + g)$',
+            fontsize=14, fontweight='bold')
+        fig.tight_layout()
+
+        if save_fig and subject:
+            fp = os.path.join(subject.result_folder, 'load_estimation.png')
+            plt.savefig(fp, dpi=300)
+            self._log(f'估算负载图已保存到: {fp}')
+
     # ==================== 3D散点图 ====================
 
     def visualize_test_3d_scatter(self, results=None, subject=None, load_weights=None,
@@ -373,6 +513,16 @@ class CurvePlotter:
         if target_muscles is None:
             target_muscles = (['emg_PMSte'] if subject and subject.target_motion == 'benchpress'
                               else self._get_default_muscles(subject)[:1])
+
+        _avail = set()
+        for _lw in load_weights:
+            _cd = results.get(_lw, {}).get('cutted_data')
+            if _cd is not None:
+                _avail.update(_cd.columns)
+                break
+        if _avail:
+            target_muscles = self._resolve_muscle_cols(target_muscles, _avail)
+
         muscle_col = target_muscles[0]
         muscle_name = muscle_col.replace('emg_', '')
 
@@ -485,6 +635,16 @@ class CurvePlotter:
 
         if target_muscles is None:
             target_muscles = self._get_default_muscles(subject)
+
+        _avail = set()
+        for _lw in load_weights:
+            _cd = results.get(_lw, {}).get('cutted_data')
+            if _cd is not None:
+                _avail.update(_cd.columns)
+                break
+        if _avail:
+            target_muscles = self._resolve_muscle_cols(target_muscles, _avail)
+
         muscle_num = len(target_muscles)
 
         fig1, axes1 = plt.subplots(1, muscle_num, figsize=(5 * muscle_num, 8),
@@ -630,6 +790,16 @@ class CurvePlotter:
 
         if target_muscles is None:
             target_muscles = self._get_default_muscles(subject)
+
+        _avail = set()
+        for _lw in load_weights:
+            _cd = results.get(_lw, {}).get('cutted_data')
+            if _cd is not None:
+                _avail.update(_cd.columns)
+                break
+        if _avail:
+            target_muscles = self._resolve_muscle_cols(target_muscles, _avail)
+
         muscle_num = len(target_muscles)
         muscle_names = [c.replace('emg_', '') for c in target_muscles]
 
@@ -828,6 +998,16 @@ class CurvePlotter:
                 target_muscles = ['emg_TriLat', 'emg_PMSte']
             else:
                 target_muscles = ['emg_FibLon', 'emg_VL', 'emg_RF']
+
+        _avail = set()
+        for _lw in load_weights:
+            _cd = results.get(_lw, {}).get('cutted_data')
+            if _cd is not None:
+                _avail.update(_cd.columns)
+                break
+        if _avail:
+            target_muscles = self._resolve_muscle_cols(target_muscles, _avail)
+
         muscle_names = [c.replace('emg_', '') for c in target_muscles]
 
         analysis_results = {}

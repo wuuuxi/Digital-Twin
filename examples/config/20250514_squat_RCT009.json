@@ -1,0 +1,75 @@
+{
+  "experiment_label": "20250514_squat_RCT009",
+  "folder": "C:/Users/PC/OneDrive/Experiment/20250514_HKSI_squat/",
+
+  "emg_settings": {
+    "fs": 1000,
+    "musc_label": ["TA", "GL", "SOL", "FibLon", "VL", "RF", "VM", "Addl", "BF", "ST", "GlutMax", "GlutMed"],
+    "musc_mvc": [0.1276, 0.0298, 0.3023, 0.2592, 0.1792, 0.2306, 0.2502, 0.2241, 0.126, 0.3334, 0.2539, 0.048]
+  },
+
+  "motion_settings": {
+    "motion_flag": "squat",
+    "target_motion": "squat"
+  },
+
+  "modeling_file": {
+    "emg_folder": "EMG",
+    "data": {
+      "20": {
+        "robot_file": "Robot/RCT009_15R_20250514_112428.csv",
+        "emg_file": "test 2025_05_14 11_23_22.csv"
+      },
+      "40": {
+        "robot_file": "Robot/RCT009_30R_20250514_114014.csv",
+        "emg_file": "test 2025_05_14 11_39_15.csv"
+      },
+      "110": {
+        "robot_file": "Robot/RCT009_85R_20250514_113731.csv",
+        "emg_file": "test 2025_05_14 11_35_36.csv"
+      }
+    }
+  },
+
+  "variable_load_file": {
+    "emg_folder": "EMG",
+    "robot_folder": "Robot",
+    "load_folder": "vload",
+    "data": {
+      "VL_0.2_0.5": {
+        "robot_file": "RCT009_VL0.2_20250514_124330.csv",
+        "emg_file": "IT 2025_05_14 12_48_34.csv",
+        "vload_file": "VL_0.2_0.5.csv",
+        "target_activation": 0.2,
+        "load_range": [0, -1],
+        "target_muscle": "VL"
+      },
+      "FibLon_0.2_0.5": {
+        "robot_file": "RCT009_Fiblon0.2_20250514_123653.csv",
+        "emg_file": "test 2025_05_14 12_35_56.csv",
+        "vload_file": "FibLon_0.2_0.5.csv",
+        "target_activation": 0.2,
+        "load_range": [0, -1],
+        "target_muscle": "FibLon"
+      },
+      "RF_0.2_0.5": {
+        "robot_file": "RCT009_RF0.2_20250514_124110.csv",
+        "emg_file": "test 2025_05_14 12_41_13.csv",
+        "vload_file": "RF_0.2_0.5.csv",
+        "target_activation": 0.2,
+        "load_range": [0, -1],
+        "target_muscle": "RF"
+      }
+    }
+  },
+
+  "heatmap_settings": {
+    "muscle_folder": "result/20250514_squat_RCT009/20250514_122703",
+    "height_range": [1.3, 1.9],
+    "plot_muscle_idx": [4, 3, 5],
+    "titles": ["VL", "GL"],
+    "goal": [0.2, 0.2],
+    "epsilons": [0.5],
+    "max_iter": [10000]
+  }
+}

@@ -35,7 +35,7 @@ HEATMAP_MODE = 'both'           # 'both' / 'rbf' / 'pspline' / 'none'
 
 
 def main():
-    subject = Subject('../config/20250409_squat_NCMP001.json')
+    subject = Subject('../config/20250409_squat_NCMP001_mvc.json')
     pipeline = MultiLoadPipeline(subject)
     pipeline.debug = True
 
