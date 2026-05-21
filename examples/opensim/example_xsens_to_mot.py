@@ -1,53 +1,31 @@
 """
-Xsens Excel → OpenSim .mot 批量转换工具
+example_xsens_to_mot.py
 
-读取 config 中所有负载的 xsens_file，转换为 OpenSim .mot 格式。
-默认不自动转换，只有运行本脚本才会执行转换。
-
-输出位置：folder/mot/<xsens_filename>_opensim.mot
-
-用法：
-    python example_xsens_to_mot.py
+从 JSON 配置文件读取实验参数，批量将 Xsens Excel 文件转换为 OpenSim .mot 文件。
+输出目录： result/{experiment_label}/opensim/mot/
 """
+import json
 import os
-from pathlib import Path
-from digitaltwin import Subject
-from digitaltwin.data.xsens_processor import XsensProcessor
+
+from digitaltwin.osim.opensim_pipeline import run_mot_conversion
+
+
+# ============================================================
+#  ★ 配置
+# ============================================================
+CONFIG_FILE = '../config/20260513_squat_FTS09.json'
+BASE_DIR    = '../..'
 
 
 def main():
-    # --- 配置 ---
-    subject = Subject('../config/20250409_squat_NCMP001_xsens.json')
+    config_path = os.path.join(os.path.dirname(__file__), CONFIG_FILE)
+    base_dir    = os.path.normpath(os.path.join(os.path.dirname(__file__), BASE_DIR))
 
-    # --- 输出目录 ---
-    output_dir = os.path.join(subject.folder, 'mot')
-    os.makedirs(output_dir, exist_ok=True)
-    print(f'输出目录: {output_dir}')
+    with open(config_path, 'r', encoding='utf-8') as f:
+        config = json.load(f)
 
-    # --- 遍历所有负载，转换 xsens 文件 ---
-    for load_key, file_info in subject.modeling_data.items():
-        xsens_file = file_info.get('xsens_file')
-        if xsens_file is None:
-            print(f'负载 {load_key}kg: 无 xsens_file，跳过')
-            continue
-
-        print(f'\n处理负载 {load_key}kg: {xsens_file}')
-
-        # 加载 Xsens 数据
-        xsens_data = XsensProcessor.process(
-            xsens_file, load_key, subject.folder,
-            xsens_folder=subject.modeling_xsens_folder)
-
-        if xsens_data is None:
-            print(f'  加载失败，跳过')
-            continue
-
-        # 保存 .mot
-        mot_filename = Path(xsens_file).stem + '_opensim.mot'
-        mot_path = os.path.join(output_dir, mot_filename)
-        XsensProcessor.save_mot(xsens_data, mot_path)
-
-    print(f'\n转换完成！所有 .mot 文件保存在: {output_dir}')
+    mot_files = run_mot_conversion(config, base_dir, verbose=True)
+    print(f'\n✅ 转换完成，共 {len(mot_files)} 个 .mot 文件。')
 
 
 if __name__ == '__main__':
