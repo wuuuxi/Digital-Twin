@@ -558,12 +558,22 @@ def scale_from_config(config, base_dir, verbose=True):
 
     # ---- 计算深蹲杆接触点（torso 局部坐标）----
     log('\n[杆接触点] 计算深蹲杆作用点...')
-    state_for_contact = model.initSystem()   # scale_from_config 作用域内重新初始化状态
+    state_for_contact = model.initSystem()
     bar_contact_point = compute_bar_contact_point(model, state_for_contact, verbose=verbose)
     log(f'  bar_contact_point (torso 局部坐标): {bar_contact_point}')
-    log('  ↑ 已自动回写到 JSON opensim_settings.bar_contact_point')
 
-    return model, bar_contact_point
+    # ---- 计算鞋垫接触点（calcn 局部坐标）----
+    log('\n[鞋垫接触点] 计算足底接触点...')
+    insole_contact_point_r = compute_insole_contact_point(model, state_for_contact, side='r', verbose=verbose)
+    insole_contact_point_l = compute_insole_contact_point(model, state_for_contact, side='l', verbose=verbose)
+    # 左右脚取平均（两脚通常对称）
+    insole_contact_point = [
+        round((insole_contact_point_r[i] + insole_contact_point_l[i]) / 2, 4)
+        for i in range(3)
+    ]
+    log(f'  insole_contact_point (calcn 局部坐标，左右平均): {insole_contact_point}')
+
+    return model, bar_contact_point, insole_contact_point
 
 
 # ============================================================
@@ -799,6 +809,59 @@ def list_model_bodies(model_path):
             print(f'  {bs.get(i).getName()}')
         except Exception:
             pass
+
+
+# ============================================================
+#  鞋垫接触点计算
+# ============================================================
+
+def compute_insole_contact_point(model, state, side='r', verbose=True):
+    """
+    从缩放后的模型估算鞋垫接触点（calcn 局部坐标）。
+
+    算法：
+      取 mtp 关节在 calcn 局部坐标系中的位置，
+      接触点 = mtp 局部坐标 × 0.5（即足弓中部）。
+
+    Parameters
+    ----------
+    model  : osim.Model
+    state  : osim.State
+    side   : 'r' or 'l'
+    verbose : bool
+
+    Returns
+    -------
+    list [x, y, z]  单位 m，calcn 局部坐标系
+    """
+    def log(msg):
+        if verbose:
+            print(msg)
+
+    try:
+        ground     = model.getGround()
+        calcn_body = model.getBodySet().get(f'calcn_{side}')
+
+        mtp_pos_ground, mtp_name = get_joint_position(
+            model, state, [f'mtp_{side}'])
+        if mtp_pos_ground is None:
+            log(f'  [INSOLE] 未找到 mtp_{side}，使用默认接触点 [0.09, 0.0, 0.0]')
+            return [0.09, 0.0, 0.0]
+
+        # 将 mtp 关节转换到 calcn 局部坐标系
+        p_g   = osim.Vec3(*mtp_pos_ground)
+        p_loc = ground.findStationLocationInAnotherFrame(state, p_g, calcn_body)
+        lx = round(float(p_loc.get(0)) * 0.5, 4)
+        ly = round(float(p_loc.get(1)) * 0.5, 4)
+        lz = round(float(p_loc.get(2)) * 0.5, 4)
+
+        log(f'  [INSOLE] mtp_{side} calcn局部坐标 = '
+            f'[{p_loc.get(0):.4f}, {p_loc.get(1):.4f}, {p_loc.get(2):.4f}]')
+        log(f'  [INSOLE] insole_contact_point (calcn_{side} 局部×0.5) = [{lx}, {ly}, {lz}]')
+        return [lx, ly, lz]
+    except Exception as e:
+        log(f'  [INSOLE] 接触点计算失败: {e}，使用默认值')
+        return [0.09, 0.0, 0.0]
 
 
 # ============================================================

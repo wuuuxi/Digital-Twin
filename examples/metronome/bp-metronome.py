@@ -3,7 +3,7 @@ import threading
 import os
 # import digitaltwin as dt
 
-from digitaltwin.osim.osim_model import OpenSimModel
+from digitaltwin.osim.realtime.osim_model import OpenSimModel
 from digitaltwin.config_manager import ConfigManager
 from digitaltwin.visualization.realtime import SpeedController, GlobalAudioScheduler
 from digitaltwin.data.data_manager import DataManager

@@ -13,7 +13,7 @@ example_scaling.py
 import json
 import os
 
-from digitaltwin.osim.opensim_scaling import scale_from_config
+from digitaltwin.osim.scaling import scale_from_config
 
 
 CONFIG_FILE = '../config/20260513_squat_FTS09_xsens.json'
@@ -36,20 +36,22 @@ def main():
         print('\n❌ 缩放失败，请检查配置与日志。')
         return
 
-    model, bar_contact_point = result
+    model, bar_contact_point, insole_contact_point = result
 
     print(f'\n✅ 缩放完成！')
-    print(f'\n杆接触点 (torso局部坐标): {bar_contact_point}')
+    print(f'\n杆接触点     (torso 局部坐标): {bar_contact_point}')
+    print(f'鞋垫接触点   (calcn 局部坐标): {insole_contact_point}')
 
     # 回写到 JSON
     if overwrite_bar_contact_point is True:
         if 'opensim_settings' not in config:
             config['opensim_settings'] = {}
-        config['opensim_settings']['bar_contact_point'] = bar_contact_point
+        config['opensim_settings']['bar_contact_point']   = bar_contact_point
+        config['opensim_settings']['insole_contact_point'] = insole_contact_point
 
         with open(config_path, 'w', encoding='utf-8') as f:
             json.dump(config, f, ensure_ascii=False, indent=2)
-        print(f'\n已将 bar_contact_point 回写到: {config_path}')
+        print(f'\n已将 bar_contact_point 和 insole_contact_point 回写到: {config_path}')
 
 
 if __name__ == '__main__':

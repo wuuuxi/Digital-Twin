@@ -1,33 +1,24 @@
 {
   "experiment_label": "20260513_squat_FTS09",
   "folder": "C:/Users/PC/OneDrive/Experiment/20260513_HKSI_squat/",
+
   "emg_settings": {
     "fs": 1000,
     "emg_folder": "EMG",
     "mvc_file": [
       "EMG_FTS09_Squat_IM_1_2026-05-13_05-34-13.csv"
     ],
-    "musc_label": ["LTA", "LGL", "LSOL", "LFibLon", "LVL", "LRF",  "LVM", "LAddl", "LBF", "LST", "LGlutMax", "LGlutMed", "RTA", "RGL", "RSOL", "RFibLon", "RVL", "RRF",  "RVM", "RAddl", "RBF", "RST", "RGlutMax", "RGlutMed"],
-    "musc_mvc": [0.1144, 0.0461, 0.0619, 0.0342, 0.2673, 0.1798, 0.3053, 0.0463, 0.0459, 0.0297, 0.1071, 0.0335, 0.1123, 0.06, 0.0549, 0.0466, 0.0287, 0.1565, 0.2789, 0.0684, 0.0578, 0.0874, 0.0657, 0.1126],
+    "musc_label": ["LTA", "LGL", "LSOL", "LFibLon", "LVL", "LRF", "LVM", "LAddl", "LBF", "LST", "LGlutMax", "LGlutMed", "RTA", "RGL", "RSOL", "RFibLon", "RVL", "RRF",  "RVM", "RAddl", "RBF", "RST", "RGlutMax", "RGlutMed"],
+    "musc_mvc": [0.1144, 0.0461, 0.0619, 0.0342, 0.2673, 0.1798, 0.3053, 0.0463, 0.0459, 0.0297, 0.1071, 0.0335, 0.1123, 0.06, 0.0549, 0.0466, 0.0287, 0.1565, 0.2789, 0.0684, 0.0578, 0.0874, 0.0657, 0.1126]
   },
-  "opensim_settings": {
-    "subject_mass": 70.0,
-    "bar_mass": 20.0,
-    "bar_contact_body": "torso",
-    "bar_contact_point": [-0.0444, 0.3829, 0.0],
-    "muscle_analysis_coordinates": [
-      "hip_flexion_r", "hip_flexion_l",
-      "knee_angle_r",  "knee_angle_l",
-      "ankle_angle_r", "ankle_angle_l",
-      "flex_extension", "lat_bending", "axial_rotation"
-    ]
-  },
+
   "motion_settings": {
     "motion_flag": "all",
     "target_motion": "squat",
     "remove_leading_zeros": true,
     "turn_position": true
   },
+
   "modeling_file": {
     "emg_folder": "emg",
     "xsens_folder": "xsens",
@@ -38,59 +29,79 @@
         "emg_file": "EMG_FTS09_Squat_IK0.3_1_2026-05-13_05-25-52.csv",
         "xsens_file": "MVN-008_FTS09.xlsx",
         "insole_file_l": "2026-05-13-17-25_squat_IK0.3/Medilogic Insoles-LT Force.csv",
-        "insole_file_r": "2026-05-13-17-25_squat_IK0.3/Medilogic Insoles-LT Force.csv"
+        "insole_file_r": "2026-05-13-17-25_squat_IK0.3/Medilogic Insoles-RT Force.csv"
       },
       "0.15": {
         "robot_file": "robot/RobotUdp_FTS09_Squat_IK0.15_20260513_172927.csv",
         "emg_file": "EMG_FTS09_Squat_IK0.15_1_2026-05-13_05-29-20.csv",
         "xsens_file": "MVN-009_FTS09.xlsx",
         "insole_file_l": "2026-05-13-17-29_squat_IK0.15/Medilogic Insoles-LT Force.csv",
-        "insole_file_r": "2026-05-13-17-29_squat_IK0.15/Medilogic Insoles-LT Force.csv"
+        "insole_file_r": "2026-05-13-17-29_squat_IK0.15/Medilogic Insoles-RT Force.csv"
       },
       "20": {
         "robot_file": "robot/RobotUdp_FTS09_Squat_15p_3_20260513_165830.csv",
         "emg_file": "EMG_FTS09_Squat_15p_1_2026-05-13_04-58-13.csv",
         "xsens_file": "MVN-001_FTS09.xlsx",
         "insole_file_l": "2026-05-13-16-58_Squat15p/Medilogic Insoles-LT Force.csv",
-        "insole_file_r": "2026-05-13-16-58_Squat15p/Medilogic Insoles-LT Force.csv"
+        "insole_file_r": "2026-05-13-16-58_Squat15p/Medilogic Insoles-RT Force.csv"
       },
       "38": {
         "robot_file": "robot/RobotUdp_FTS09_Squat_30p_20260513_170034.csv",
         "emg_file": "EMG_FTS09_Squat_30p_1_2026-05-13_05-00-23.csv",
         "xsens_file": "MVN-002_FTS09.xlsx",
         "insole_file_l": "2026-05-13-17-00_squat30p/Medilogic Insoles-LT Force.csv",
-        "insole_file_r": "2026-05-13-17-00_squat30p/Medilogic Insoles-LT Force.csv"
+        "insole_file_r": "2026-05-13-17-00_squat30p/Medilogic Insoles-RT Force.csv"
       },
       "56": {
         "robot_file": "robot/RobotUdp_FTS09_Squat_45p_20260513_170310.csv",
         "emg_file": "EMG_FTS09_Squat_45p_1_2026-05-13_05-02-42.csv",
         "xsens_file": "MVN-003_FTS09.xlsx",
         "insole_file_l": "2026-05-13-17-02_squat45p/Medilogic Insoles-LT Force.csv",
-        "insole_file_r": "2026-05-13-17-02_squat45p/Medilogic Insoles-LT Force.csv"
+        "insole_file_r": "2026-05-13-17-02_squat45p/Medilogic Insoles-RT Force.csv"
       },
       "75": {
         "robot_file": "robot/RobotUdp_FTS09_Squat_60p_20260513_170907.csv",
         "emg_file": "EMG_FTS09_Squat_60p_1_2026-05-13_05-08-52.csv",
         "xsens_file": "MVN-004_FTS09.xlsx",
         "insole_file_l": "2026-05-13-17-09_squat60p/Medilogic Insoles-LT Force.csv",
-        "insole_file_r": "2026-05-13-17-09_squat60p/Medilogic Insoles-LT Force.csv"
+        "insole_file_r": "2026-05-13-17-09_squat60p/Medilogic Insoles-RT Force.csv"
       },
       "94": {
         "robot_file": "robot/RobotUdp_FTS09_Squat_75p_20260513_171545.csv",
         "emg_file": "EMG_FTS09_Squat_75p_1_2026-05-13_05-15-37.csv",
         "xsens_file": "MVN-005_FTS09.xlsx",
         "insole_file_l": "2026-05-13-17-15_squat75p/Medilogic Insoles-LT Force.csv",
-        "insole_file_r": "2026-05-13-17-15_squat75p/Medilogic Insoles-LT Force.csv"
+        "insole_file_r": "2026-05-13-17-15_squat75p/Medilogic Insoles-RT Force.csv"
       },
       "106": {
         "robot_file": "robot/RobotUdp_FTS09_Squat_85p_20260513_171938.csv",
         "emg_file": "EMG_FTS09_Squat_85p_1_2026-05-13_05-19-31.csv",
         "xsens_file": "MVN-006_FTS09.xlsx",
         "insole_file_l": "2026-05-13-17-19_squat85p/Medilogic Insoles-LT Force.csv",
-        "insole_file_r": "2026-05-13-17-19_squat85p/Medilogic Insoles-LT Force.csv"
+        "insole_file_r": "2026-05-13-17-19_squat85p/Medilogic Insoles-RT Force.csv"
       }
     }
   },
+
+    "opensim_settings": {
+    "subject_mass": 70.0,
+    "bar_mass": 20.0,
+    "bar_contact_body": "torso",
+    "bar_contact_point": [-0.0444, 0.3829, 0.0],
+    "insole_contact_point": [0.097, -0.0011, 0.0],
+    "muscle_analysis_coordinates": [
+      "hip_flexion_r", "hip_flexion_l",
+      "knee_angle_r",  "knee_angle_l",
+      "ankle_angle_r", "ankle_angle_l"
+    ],
+    "muscle_analysis_muscles": [
+      "tibant_l", "gaslat_l", "soleus_l", "perlong_l", "vaslat_l", "recfem_l",
+      "vasmed_l", "addlong_l", "bflh_l", "semiten_l", "glmax1_l", "glmed1_l",
+      "tibant_r", "gaslat_r", "soleus_r", "perlong_r", "vaslat_r", "recfem_r",
+      "vasmed_r", "addlong_r", "bflh_r", "semiten_r", "glmax1_r", "glmed1_r"
+    ]
+    },
+
   "heatmap_settings": {
     "muscle_folder": "result/20250409_squat_NCMP001/20250409_164021",
     "height_range": [1.41, 1.909],

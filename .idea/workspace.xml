@@ -4,16 +4,27 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="44977361-f79e-4137-b8be-2fb435dbd7f5" name="Changes" comment="Added load estimation.">
-      <change afterPath="$PROJECT_DIR$/digitaltwin/osim/opensim_pipeline.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/config/20260513_squat_FTS09_xsens.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/opensim/example_opensim_pipeline.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/examples/opensim/example_scaling.py" afterDir="false" />
+    <list default="true" id="44977361-f79e-4137-b8be-2fb435dbd7f5" name="Changes" comment="Added model scaling.">
+      <change afterPath="$PROJECT_DIR$/digitaltwin/data/insole_processor.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/digitaltwin/osim/external_forces.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/digitaltwin/osim/inverse_dynamics.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/digitaltwin/osim/mot_pipeline.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/digitaltwin/osim/realtime/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/workspace/whole body model.osim" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/digitaltwin/data/xsens_processor.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/data/xsens_processor.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/digitaltwin/osim/opensim_scaling.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/osim/opensim_scaling.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/opensim/example_xsens_to_mot.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/opensim/example_xsens_to_mot.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/workspace/opensim.log" beforeDir="false" afterPath="$PROJECT_DIR$/workspace/opensim.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/osim/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/osim/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/osim/muscle_analysis.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/osim/muscle_analysis.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/osim/muscle_state.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/osim/realtime/muscle_state.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/osim/opensim_pipeline.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/osim/opensim_scaling.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/osim/scaling.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/osim/osim_model.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/osim/realtime/osim_model.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/osim/xsens_to_mot.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/config/20260513_squat_FTS09_xsens.json" beforeDir="false" afterPath="$PROJECT_DIR$/examples/config/20260513_squat_FTS09_xsens.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/metronome/bp-metronome.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/metronome/bp-metronome.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/metronome/sq-metronome.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/metronome/sq-metronome.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/opensim/example_opensim_pipeline.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/opensim/example_opensim_pipeline.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/opensim/example_scaling.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/opensim/example_scaling.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/opensim/example_xsens_to_mot.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -84,11 +95,11 @@
       <recent name="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\examples\config" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\digitaltwin\osim\realtime" />
       <recent name="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\digitaltwin\visualization\vload" />
       <recent name="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\digitaltwin\analysis\vload" />
       <recent name="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\digitaltwin\analysis\heatmap" />
       <recent name="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\examples\opensim" />
-      <recent name="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\examples\emg_analysis" />
     </key>
   </component>
   <component name="RunManager" selected="Python.example_opensim_pipeline">
@@ -258,13 +269,22 @@
       <option name="project" value="LOCAL" />
       <updated>1779262406164</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="Added model scaling.">
+      <option name="closed" value="true" />
+      <created>1779342494283</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1779342494283</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Added basic variable load planning." />
     <MESSAGE value="Added 20260513_squat_FTS09." />
     <MESSAGE value="Added load estimation." />
-    <option name="LAST_COMMIT_MESSAGE" value="Added load estimation." />
+    <MESSAGE value="Added model scaling." />
+    <option name="LAST_COMMIT_MESSAGE" value="Added model scaling." />
   </component>
 </project>

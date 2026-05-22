@@ -1,7 +1,7 @@
 import time
 import threading
 
-from digitaltwin.osim.osim_model import OpenSimModel
+from digitaltwin.osim.realtime.osim_model import OpenSimModel
 from digitaltwin.config_manager import ConfigManager
 from digitaltwin.visualization.realtime import SpeedController, GlobalAudioScheduler
 from digitaltwin.data.data_manager import DataManager

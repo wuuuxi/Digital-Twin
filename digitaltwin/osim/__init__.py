@@ -1,4 +1,4 @@
-from .osim_model import OpenSimModel
-from .muscle_state import MuscleStateManager
+from digitaltwin.osim.realtime.osim_model import OpenSimModel
+from digitaltwin.osim.realtime.muscle_state import MuscleStateManager
 
 __all__ = ['OpenSimModel', 'MuscleStateManager']
