@@ -4,27 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="44977361-f79e-4137-b8be-2fb435dbd7f5" name="Changes" comment="Added model scaling.">
-      <change afterPath="$PROJECT_DIR$/digitaltwin/data/insole_processor.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/digitaltwin/osim/external_forces.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/digitaltwin/osim/inverse_dynamics.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/digitaltwin/osim/mot_pipeline.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/digitaltwin/osim/realtime/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/workspace/whole body model.osim" afterDir="false" />
+    <list default="true" id="44977361-f79e-4137-b8be-2fb435dbd7f5" name="Changes" comment="Added muscle analysis.">
+      <change afterPath="$PROJECT_DIR$/digitaltwin/analysis/result_analysis.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/opensim/example_external_force.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/opensim/example_inverse_dynamics.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/examples/opensim/example_xsens_to_mot.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/digitaltwin/analysis/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/analysis/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/digitaltwin/osim/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/osim/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/digitaltwin/osim/muscle_analysis.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/osim/muscle_analysis.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/digitaltwin/osim/muscle_state.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/osim/realtime/muscle_state.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/digitaltwin/osim/opensim_pipeline.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/digitaltwin/osim/opensim_scaling.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/osim/scaling.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/digitaltwin/osim/osim_model.py" beforeDir="false" afterPath="$PROJECT_DIR$/digitaltwin/osim/realtime/osim_model.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/digitaltwin/osim/xsens_to_mot.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/config/20260513_squat_FTS09_xsens.json" beforeDir="false" afterPath="$PROJECT_DIR$/examples/config/20260513_squat_FTS09_xsens.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/metronome/bp-metronome.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/metronome/bp-metronome.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/metronome/sq-metronome.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/metronome/sq-metronome.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/opensim/example_opensim_pipeline.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/opensim/example_opensim_pipeline.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/opensim/example_scaling.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/opensim/example_scaling.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/examples/opensim/example_xsens_to_mot.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/examples/opensim/example_muscle_moment_contribution.py" beforeDir="false" afterPath="$PROJECT_DIR$/examples/opensim/example_muscle_moment_contribution.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -76,15 +64,22 @@
     "Python.example_emg_force_ratio.executor": "Run",
     "Python.example_emg_frequency.executor": "Run",
     "Python.example_emg_rms.executor": "Run",
+    "Python.example_external_force.executor": "Run",
     "Python.example_heatmap.executor": "Run",
     "Python.example_heatmap_estimated_load.executor": "Run",
+    "Python.example_inverse_dynamics.executor": "Run",
     "Python.example_load_estimation.executor": "Run",
+    "Python.example_muscle_moment_arm_angle (1).executor": "Run",
+    "Python.example_muscle_moment_arm_angle.executor": "Run",
+    "Python.example_muscle_moment_arm_height.executor": "Run",
+    "Python.example_muscle_moment_contribution.executor": "Run",
     "Python.example_opensim_pipeline.executor": "Run",
     "Python.example_scaling.executor": "Run",
     "Python.example_variable_load.executor": "Run",
     "Python.example_vload_result.executor": "Run",
     "Python.example_vload_result_est_load.executor": "Run",
     "Python.example_xsens_to_mot.executor": "Run",
+    "Python.example_xsens_to_mot_constrained.executor": "Run",
     "RunOnceActivity.git.unshallow": "true",
     "git-widget-placeholder": "master",
     "last_opened_file_path": "C:/Users/PC/OneDrive/CUHK/HKSI digital twins/Digital Twin/examples/config"
@@ -95,15 +90,15 @@
       <recent name="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\examples\config" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\digitaltwin\analysis" />
       <recent name="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\digitaltwin\osim\realtime" />
       <recent name="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\digitaltwin\visualization\vload" />
       <recent name="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\digitaltwin\analysis\vload" />
       <recent name="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\digitaltwin\analysis\heatmap" />
-      <recent name="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\examples\opensim" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.example_opensim_pipeline">
-    <configuration name="example_emg_force_ratio" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+  <component name="RunManager" selected="Python.example_inverse_dynamics">
+    <configuration name="example_compute_mvc" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="Digital Twin" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -112,11 +107,11 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/examples/vload_analysis" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/examples/emg_analysis" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/vload_analysis/example_emg_force_ratio.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/emg_analysis/example_compute_mvc.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -125,7 +120,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="example_opensim_pipeline" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="example_external_force" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="Digital Twin" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -138,7 +133,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/opensim/example_opensim_pipeline.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/opensim/example_external_force.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -147,7 +142,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="example_scaling" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="example_inverse_dynamics" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="Digital Twin" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -160,7 +155,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/opensim/example_scaling.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/opensim/example_inverse_dynamics.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -169,7 +164,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="example_vload_result_est_load" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="example_muscle_moment_contribution" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="Digital Twin" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -178,11 +173,11 @@
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/examples/vload_analysis" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/examples/opensim" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/vload_analysis/example_vload_result_est_load.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/opensim/example_muscle_moment_contribution.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -204,7 +199,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/examples/opensim/example_xsens_to_mot.py" />
+      <option name="SCRIPT_NAME" value="C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\examples\opensim\example_xsens_to_mot.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -214,19 +209,19 @@
       <method v="2" />
     </configuration>
     <list>
-      <item itemvalue="Python.example_emg_force_ratio" />
-      <item itemvalue="Python.example_opensim_pipeline" />
-      <item itemvalue="Python.example_scaling" />
-      <item itemvalue="Python.example_vload_result_est_load" />
-      <item itemvalue="Python.example_xsens_to_mot" />
+      <item itemvalue="Python.example_compute_mvc" />
+      <item itemvalue="Python.example_external_force" />
+      <item itemvalue="Python.example_inverse_dynamics" />
+      <item itemvalue="Python.example_muscle_moment_contribution" />
+      <item itemvalue="Python.example_xsens_to_mot_constrained" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.example_opensim_pipeline" />
-        <item itemvalue="Python.example_scaling" />
-        <item itemvalue="Python.example_xsens_to_mot" />
-        <item itemvalue="Python.example_emg_force_ratio" />
-        <item itemvalue="Python.example_vload_result_est_load" />
+        <item itemvalue="Python.example_inverse_dynamics" />
+        <item itemvalue="Python.example_external_force" />
+        <item itemvalue="Python.example_xsens_to_mot_constrained" />
+        <item itemvalue="Python.example_compute_mvc" />
+        <item itemvalue="Python.example_muscle_moment_contribution" />
       </list>
     </recent_temporary>
   </component>
@@ -277,7 +272,23 @@
       <option name="project" value="LOCAL" />
       <updated>1779342494283</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Added inverse dynamics.">
+      <option name="closed" value="true" />
+      <created>1779430836477</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1779430836477</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Added muscle analysis.">
+      <option name="closed" value="true" />
+      <created>1779518757099</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1779518757099</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -285,6 +296,8 @@
     <MESSAGE value="Added 20260513_squat_FTS09." />
     <MESSAGE value="Added load estimation." />
     <MESSAGE value="Added model scaling." />
-    <option name="LAST_COMMIT_MESSAGE" value="Added model scaling." />
+    <MESSAGE value="Added inverse dynamics." />
+    <MESSAGE value="Added muscle analysis." />
+    <option name="LAST_COMMIT_MESSAGE" value="Added muscle analysis." />
   </component>
 </project>

@@ -321,6 +321,7 @@ def collect_load_data(config, base_dir, coord_l, load_keys, pipeline_results):
         seg_df = upward_df.copy()
 
         muscle_records = []
+        ma_cols = []   # 所有左腿肌肉 moment 列，用于计算所有肌肉力矩之和
         for col in muscle_cols:
             vals = m_df[col].values.astype(float)
             ma_col = f'ma_moment_{col}'
@@ -328,6 +329,7 @@ def collect_load_data(config, base_dir, coord_l, load_keys, pipeline_results):
                 t_up, m_t, vals,
                 left=vals[0], right=vals[-1]
             )
+            ma_cols.append(ma_col)
 
             valid = np.isfinite(seg_df['pos_l'].values) & np.isfinite(seg_df[ma_col].values)
             if valid.sum() == 0:
@@ -340,6 +342,14 @@ def collect_load_data(config, base_dir, coord_l, load_keys, pipeline_results):
                 seg_df.loc[valid, 'pos_l'].values.astype(float),
                 seg_df.loc[valid, ma_col].values.astype(float),
             ))
+
+        # 所有左腿肌肉力矩逐时刻求和（不因 MOMENT_EPS 过滤而丢掉小肌肉）
+        muscle_total_raw = None
+        muscle_total_mean_upward = None
+        if ma_cols:
+            muscle_total_raw = seg_df[ma_cols].sum(axis=1, skipna=True).values.astype(float)
+            if np.isfinite(muscle_total_raw).any():
+                muscle_total_mean_upward = float(np.nanmean(muscle_total_raw))
 
         if not muscle_records:
             print(f'[WARN] load={load_key} coord={coord_l} 无有效肌肉')
@@ -412,6 +422,8 @@ def collect_load_data(config, base_dir, coord_l, load_keys, pipeline_results):
                 float(np.nanmean(id_moment_raw))
                 if id_moment_raw is not None else None
             ),
+            # 用于最后打印：标准 upward 切片中所有左腿肌肉 moment 的逐时刻求和均值
+            'muscle_total_mean_upward': muscle_total_mean_upward,
         }
         print(f'[OK] load={load_key} coord={coord_l}  '
               f'n_muscles={len(binned_muscles)}  '
@@ -712,8 +724,9 @@ def main():
     experiment_label = config['experiment_label']
     out_dir = os.path.join(base_dir, 'result', experiment_label, 'test')
 
-    # 记录每个负载、每个关节在标准 upward 切片中的 ID 平均力矩
+    # 记录每个负载、每个关节在标准 upward 切片中的平均力矩
     id_mean_summary = {}
+    muscle_total_mean_summary = {}
 
     for joint_base, coord_l in joint_groups.items():
         print(f'\n{"=" * 60}')
@@ -736,6 +749,10 @@ def main():
             lk: entry.get('id_mean_upward', entry.get('id_mean'))
             for lk, entry in data.items()
         }
+        muscle_total_mean_summary[joint_base] = {
+            lk: entry.get('muscle_total_mean_upward')
+            for lk, entry in data.items()
+        }
 
         # 收集所有肌肉列名以建立全局颜色映射
         all_cols = [col for entry in data.values()
@@ -755,10 +772,12 @@ def main():
             )
         )
 
-    # ── 最后打印每个负载、每个关节在 upward 阶段的 ID 平均关节力矩 ──
-    if id_mean_summary:
+    def print_summary_table(title, summary, load_keys, note):
+        """按 joint × load 打印均值表。"""
+        if not summary:
+            return
         print('\n' + '=' * 60)
-        print('ID 关节力矩平均值（仅标准 upward 切片阶段）')
+        print(title)
         print('=' * 60)
 
         header = f'{"joint":<20s}' + ''.join(
@@ -767,7 +786,7 @@ def main():
         print(header)
         print('-' * len(header))
 
-        for joint_base, load_means in id_mean_summary.items():
+        for joint_base, load_means in summary.items():
             row = f'{joint_base:<20s}'
             for lk in load_keys:
                 v = load_means.get(str(lk))
@@ -778,8 +797,25 @@ def main():
             print(row)
 
         print('\n单位: N·m')
-        print('说明: 均值基于 MultiLoadPipeline/DataAligner 切出的 upward 阶段，'
+        print(note)
+
+    # ── 最后打印每个负载、每个关节在 upward 阶段的 ID 平均关节力矩 ──
+    print_summary_table(
+        title='ID 关节力矩平均值（仅标准 upward 切片阶段）',
+        summary=id_mean_summary,
+        load_keys=load_keys,
+        note=('说明: 均值基于 MultiLoadPipeline/DataAligner 切出的 upward 阶段，'
               '再按对应时间插值 inverse_dynamics.sto 的 ID moment。')
+    )
+
+    # ── 类似地打印所有左腿肌肉力矩逐时刻求和后的平均值 ──
+    print_summary_table(
+        title='所有左腿肌肉力矩之和的平均值（仅标准 upward 切片阶段）',
+        summary=muscle_total_mean_summary,
+        load_keys=load_keys,
+        note=('说明: 先在标准 upward 阶段按时间插值 MuscleAnalysis_Moment，'
+              '再对该关节下所有左腿肌肉 moment 逐时刻求和，最后对时间取平均。')
+    )
 
     plt.show()
 
