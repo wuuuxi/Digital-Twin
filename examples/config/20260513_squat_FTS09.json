@@ -4,12 +4,41 @@
 
   "emg_settings": {
     "fs": 1000,
-    "emg_folder": "EMG",
+    "emg_folder": "MVC",
     "mvc_file": [
-      "EMG_FTS09_Squat_IM_1_2026-05-13_05-34-13.csv"
+      "EMG_FTS09_Squat_IM_1_2026-05-13_05-34-13.csv",
+      "EMG_FTS09_MVC_Ankle_L_1_2026-05-13_06-14-22.csv",
+      "EMG_FTS09_MVC_Ankle_L_2_2026-05-13_06-15-33.csv",
+      "EMG_FTS09_MVC_Ankle_L_3_2026-05-13_06-16-50.csv",
+      "EMG_FTS09_MVC_Ankle_L_4_2026-05-13_06-18-00.csv",
+      "EMG_FTS09_MVC_Ankle_R_1_2026-05-13_06-07-46.csv",
+      "EMG_FTS09_MVC_Ankle_R_2_2026-05-13_06-08-58.csv",
+      "EMG_FTS09_MVC_Ankle_R_3_2026-05-13_06-10-04.csv",
+      "EMG_FTS09_MVC_Ankle_R_4_2026-05-13_06-11-22.csv",
+      "EMG_FTS09_MVC_Hip_L_1_2026-05-13_05-57-50.csv",
+      "EMG_FTS09_MVC_Hip_L_2_2026-05-13_05-58-58.csv",
+      "EMG_FTS09_MVC_Hip_L_3_2026-05-13_06-00-03.csv",
+      "EMG_FTS09_MVC_Hip_L_4_2026-05-13_06-01-09.csv",
+      "EMG_FTS09_MVC_Hip_R_1_2026-05-13_05-49-03.csv",
+      "EMG_FTS09_MVC_Hip_R_2_2026-05-13_05-50-10.csv",
+      "EMG_FTS09_MVC_Hip_R_3_2026-05-13_05-51-15.csv",
+      "EMG_FTS09_MVC_Hip_R_4_2026-05-13_05-52-21.csv",
+      "EMG_FTS09_MVC_Knee_L_1_2026-05-13_06-28-49.csv",
+      "EMG_FTS09_MVC_Knee_L_2_2026-05-13_06-29-53.csv",
+      "EMG_FTS09_MVC_Knee_L_3_2026-05-13_06-31-15.csv",
+      "EMG_FTS09_MVC_Knee_L_4_2026-05-13_06-32-23.csv",
+      "EMG_FTS09_MVC_Knee_R_1_2026-05-13_06-21-39.csv",
+      "EMG_FTS09_MVC_Knee_R_2_2026-05-13_06-22-55.csv",
+      "EMG_FTS09_MVC_Knee_R_3_2026-05-13_06-24-13.csv",
+      "EMG_FTS09_MVC_Knee_R_4_2026-05-13_06-25-12.csv"
     ],
-    "musc_label": ["LTA", "LGL", "LSOL", "LFibLon", "LVL", "LRF",  "LVM", "LAddl", "LBF", "LST", "LGlutMax", "LGlutMed", "RTA", "RGL", "RSOL", "RFibLon", "RVL", "RRF",  "RVM", "RAddl", "RBF", "RST", "RGlutMax", "RGlutMed"],
-    "musc_mvc": [0.1144, 0.0461, 0.0619, 0.0342, 0.2673, 0.1798, 0.3053, 0.0463, 0.0459, 0.0297, 0.1071, 0.0335, 0.1123, 0.06, 0.0549, 0.0466, 0.0287, 0.1565, 0.2789, 0.0684, 0.0578, 0.0874, 0.0657, 0.1126]
+    "musc_label": [
+      "LTA", "LGL", "LSOL", "LFibLon", "LVL", "LRF", "LVM", "LAddl", "LBF", "LST", "LGlutMax", "LGlutMed",
+      "RTA", "RGL", "RSOL", "RFibLon", "RVL", "RRF",  "RVM", "RAddl", "RBF", "RST", "RGlutMax", "RGlutMed"],
+    "musc_mvc": [
+      0.2551, 0.1117, 0.0913, 0.1027, 0.2673, 0.1798, 0.3053, 0.0951, 0.1233, 0.1409, 0.1350, 0.0439,
+      0.1908, 0.1100, 0.0864, 0.1420, 0.0287, 0.1565, 0.2789, 0.0789, 0.0969, 0.1482, 0.0657, 0.1214
+    ]
   },
 
   "motion_settings": {
@@ -22,14 +51,6 @@
   "modeling_file": {
     "emg_folder": "emg",
     "data": {
-      "0.3": {
-        "robot_file": "robot/RobotUdp_FTS09_Squat_IK0.3_20260513_172556.csv",
-        "emg_file": "EMG_FTS09_Squat_IK0.3_1_2026-05-13_05-25-52.csv"
-      },
-      "0.15": {
-        "robot_file": "robot/RobotUdp_FTS09_Squat_IK0.15_20260513_172927.csv",
-        "emg_file": "EMG_FTS09_Squat_IK0.15_1_2026-05-13_05-29-20.csv"
-      },
       "20": {
         "robot_file": "robot/RobotUdp_FTS09_Squat_15p_3_20260513_165830.csv",
         "emg_file": "EMG_FTS09_Squat_15p_1_2026-05-13_04-58-13.csv"
@@ -58,13 +79,12 @@
   },
 
   "heatmap_settings": {
-    "muscle_folder": "result/20250409_squat_NCMP001/20250409_164021",
     "height_range": [1.41, 1.909],
-    "load_range": [20, 100],
-    "titles": ["LFibLon", "LGL", "LVL"],
-    "goal": [0.62, 0.48, 0.68],
-    "over_activate_threshold": [0.8, 0.8, 0.8],
+    "load_range": [20, 105],
+    "titles": ["RVL", "RVM", "RGlutMax", "RBF"],
+    "goal": [0.4267, 0.3808, 0.3145, 0.2778],
+    "over_activate_threshold": [0.8, 0.8, 0.8, 0.8],
     "epsilons": [1],
-    "max_iter": [10000, 10000, 10000]
+    "max_iter": [10000, 10000, 10000, 10000]
   }
 }

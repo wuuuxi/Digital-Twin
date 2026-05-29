@@ -24,12 +24,13 @@ LABEL = 'MDF (Hz)'
 
 def main():
     # subject = Subject('../config/20250409_squat_NCMP001.json')
-    subject = Subject('../config/20260513_squat_FTS09_mvc.json')
+    subject = Subject('../config/20260513_squat_FTS09.json')
     pipeline = MultiLoadPipeline(subject)
     pipeline.debug = True
     pipeline.run(include_xsens=False)
 
-    muscles = subject.musc_label[:12]
+    # muscles = subject.musc_label[:12]
+    muscles = subject.musc_label
 
     plot_feature_vs_time(pipeline.results, muscles, feature=FEATURE, feature_label=LABEL)
     plot_feature_vs_position(pipeline.results, muscles, feature=FEATURE, feature_label=LABEL)

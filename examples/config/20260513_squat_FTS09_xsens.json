@@ -4,12 +4,29 @@
 
   "emg_settings": {
     "fs": 1000,
-    "emg_folder": "EMG",
+    "emg_folder": "MVC",
     "mvc_file": [
-      "EMG_FTS09_Squat_IM_1_2026-05-13_05-34-13.csv"
+      "EMG_FTS09_Squat_IM_1_2026-05-13_05-34-13.csv",
+      "EMG_FTS09_MVC_Ankle_L_1_2026-05-13_06-14-22.csv",
+      "EMG_FTS09_MVC_Ankle_L_2_2026-05-13_06-15-33.csv",
+      "EMG_FTS09_MVC_Ankle_L_3_2026-05-13_06-16-50.csv",
+      "EMG_FTS09_MVC_Ankle_L_4_2026-05-13_06-18-00.csv",
+      "EMG_FTS09_MVC_Hip_L_1_2026-05-13_05-57-50.csv",
+      "EMG_FTS09_MVC_Hip_L_2_2026-05-13_05-58-58.csv",
+      "EMG_FTS09_MVC_Hip_L_3_2026-05-13_06-00-03.csv",
+      "EMG_FTS09_MVC_Hip_L_4_2026-05-13_06-01-09.csv",
+      "EMG_FTS09_MVC_Knee_L_1_2026-05-13_06-28-49.csv",
+      "EMG_FTS09_MVC_Knee_L_2_2026-05-13_06-29-53.csv",
+      "EMG_FTS09_MVC_Knee_L_3_2026-05-13_06-31-15.csv",
+      "EMG_FTS09_MVC_Knee_L_4_2026-05-13_06-32-23.csv"
     ],
-    "musc_label": ["LTA", "LGL", "LSOL", "LFibLon", "LVL", "LRF", "LVM", "LAddl", "LBF", "LST", "LGlutMax", "LGlutMed", "RTA", "RGL", "RSOL", "RFibLon", "RVL", "RRF",  "RVM", "RAddl", "RBF", "RST", "RGlutMax", "RGlutMed"],
-    "musc_mvc": [0.1144, 0.0461, 0.0619, 0.0342, 0.2673, 0.1798, 0.3053, 0.0463, 0.0459, 0.0297, 0.1071, 0.0335, 0.1123, 0.06, 0.0549, 0.0466, 0.0287, 0.1565, 0.2789, 0.0684, 0.0578, 0.0874, 0.0657, 0.1126]
+    "musc_label": [
+      "LTA", "LGL", "LSOL", "LFibLon", "LVL", "LRF", "LVM", "LAddl", "LBF", "LST", "LGlutMax", "LGlutMed",
+      "RTA", "RGL", "RSOL", "RFibLon", "RVL", "RRF",  "RVM", "RAddl", "RBF", "RST", "RGlutMax", "RGlutMed"],
+    "musc_mvc": [
+      0.2551, 0.1117, 0.0913, 0.1027, 0.2673, 0.1798, 0.3053, 0.0951, 0.1233, 0.1409, 0.1350, 0.0439,
+      0.1908, 0.1100, 0.0864, 0.1420, 0.0287, 0.1565, 0.2789, 0.0789, 0.0969, 0.1482, 0.0657, 0.1214
+    ]
   },
 
   "motion_settings": {
@@ -103,13 +120,12 @@
     },
 
   "heatmap_settings": {
-    "muscle_folder": "result/20250409_squat_NCMP001/20250409_164021",
     "height_range": [1.41, 1.909],
-    "load_range": [20, 100],
-    "titles": ["LFibLon", "LGL", "LVL"],
-    "goal": [0.62, 0.48, 0.68],
-    "over_activate_threshold": [0.8, 0.8, 0.8],
+    "load_range": [20, 105],
+    "titles": ["LVL", "LVM", "LGlutMax", "RVL", "RVM", "RGlutMax", "RGL", "RBF"],
+    "goal": [0.6755, 0.6714, 0.4063, 0.6805, 0.6777, 0.6157, 0.2621, 0.4163],
+    "over_activate_threshold": [0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9],
     "epsilons": [1],
-    "max_iter": [10000, 10000, 10000]
+    "max_iter": [10000, 10000, 10000, 10000, 10000, 10000, 10000, 10000]
   }
 }

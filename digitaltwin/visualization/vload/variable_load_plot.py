@@ -79,9 +79,8 @@ def plot_variable_load_result(subject, xi, yi, zi, heights, opti_loads,
     ax1 = fig.add_subplot(gs[0, :])
     contour = ax1.contourf(xi, yi, zi, levels=100, cmap='hot')
     plt.colorbar(contour, ax=ax1)
-    cs_goal = ax1.contour(xi, yi, zi, levels=[goal], colors='white',
+    cs_goal = ax1.contour(xi, yi, zi, levels=[goal], colors='black',
                           linewidths=1.5, linestyles='--')
-    _apply_goal_halo(cs_goal)
 
     # 过激活阴影：zi > over_activate_th 的区域
     if over_activate_th is not None:
@@ -91,8 +90,6 @@ def plot_variable_load_result(subject, xi, yi, zi, heights, opti_loads,
             ax1.contourf(xi, yi, zi,
                          levels=[th, zmax + 1e-3],
                          colors=['#00000066'])
-            ax1.contour(xi, yi, zi, levels=[th],
-                        colors='red', linewidths=1.5, linestyles='-')
 
     for i in range(len(epsilons)):
         ax1.plot(heights[i], opti_loads[i], color='#1f77b4',
@@ -104,7 +101,7 @@ def plot_variable_load_result(subject, xi, yi, zi, heights, opti_loads,
     # --- 激活曲线 ---
     ax2 = fig.add_subplot(gs[1, :])
     ax2.plot(heights[0], goal * np.ones_like(activations[0][:, idx]),
-             '--', label='Goal', color='#ff7f0e')
+             '--', label='Goal', color='black')
     for i in range(len(epsilons)):
         ax2.plot(heights[i], activations[i][:, idx], color=color[i % 3],
                  linestyle=line_styles[i % 4], label='Optimization')
@@ -299,13 +296,11 @@ def plot_danger_area(subject, xi, yi, zi, heights, opti_loads, activations,
                 Patch(facecolor='none', edgecolor='white',
                       hatch='\\\\', label='Inefficient Area'))
 
-    cs_goal = ax1.contour(xi, yi, zi, levels=[goal], colors='white',
+    cs_goal = ax1.contour(xi, yi, zi, levels=[goal], colors='black',
                           linewidths=1.5, linestyles='--')
-    _apply_goal_halo(cs_goal)
     legend_elements.append(
-        Line2D([0], [0], color='white', linestyle='--',
-               linewidth=1.5, label='Goal',
-               path_effects=_GOAL_LINE_HALO))
+        Line2D([0], [0], color='black', linestyle='--',
+               linewidth=1.5, label='Goal'))
 
     for i in range(len(epsilons)):
         line, = ax1.plot(heights[i], opti_loads[i], color='#1f77b4',
@@ -321,7 +316,7 @@ def plot_danger_area(subject, xi, yi, zi, heights, opti_loads, activations,
     # 激活曲线
     ax2 = fig.add_subplot(gs[1, :])
     ax2.plot(heights[0], goal * np.ones_like(activations[0][:, idx]),
-             '--', label='Goal', color='#ff7f0e')
+             '--', label='Goal', color='black')
     for i in range(len(epsilons)):
         ax2.plot(heights[i], activations[i][:, idx], color=color[i % 3],
                  linestyle=line_styles[i % 4], label='Optimization')

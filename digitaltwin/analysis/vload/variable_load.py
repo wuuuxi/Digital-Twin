@@ -654,6 +654,17 @@ def one_muscle_variable_load(subject, title, muscle_files, goal, epsilons,
         xi = np.linspace(height_min, height_max, 100)
         yi = np.linspace(load_min, load_max, 100)
         xi, yi = np.meshgrid(xi, yi)
+
+        # 多肌肉同时优化时，goal 可以是列表；绘图时每块肌肉必须使用自己的标量目标值，
+        # 不能把整个 goal 列表传给 contour(levels=[goal])。
+        if isinstance(goal, (int, float)):
+            goal_for_plot = [float(goal)] * len(muscle_files)
+        else:
+            assert len(goal) == len(muscle_files), (
+                f"goal 长度 {len(goal)} 与 muscle_files 长度 "
+                f"{len(muscle_files)} 不匹配")
+            goal_for_plot = [float(x) for x in goal]
+
         for j in range(len(muscle_files)):
             if use_pspline:
                 from digitaltwin.analysis.heatmap.monotone_pspline import (
@@ -672,9 +683,12 @@ def one_muscle_variable_load(subject, title, muscle_files, goal, epsilons,
                 th_j = float(s_val)
             else:
                 th_j = None
+
+            muscle_name = muscle_files[j].replace('_rbf_params.pkl', '')
+            plot_title = title if len(muscle_files) == 1 else f'{title}_{muscle_name}'
             plot_fn(subject, xi, yi, zi, heights, opti_loads,
-                    activations, epsilons, j, goal, title, vload_dir,
-                    over_activate_th=th_j)
+                    activations, epsilons, j, goal_for_plot[j], plot_title,
+                    vload_dir, over_activate_th=th_j)
 
     return heights, opti_loads, activations
 

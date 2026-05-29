@@ -16,9 +16,9 @@ from digitaltwin import Subject, MultiLoadPipeline
 
 def main():
     # subject = Subject('../config/20250409_squat_NCMP001_mvc.json')
-    subject = Subject('../config/20260513_squat_FTS09_mvc.json')
+    subject = Subject('../config/20260513_squat_FTS09.json')
     pipeline = MultiLoadPipeline(subject)
-    pipeline.debug = True
+    pipeline.debug = False
 
     # # Step 1: 产出 RBF 与 P-spline 两套热力图参数
     # target_muscles = ['GL', 'FibLon', 'VL']

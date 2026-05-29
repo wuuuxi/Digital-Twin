@@ -24,14 +24,15 @@ LABEL = 'RMS (mV)'
 
 def main():
     # subject = Subject('../config/20250512_squat_Yuchen.json')
-    subject = Subject('../config/20260513_squat_FTS09_mvc.json')
+    subject = Subject('../config/20260513_squat_FTS09.json')
     pipeline = MultiLoadPipeline(subject)
     pipeline.debug = True
 
     pipeline.run(include_xsens=False)
     vload_results = pipeline.run_vload()
 
-    muscles = subject.musc_label[:12]
+    # muscles = subject.musc_label[:12]
+    muscles = subject.musc_label
 
     plot_feature_vs_time_combined(pipeline.results, vload_results, muscles,
                                   feature=FEATURE, feature_label=LABEL)

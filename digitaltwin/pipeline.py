@@ -523,7 +523,8 @@ class MultiLoadPipeline:
                     num_centers=num_centers, sigma=sigma, data_len=data_len)
                 all_params[f'{musc}_3d'] = params_3d
 
-        # ---- RMSE 报告 ----
+        # ---- RMSE 报告：表格形式输出 ----
+        rmse_rows = {}
         for musc, p in all_params.items():
             if '_3d' in musc:
                 continue
@@ -533,21 +534,41 @@ class MultiLoadPipeline:
             else:
                 base_musc = musc
                 tag = 'P-spline'
+
             emg_col = f'emg_{base_musc}'
+            if emg_col not in data.columns:
+                continue
+
             if p.get('model') == 'pspline':
                 pred = predict_at(
                     p, data['pos_l'].values, data[load_col].values)
                 actual = data[emg_col].values
-                rmse = float(np.sqrt(np.mean((pred - actual) ** 2)))
-                mean_pred = float(np.mean(pred))
-                rmse_pct = (rmse / mean_pred
-                            if mean_pred != 0 else float('inf'))
+                rmse = float(np.sqrt(np.nanmean((pred - actual) ** 2)))
+                mean_pred = float(np.nanmean(np.abs(pred)))
+                rmse_pct = (rmse / mean_pred * 100
+                            if mean_pred > 1e-8 else float('inf'))
             else:
                 rmse_pct = compute_rmse_percentage(
                     data, 'pos_l', load_col, emg_col,
                     p['centers'], p['weights'],
                     p['scaler'], p['sigma'])
-            self._log(f"{base_musc} [{tag}] RMSE%: {rmse_pct:.2f}%")
+
+            rmse_rows.setdefault(base_musc, {})[tag] = rmse_pct
+
+        if rmse_rows:
+            print('\n' + '=' * 64)
+            print(f'Heatmap RMSE% 表格（movement_types={movement_types}）')
+            print('=' * 64)
+            print(f'{"muscle":<16s}{"RBF RMSE%":>16s}{"P-spline RMSE%":>20s}')
+            print('-' * 64)
+            for base_musc in sorted(rmse_rows.keys()):
+                rbf_v = rmse_rows[base_musc].get('RBF')
+                psp_v = rmse_rows[base_musc].get('P-spline')
+                rbf_s = 'N/A' if rbf_v is None else f'{rbf_v:.2f}'
+                psp_s = 'N/A' if psp_v is None else f'{psp_v:.2f}'
+                print(f'{base_musc:<16s}{rbf_s:>16s}{psp_s:>20s}')
+            print('=' * 64)
+            print('单位: %')
 
         self._log(f"热力图已保存至 {save_dir}")
         return all_params
@@ -692,7 +713,7 @@ class MultiLoadPipeline:
                     data, 'pos_l', 'load', emg_col,
                     p['centers'], p['weights'],
                     p['scaler'], p['sigma'])
-            # print(f'{base_musc} [{tag}] RMSE%: {rmse_pct:.2f}%')
+            print(f'{base_musc} [{tag}] RMSE%: {rmse_pct:.2f}%')
             self._log(f'{base_musc} [{tag}] RMSE%: {rmse_pct:.2f}%')
 
         self._log(f'估算负载热力图已保存至 {save_dir}')

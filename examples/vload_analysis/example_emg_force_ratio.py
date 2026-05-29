@@ -348,12 +348,14 @@ def plot_emg_share_vs_height(datasets, muscles, n_cols=3):
 # ============================================================
 
 def main():
-    subject = Subject('../config/20250409_squat_NCMP001_mvc.json')
-    # subject = Subject('../config/20260513_squat_FTS09_mvc.json')
+    # subject = Subject('../config/20250409_squat_NCMP001_mvc.json')
+    subject = Subject('../config/20260513_squat_FTS09_xsens.json')
     pipeline = MultiLoadPipeline(subject)
     pipeline.debug = True
 
-    target_muscles = ['VL', 'RF', 'FibLon', 'GL', 'SOL']
+    # target_muscles = ['VL', 'RF', 'FibLon', 'GL', 'SOL']
+    target_muscles = ["LGL", "LFibLon", "LVL", "LRF", "LVM", "LBF", "LGlutMax",]
+                      # "RGL", "RFibLon", "RVL", "RRF", "RVM", "RBF", "RGlutMax"]
     # target_muscles = ["LTA", "LGL", "LFibLon", "LVL", "LRF", "LVM", "LAddl", "LBF", "LGlutMax", "LGlutMed"]
 
     # ---- 加载固定负载数据 ----
