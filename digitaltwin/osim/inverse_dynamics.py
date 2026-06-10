@@ -115,7 +115,7 @@ def run_inverse_dynamics(model_path, mot_path, output_dir,
 
 
 def run_step3_inverse_dynamics(config, base_dir,
-                               use_external_forces=False, Mb=20.0,
+                               use_external_forces=False, Mb=0.0,
                                external_load_file=None,
                                output_body_forces=False,
                                verbose=True):

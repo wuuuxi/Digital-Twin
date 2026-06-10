@@ -283,16 +283,30 @@ class CurvePlotter:
 
             if result.get('aligned_data') is not None:
                 ad = result['aligned_data']
-                emg_cols = [c for c in ad.columns if c.startswith('emg_')]
-                if emg_cols:
-                    tc = target_cols
-                    if tc is None:
-                        tc = (['emg_TriLat'] if subject and subject.target_motion == 'benchpress'
-                              else ['emg_FibLon', 'emg_VL', 'emg_RF'])
-                    for mc in tc:
-                        if mc in ad.columns:
-                            ax.plot(ad['time'], ad[mc], '--',
-                                    label=f'EMG {mc.replace("emg_", "")}', alpha=0.7)
+                tc = target_cols
+                if tc is None:
+                    tc = (['emg_TriLat'] if subject and subject.target_motion == 'benchpress'
+                          else ['emg_FibLon', 'emg_VL', 'emg_RF'])
+
+                for col in tc:
+                    if col not in ad.columns:
+                        continue
+
+                    y = ad[col].values.astype(float)
+                    label = col.replace('emg_', '')
+                    if col.startswith('emg_'):
+                        # EMG 激活通常已经归一化，直接画
+                        y_plot = y
+                        label = f'EMG {label}'
+                    else:
+                        # 其他传感器量（如 grf_l / grf_r）量纲可能很大，
+                        # 在 alignment 图中归一化，便于和力/位置/EMG 同图比较。
+                        denom = np.nanmax(np.abs(y)) + 1e-10
+                        y_plot = y / denom
+                        label = f'{label} (norm)'
+
+                    ax.plot(ad['time'], y_plot, '--',
+                            label=label, alpha=0.7)
 
             ax.set_title(f'Load: {lw}kg')
             ax.set_xlabel('Time (s)')
@@ -309,8 +323,20 @@ class CurvePlotter:
     # ==================== 运动切片可视化 ====================
 
     def visualize_movement_segments(self, results=None, subject=None, load_weights=None,
-                                     save_fig=True, target_muscles=None, legend_label=False):
-        """可视化运动切片结果：速度、位置、力、EMG分行显示"""
+                                     save_fig=True, target_muscles=None,
+                                     extra_sensor_cols=None, legend_label=False):
+        """
+        可视化运动切片结果。
+
+        默认分行显示：
+          1. 速度
+          2. 位置
+          3. 机器人力
+          4. EMG
+
+        如果传入 extra_sensor_cols，例如 ['grf_l', 'grf_r']，
+        则每个额外传感器列会继续作为单独的行显示。
+        """
         results = results or self.results
         subject = subject or self.subject
         if not results:
@@ -322,6 +348,10 @@ class CurvePlotter:
 
         if target_muscles is None:
             target_muscles = self._get_default_muscles(subject)[:1]
+        if extra_sensor_cols is None:
+            extra_sensor_cols = []
+        else:
+            extra_sensor_cols = list(extra_sensor_cols)
 
         # 从第一个可用结果中收集列名，将候选肌肉名解析为实际存在的列
         _avail = set()
@@ -335,23 +365,51 @@ class CurvePlotter:
 
         muscle_col = target_muscles[0]
 
-        fig, axes = plt.subplots(4, load_num, figsize=(17, 8))
-        if load_num == 1: axes = axes.reshape(4, 1)
+        # 只保留实际存在的额外传感器列，避免空子图
+        valid_extra_cols = []
+        for col in extra_sensor_cols:
+            if not _avail or col in _avail:
+                valid_extra_cols.append(col)
+            else:
+                self._log(f"visualize_movement_segments: 跳过不存在的额外传感器列 {col}")
+
+        signal_specs = [
+            ('vel_l', 'Velocity', 'vel'),
+            ('pos_l', 'Position', 'pos'),
+            ('force_l', 'Force', 'force'),
+            (muscle_col, 'EMG Activation', 'emg'),
+        ]
+        for col in valid_extra_cols:
+            signal_specs.append((col, col, f'extra_{col}'))
+
+        n_rows = len(signal_specs)
+        fig_height = max(8, 2.1 * n_rows)
+        fig, axes = plt.subplots(n_rows, load_num, figsize=(17, fig_height))
+        if load_num == 1:
+            axes = axes.reshape(n_rows, 1)
+        if n_rows == 1:
+            axes = axes.reshape(1, load_num)
 
         # 计算全局Y轴范围
-        gy = {k: [float('inf'), float('-inf')] for k in ['vel', 'pos', 'force', 'emg']}
-        col_map = {'vel': 'vel_l', 'pos': 'pos_l', 'force': 'force_l', 'emg': muscle_col}
+        gy = {gk: [float('inf'), float('-inf')]
+              for _, _, gk in signal_specs}
         for lw in load_weights:
             if lw not in results: continue
             cd = results[lw].get('cutted_data')
             if cd is None: continue
-            for k, c in col_map.items():
-                if c in cd.columns:
-                    gy[k][0] = min(gy[k][0], np.min(cd[c]))
-                    gy[k][1] = max(gy[k][1], np.max(cd[c]))
+            for col, _, gk in signal_specs:
+                if col in cd.columns:
+                    values = cd[col].values.astype(float)
+                    values = values[np.isfinite(values)]
+                    if len(values) == 0:
+                        continue
+                    gy[gk][0] = min(gy[gk][0], np.min(values))
+                    gy[gk][1] = max(gy[gk][1], np.max(values))
         for k in gy:
             if gy[k][0] != float('inf') and gy[k][1] != float('-inf'):
                 r = (gy[k][1] - gy[k][0]) * 0.1
+                if r <= 0:
+                    r = max(abs(gy[k][0]) * 0.05, 1e-6)
                 gy[k][0] -= r; gy[k][1] += r
             else:
                 # 该列在所有 cutted_data 中均不存在，使用安全默认范围
@@ -364,12 +422,9 @@ class CurvePlotter:
             if ad is None or cd is None: continue
             seg_num = int(max(cd['cycle_id']) + 1)
 
-            axs = [axes[j, li] for j in range(4)]
-            cols = ['vel_l', 'pos_l', 'force_l', muscle_col]
-            labels = ['Velocity', 'Position', 'Force', 'EMG Activation']
-            gy_keys = ['vel', 'pos', 'force', 'emg']
+            axs = [axes[j, li] for j in range(n_rows)]
 
-            for ax, col in zip(axs, cols):
+            for ax, (col, _, _) in zip(axs, signal_specs):
                 if col in ad.columns:
                     ax.plot(ad['time'], ad[col], 'k-', alpha=0.3)
 
@@ -379,12 +434,12 @@ class CurvePlotter:
                 seg = cd[cd['cycle_id'] == i]
                 su = seg[seg['movement_type'] == 'upward']
                 sd_seg = seg[seg['movement_type'] == 'downward']
-                for ax, col in zip(axs, cols):
+                for ax, (col, _, _) in zip(axs, signal_specs):
                     if col in su.columns:
                         ax.plot(su['time'], su[col], '-', color=clr, linewidth=2)
                         ax.plot(sd_seg['time'], sd_seg[col], '--', color=clr, linewidth=2, alpha=0.6)
 
-            for ax, gk, lbl in zip(axs, gy_keys, labels):
+            for ax, (_, lbl, gk) in zip(axs, signal_specs):
                 ax.set_ylim(gy[gk][0], gy[gk][1])
                 ax.set_ylabel(lbl)
                 ax.set_xlabel('Time (s)')
@@ -393,6 +448,7 @@ class CurvePlotter:
                 ax.grid(True, alpha=0.3)
                 if legend_label: ax.legend(loc='upper right')
 
+            # velocity 行添加 0 参考线
             axs[0].axhline(y=0, color='r', linestyle='--', alpha=0.5)
             axs[0].set_title(f'Load {lw}kg')
 

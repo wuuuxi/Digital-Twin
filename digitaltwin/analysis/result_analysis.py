@@ -125,11 +125,23 @@ def read_opensim_table(path):
 #  标准数据处理 / 运动切片
 # ============================================================
 
-def run_standard_data_pipeline(config_path, include_xsens=False, debug=True):
+def run_standard_data_pipeline(config_path, include_xsens=False,
+                               include_insole=False,
+                               use_insole_info_timestamp=True,
+                               debug=True):
     """
     复用 example_data_analysis.py 中的标准处理流程：
 
       Subject -> MultiLoadPipeline.run() -> DataAligner.cut_aligned_data()
+
+    Parameters
+    ----------
+    include_xsens : bool
+        是否注入 Xsens 数据。
+    include_insole : bool
+        是否按 example_data_analysis.py / MultiLoadPipeline 的方式注入
+        鞋垫 GRF，即将 insole_file_l / insole_file_r 插值到 aligned_data
+        的 time 轴，生成 grf_l / grf_r，再进行标准切片。
 
     Returns
     -------
@@ -140,7 +152,11 @@ def run_standard_data_pipeline(config_path, include_xsens=False, debug=True):
     subject = Subject(config_path)
     pipeline = MultiLoadPipeline(subject)
     pipeline.debug = debug
-    results = pipeline.run(include_xsens=include_xsens)
+    results = pipeline.run(
+        include_xsens=include_xsens,
+        include_insole=include_insole,
+        use_insole_info_timestamp=use_insole_info_timestamp,
+    )
     return subject, pipeline, results
 
 
@@ -204,6 +220,8 @@ def _collect_cutted_from_pipeline_results(pipeline_results):
 
 def load_or_create_cutted_pipeline_results(config_path,
                                            include_xsens=False,
+                                           include_insole=False,
+                                           use_insole_info_timestamp=True,
                                            debug=True,
                                            force_rebuild=False,
                                            cache_name='cutted_data.csv'):
@@ -231,55 +249,64 @@ def load_or_create_cutted_pipeline_results(config_path,
         cutted_df = pd.read_csv(cutted_cache_path)
         return subject, None, _segments_to_pipeline_results(cutted_df)
 
-    # 如果已有 aligned_data.csv，不再跑完整 pipeline，只重新做标准切片
+    # 如果已有 aligned_data.csv，不再跑完整 pipeline，只重新做标准切片。
+    # 但当需要鞋垫 GRF 且缓存里没有 grf_l / grf_r 时，必须重新跑 pipeline，
+    # 否则无法补回鞋垫列。
     if os.path.exists(aligned_cache_path) and not force_rebuild:
         if debug:
             print(f'[cache] 读取 aligned_data 并重新切片: {aligned_cache_path}')
         aligned_df = pd.read_csv(aligned_cache_path)
 
-        load_col = None
-        for c in ('load_weight', 'load', 'load_value'):
-            if c in aligned_df.columns:
-                load_col = c
-                break
-
-        aligner = DataAligner()
-        frames = []
-
-        if load_col is None:
-            groups = [('all', aligned_df)]
-        else:
-            groups = list(aligned_df.groupby(load_col))
-
-        for load_key, df_load in groups:
-            # DataAligner 内部使用位置索引，因此每个 load 必须 reset_index
-            df_load = df_load.reset_index(drop=True)
-            cd = aligner.cut_aligned_data(df_load)
-            if cd is None:
-                continue
-            if isinstance(cd, list):
-                if not cd:
-                    continue
-                cd = pd.concat(cd, ignore_index=True)
-            if len(cd) == 0:
-                continue
-
-            cd = cd.copy()
-            key = _canonical_load_key(load_key)
-            cd['load_weight'] = key
-            if 'load_value' not in cd.columns:
-                try:
-                    cd['load_value'] = float(key)
-                except Exception:
-                    pass
-            frames.append(cd)
-
-        if frames:
-            cutted_df = pd.concat(frames, ignore_index=True)
-            cutted_df.to_csv(cutted_cache_path, index=False)
+        can_use_aligned_cache = True
+        if include_insole and not {'grf_l', 'grf_r'}.issubset(aligned_df.columns):
+            can_use_aligned_cache = False
             if debug:
-                print(f'[cache] 切片缓存已保存: {cutted_cache_path}')
-            return subject, None, _segments_to_pipeline_results(cutted_df)
+                print('[cache] aligned_data 缺少 grf_l/grf_r，改为运行完整 MultiLoadPipeline...')
+
+        if can_use_aligned_cache:
+            load_col = None
+            for c in ('load_weight', 'load', 'load_value'):
+                if c in aligned_df.columns:
+                    load_col = c
+                    break
+
+            aligner = DataAligner()
+            frames = []
+
+            if load_col is None:
+                groups = [('all', aligned_df)]
+            else:
+                groups = list(aligned_df.groupby(load_col))
+
+            for load_key, df_load in groups:
+                # DataAligner 内部使用位置索引，因此每个 load 必须 reset_index
+                df_load = df_load.reset_index(drop=True)
+                cd = aligner.cut_aligned_data(df_load)
+                if cd is None:
+                    continue
+                if isinstance(cd, list):
+                    if not cd:
+                        continue
+                    cd = pd.concat(cd, ignore_index=True)
+                if len(cd) == 0:
+                    continue
+
+                cd = cd.copy()
+                key = _canonical_load_key(load_key)
+                cd['load_weight'] = key
+                if 'load_value' not in cd.columns:
+                    try:
+                        cd['load_value'] = float(key)
+                    except Exception:
+                        pass
+                frames.append(cd)
+
+            if frames:
+                cutted_df = pd.concat(frames, ignore_index=True)
+                cutted_df.to_csv(cutted_cache_path, index=False)
+                if debug:
+                    print(f'[cache] 切片缓存已保存: {cutted_cache_path}')
+                return subject, None, _segments_to_pipeline_results(cutted_df)
 
     # 最后才运行完整 pipeline
     if debug:
@@ -287,6 +314,8 @@ def load_or_create_cutted_pipeline_results(config_path,
     subject, pipeline, results = run_standard_data_pipeline(
         config_path,
         include_xsens=include_xsens,
+        include_insole=include_insole,
+        use_insole_info_timestamp=use_insole_info_timestamp,
         debug=debug,
     )
     cutted_df = _collect_cutted_from_pipeline_results(results)

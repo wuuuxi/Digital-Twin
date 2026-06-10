@@ -55,7 +55,7 @@ CUTTED_CACHE_NAME = 'cutted_data.csv'
 
 # ID 外力设置
 USE_EXTERNAL_FORCES = True
-MB = 20.0
+MB = 0.0
 OUTPUT_BODY_FORCES = False
 
 

@@ -20,6 +20,7 @@ from datetime import datetime
 from digitaltwin.data.robot_processor import RobotProcessor, RobotOriginProcessor
 from digitaltwin.data.emg_processor import EMGProcessor
 from digitaltwin.data.xsens_processor import XsensProcessor
+from digitaltwin.data.insole_processor import InsoleProcessor
 from digitaltwin.analysis.alignment import DataAligner
 from digitaltwin.analysis.curve_analysis import CurveAnalyzer
 from digitaltwin.analysis.feature_injector import (
@@ -67,7 +68,8 @@ class MultiLoadPipeline:
 
     # ==================== 核心流水线 ====================
 
-    def run(self, robot_files=None, include_xsens=True):
+    def run(self, robot_files=None, include_xsens=True,
+            include_insole=False, use_insole_info_timestamp=True):
         """
         执行完整的多负载数据处理流水线。
 
@@ -77,6 +79,14 @@ class MultiLoadPipeline:
             负载文件字典，默认使用 subject.modeling_data
         include_xsens : bool
             是否处理 Xsens 数据
+        include_insole : bool
+            是否可选注入鞋垫 GRF 数据。
+            若 True，会读取 modeling_file.data[*].insole_file_l / insole_file_r，
+            并插值到 aligned_data 的 time 轴，生成 grf_l / grf_r 列。
+        use_insole_info_timestamp : bool, default True
+            是否使用鞋垫文件同目录 info.csv 中的 measurement_date，
+            结合 robot_file 第一帧时间修正鞋垫时间轴。默认开启；
+            如需退回鞋垫文件原始相对时间，可置为 False。
 
         Returns
         -------
@@ -92,7 +102,8 @@ class MultiLoadPipeline:
         for load_weight, file_info in robot_files.items():
             self._log(f"处理负载 {load_weight}kg...")
             result = self._process_single_load(
-                load_weight, file_info, include_xsens)
+                load_weight, file_info, include_xsens, include_insole,
+                use_insole_info_timestamp)
             if result is not None:
                 all_results[load_weight] = result
 
@@ -105,7 +116,9 @@ class MultiLoadPipeline:
 
         return all_results
 
-    def _process_single_load(self, load_weight, file_info, include_xsens):
+    def _process_single_load(self, load_weight, file_info, include_xsens,
+                             include_insole=False,
+                             use_insole_info_timestamp=True):
         """处理单个负载的数据"""
         robot_file = file_info.get("robot_file", "")
         emg_file = file_info.get("emg_file", "")
@@ -160,18 +173,24 @@ class MultiLoadPipeline:
             aligned = inject_emg_features(
                 aligned, emg_data, self.subject.emg_fs)
 
-            # 6. 注入 Xsens 关节角度
+            # 6. 可选注入其他传感器，例如鞋垫 GRF
+            if include_insole:
+                aligned = self._inject_insole_grf(
+                    aligned, file_info, load_weight,
+                    use_insole_info_timestamp=use_insole_info_timestamp)
+
+            # 7. 注入 Xsens 关节角度
             if include_xsens and xsens_file and result.get('xsens_data'):
                 aligned = inject_xsens_features(
                     aligned, result['xsens_data'], start_time=start_time)
 
             result['aligned_data'] = aligned
 
-            # 7. 运动分割
+            # 8. 运动分割
             cutted = self.aligner.cut_aligned_data(aligned)
             result['cutted_data'] = cutted
 
-            # 8. 计算平均曲线
+            # 9. 计算平均曲线
             average = self.curve_analyzer.process_for_curves(cutted)
             result['average_data'] = average
 
@@ -185,6 +204,78 @@ class MultiLoadPipeline:
             import traceback
             traceback.print_exc()
             return None
+
+    def _resolve_modeling_insole_path(self, insole_file):
+        """解析 modeling_file 中的鞋垫文件路径。"""
+        if not insole_file:
+            return None
+        if os.path.isabs(insole_file):
+            return insole_file if os.path.exists(insole_file) else None
+
+        modeling = self.subject.config.get('modeling_file', {})
+        insole_folder = modeling.get('insole_folder', 'Sorted')
+        if os.path.isabs(insole_folder):
+            candidates = [
+                os.path.join(insole_folder, insole_file),
+                os.path.join(self.subject.folder, insole_file),
+            ]
+        else:
+            candidates = [
+                os.path.join(self.subject.folder, insole_folder, insole_file),
+                os.path.join(self.subject.folder, insole_file),
+            ]
+
+        for path in candidates:
+            if os.path.exists(path):
+                return path
+        return None
+
+    def _inject_insole_grf(self, aligned, file_info, load_weight,
+                           use_insole_info_timestamp=True):
+        """
+        将鞋垫 GRF 数据插值到 aligned_data 时间轴。
+
+        生成列：
+          - grf_l: 左脚 GRF，+Y 向上，单位 N
+          - grf_r: 右脚 GRF，+Y 向上，单位 N
+        """
+        if aligned is None or 'time' not in aligned.columns:
+            return aligned
+
+        out = aligned.copy()
+        target_times = out['time'].values.astype(float)
+
+        for side, key, col in [
+            ('L', 'insole_file_l', 'grf_l'),
+            ('R', 'insole_file_r', 'grf_r'),
+        ]:
+            insole_file = file_info.get(key)
+            if not insole_file:
+                self._log(f"负载 {load_weight}kg: 无 {key}，跳过 {col}")
+                continue
+
+            insole_path = self._resolve_modeling_insole_path(insole_file)
+            if insole_path is None:
+                self._log(f"负载 {load_weight}kg: 鞋垫文件不存在 {insole_file}")
+                continue
+
+            t_s, f_s = InsoleProcessor.load(
+                insole_path,
+                verbose=self.debug,
+                use_info_timestamp=use_insole_info_timestamp,
+                robot_file=file_info.get('robot_file'),
+                robot_folder=self.subject.modeling_robot_folder,
+                folder=self.subject.folder)
+            if t_s is None or f_s is None:
+                self._log(f"负载 {load_weight}kg: {side} 鞋垫数据读取失败")
+                continue
+
+            out[col] = InsoleProcessor.resample(t_s, f_s, target_times)
+            self._log(
+                f"负载 {load_weight}kg: 已注入 {col} "
+                f"[{np.nanmin(out[col]):.1f}, {np.nanmax(out[col]):.1f}] N")
+
+        return out
 
     def _align_all_loads(self):
         """对齐所有负载的数据并保存"""

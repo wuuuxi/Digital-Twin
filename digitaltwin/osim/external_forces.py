@@ -35,7 +35,8 @@ def get_ext_forces_dir(config, base_dir, load_key):
 
 
 def generate_external_loads(config, base_dir, load_key, mot_path,
-                             Mb=20.0, verbose=True):
+                             Mb=20.0, verbose=True,
+                             use_insole_info_timestamp=True):
     """
     从机器人数据和鞋垫数据生成 OpenSim ExternalLoads 文件。
 
@@ -62,6 +63,10 @@ def generate_external_loads(config, base_dir, load_key, mot_path,
     mot_path : str   -- 用于获取时间轴
     Mb       : float -- 杆质量默认值（会被 opensim_settings.bar_mass 覆盖）
     verbose  : bool
+    use_insole_info_timestamp : bool, default True
+        是否使用鞋垫文件同目录 info.csv 中的 measurement_date，
+        结合 robot_file 第一帧时间修正鞋垫时间轴。默认开启；
+        如需退回鞋垫文件原始相对时间，可置为 False。
 
     Returns
     -------
@@ -143,7 +148,12 @@ def generate_external_loads(config, base_dir, load_key, mot_path,
         insole_rel = file_info.get(key)
         if insole_rel:
             t_s, f_s = InsoleProcessor.load(
-                os.path.join(insole_base, insole_rel), verbose=verbose)
+                os.path.join(insole_base, insole_rel),
+                verbose=verbose,
+                use_info_timestamp=use_insole_info_timestamp,
+                robot_file=robot_file,
+                robot_folder=folder,
+                folder=folder)
             if t_s is not None:
                 resampled = InsoleProcessor.resample(t_s, f_s, mot_times)
                 log(f'  [EXT] {side} 足底 GRF 范围: [{f_s.min():.1f}, {f_s.max():.1f}] N')
