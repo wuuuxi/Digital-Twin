@@ -11,21 +11,41 @@ class RobotProcessor:
 
     # 机器人数据列名映射（原始列名 → 标准列名）
     COLUMN_MAP = {
-        'axis4_force': 'pos_r',
-        'axis4_vel': 'force_r',
-        'axis4_pos': 'vel_r',
-        'axis4_accel': 'acc_r',
-        'axis3_force': 'pos_l',
-        'axis3_vel': 'force_l',
-        'axis3_pos': 'vel_l',
-        'axis3_accel': 'acc_l',
+        'axis4_force': 'pos_l',
+        'axis4_vel': 'force_l',
+        'axis4_pos': 'vel_l',
+        'axis4_accel': 'acc_l',
+        'axis3_force': 'pos_r',
+        'axis3_vel': 'force_r',
+        'axis3_pos': 'vel_r',
+        'axis3_accel': 'acc_r',
         'Timestamp': 'time',
         'Time': 'time',
     }
 
     @staticmethod
+    def _numeric_load(load_weight, load_value=None):
+        """把组名解析成数值负载 (kg)；解析不出来返回 nan。
+
+        组名不保证是数字：等长 / 等速组叫 'IM-1' / 'IK-0.3'，直接 float()
+        会抛 ValueError，被 process() 的 except 吞掉后整组返回 None。
+        也不能从组名里抽数字（'IM-1' 的 1 是杆高 m，'IK-0.3' 的 0.3 是
+        速度 m/s，都不是负载），这两类组的负载必须由受力反推，先给 nan。
+        """
+        for value in (load_value, load_weight):
+            if value is None:
+                continue
+            try:
+                f = float(value)
+            except (TypeError, ValueError):
+                continue
+            if np.isfinite(f):
+                return f
+        return float('nan')
+
+    @staticmethod
     def process(robot_file, load_weight, robot_folder, folder,
-                turn_position=False):
+                turn_position=False, load_value=None):
         """
         处理单个负载的机器人数据文件。
 
@@ -41,6 +61,9 @@ class RobotProcessor:
             实验根目录
         turn_position : bool
             是否反转位置数据方向
+        load_value : float, optional
+            数值负载 (kg)。组名不是数字时（等长 / 等速组）由调用方传入；
+            两者都解析不出数值时 load 列写 nan，而不是让整组处理失败。
 
         Returns
         -------
@@ -66,7 +89,8 @@ class RobotProcessor:
             robot_df = RobotProcessor._process_time_column(robot_df)
 
             # 5. 添加负载信息
-            robot_df['load'] = float(load_weight)
+            robot_df['load'] = RobotProcessor._numeric_load(
+                load_weight, load_value)
             robot_df['load_weight'] = load_weight
 
             # 6. 调整位置数据
@@ -162,13 +186,8 @@ class RobotOriginProcessor:
     COLUMN_MAP = {
         ' time': 'time',
         ' axis3_force(N)': 'force_l',
-        ' axis4_force(N)': 'force_r',
         ' axis3_pos(m)': 'pos_l',
-        ' axis4_pos(m)': 'pos_r',
         ' axis3_vel(m/s)': 'vel_l',
-        ' axis4_vel(m/s)': 'vel_r',
-        ' axis3_acc(m/s2)': 'acc_l',
-        ' axis4_acc(m/s2)': 'acc_r',
     }
 
     HEADER_ROWS = 17  # 设备头部信息行数

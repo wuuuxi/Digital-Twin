@@ -5,6 +5,24 @@ import os
 from datetime import datetime
 
 
+def _as_float(load_key):
+    """组名能转成数字就返回 float，否则 None（等长 / 等速组）。"""
+    try:
+        return float(load_key)
+    except (TypeError, ValueError):
+        return None
+
+
+def _load_label(load_key, suffix=' kg'):
+    """图例 / 标题用的组名。
+
+    只有定负载组才拼 'kg'；'IM-1' / 'IK-0.3' 直接原样输出，
+    否则会写成 'IM-1kg'，看起来像 1 kg 的定负载组。
+    """
+    return (f'{load_key}{suffix}' if _as_float(load_key) is not None
+            else f'{load_key}')
+
+
 class CurvePlotter:
     """
     曲线可视化器
@@ -308,7 +326,7 @@ class CurvePlotter:
                     ax.plot(ad['time'], y_plot, '--',
                             label=label, alpha=0.7)
 
-            ax.set_title(f'Load: {lw}kg')
+            ax.set_title(f'Load: {_load_label(lw)}')
             ax.set_xlabel('Time (s)')
             ax.set_ylabel('Normalized Signal')
             ax.legend(loc='upper right')
@@ -450,7 +468,7 @@ class CurvePlotter:
 
             # velocity 行添加 0 参考线
             axs[0].axhline(y=0, color='r', linestyle='--', alpha=0.5)
-            axs[0].set_title(f'Load {lw}kg')
+            axs[0].set_title(f'Load {_load_label(lw)}')
 
         plt.tight_layout()
         if save_fig and subject:
@@ -483,8 +501,13 @@ class CurvePlotter:
             print('plot_load_estimation: 无可用切片数据。')
             return
 
-        load_col = 'load' if 'load' in cutted.columns else 'load_weight'
-        load_weights = sorted(cutted[load_col].unique())
+        load_col = 'load_weight' if 'load_weight' in cutted.columns else 'load'
+        # 数值组（定负载）按数值排序，'IM-1' / 'IK-0.3' 等非数值组排后面，
+        # 避免字符串排序把 '106' 排到 '20' 前面、图例顺序乱掉。
+        def _load_sort_key(k):
+            f = _as_float(k)
+            return (0, f) if f is not None else (1, str(k))
+        load_weights = sorted(cutted[load_col].unique(), key=_load_sort_key)
         colors = plt.cm.tab10.colors
 
         fig, axes = plt.subplots(1, 3, figsize=(21, 6))
@@ -500,11 +523,11 @@ class CurvePlotter:
             required = ['pos_l', 'vel_l', 'force_l', 'force_r', 'estimated_load']
             missing = [c for c in required if c not in ad.columns]
             if missing:
-                self._log(f'负载 {lw}kg：缺少列 {missing}，跳过')
+                self._log(f'负载 {_load_label(lw)}：缺少列 {missing}，跳过')
                 continue
 
             clr       = colors[i % len(colors)]
-            label     = f'{lw} kg'
+            label     = _load_label(lw)
             pos       = ad['pos_l'].values
             vel       = ad['vel_l'].values
             est_load  = ad['estimated_load'].values
@@ -531,9 +554,14 @@ class CurvePlotter:
         ax_load.grid(True, alpha=0.3)
         ax_load.axhline(y=0, color='k', linewidth=0.8, alpha=0.5, linestyle='--')
         for j, lw in enumerate(load_weights):
-            ax_load.axhline(y=float(lw), color=colors[j % len(colors)],
+            # 等长 / 等速组没有标称负载（要由受力反推），画不出参考线；
+            # 以前这里直接 float(lw)，遇到 'IM-1' 会抛 ValueError。
+            ref = _as_float(lw)
+            if ref is None:
+                continue
+            ax_load.axhline(y=ref, color=colors[j % len(colors)],
                             linewidth=1.2, linestyle='--', alpha=0.8,
-                            label=f'ref {lw} kg')
+                            label=f'ref {_load_label(lw)}')
         ax_load.legend(fontsize=8, loc='best')
 
         # 右图
@@ -624,18 +652,18 @@ class CurvePlotter:
             acc = cd['acc_l'].values
             all_scatter.extend(emg)
 
-            ax1.scatter3D(pos, vel, load, c=emg, cmap=cmap, s=10, alpha=0.6, label=f'{lw}kg')
-            ax2.scatter(force, emg, s=10, alpha=0.6, label=f'{lw}kg')
-            ax31.scatter(pos, vel, s=10, alpha=0.6, label=f'{lw}kg')
-            ax32.scatter(pos, force, s=10, alpha=0.6, label=f'{lw}kg')
-            ax33.scatter(pos, power, s=10, alpha=0.6, label=f'{lw}kg')
+            ax1.scatter3D(pos, vel, load, c=emg, cmap=cmap, s=10, alpha=0.6, label=_load_label(lw))
+            ax2.scatter(force, emg, s=10, alpha=0.6, label=_load_label(lw))
+            ax31.scatter(pos, vel, s=10, alpha=0.6, label=_load_label(lw))
+            ax32.scatter(pos, force, s=10, alpha=0.6, label=_load_label(lw))
+            ax33.scatter(pos, power, s=10, alpha=0.6, label=_load_label(lw))
 
             pmask, nmask = vel > 0, vel <= 0
             ax51 = fig5.add_subplot(2, len(load_weights), li + 1)
             ax52 = fig5.add_subplot(2, len(load_weights), li + 1 + len(load_weights))
             ax51.scatter(pos[pmask], np.abs(vel[pmask]), alpha=0.6, s=10, label='Concentric')
             ax51.scatter(pos[nmask], np.abs(vel[nmask]), alpha=0.6, s=10, label='Eccentric')
-            ax51.set_ylim(gv[0], gv[1]); ax51.set_title(f'{lw}kg')
+            ax51.set_ylim(gv[0], gv[1]); ax51.set_title(_load_label(lw))
             ax52.scatter(pos[pmask], np.abs(emg[pmask]), alpha=0.6, s=10, label='Concentric')
             ax52.scatter(pos[nmask], np.abs(emg[nmask]), alpha=0.6, s=10, label='Eccentric')
             ax52.set_ylim(ge[0], ge[1])
@@ -650,7 +678,8 @@ class CurvePlotter:
             mpv = np.mean(vel[mpv_mask]) if np.any(mpv_mask) else 0
             pl1 = 11.4196 * mv**2 - 81.904 * mv + 114.03
             pl2 = 11.2988 * mpv**2 - 78.05 * mpv + 113.04
-            print(f'{lw}kg: MPV={mpv:.3f}, MV={mv:.3f}, PL1={pl1:.3f}, PL2={pl2:.3f}')
+            print(f'{_load_label(lw)}: MPV={mpv:.3f}, MV={mv:.3f}, '
+                  f'PL1={pl1:.3f}, PL2={pl2:.3f}')
 
         if all_scatter:
             norm = plt.Normalize(np.min(all_scatter), np.max(all_scatter))
@@ -772,7 +801,7 @@ class CurvePlotter:
                 ax3v.scatter(pos[nmask], np.abs(vel[nmask]), alpha=0.6, s=10, color='#ff7f0e', label='Ecc')
                 ax3v.plot(xe, np.abs(ye), linewidth=2, color='#ff7f0e')
                 ax3v.fill_between(xe, np.abs(ye - yse), np.abs(ye + yse), alpha=0.2, color='#ff7f0e')
-            ax3v.set_ylim(gv[0], gv[1]); ax3v.set_xlabel('Position'); ax3v.set_title(f'{lw}kg')
+            ax3v.set_ylim(gv[0], gv[1]); ax3v.set_xlabel('Position'); ax3v.set_title(_load_label(lw))
             if li == 0: ax3v.set_ylabel('Velocity')
             elif li == len(load_weights) - 1: ax3v.legend()
 
@@ -785,13 +814,13 @@ class CurvePlotter:
                 emg_ecc_c = avg_ecc.get('emg_curves', {}).get(mc, {})
                 emg_con_c = avg_con.get('emg_curves', {}).get(mc, {})
 
-                ax1.scatter3D(pos, vel, load, c=emg, cmap=cmap, s=10, alpha=0.6, label=f'{lw}kg')
+                ax1.scatter3D(pos, vel, load, c=emg, cmap=cmap, s=10, alpha=0.6, label=_load_label(lw))
                 ax1.set_xlabel('Position', labelpad=10)
                 ax1.set_ylabel('Velocity', labelpad=10)
                 ax1.set_zlabel('Load', labelpad=10)
                 ax1.set_title(f'Muscle: {mn}', fontsize=12)
 
-                ax2.scatter(force, emg, s=10, alpha=0.6, label=f'{lw}kg')
+                ax2.scatter(force, emg, s=10, alpha=0.6, label=_load_label(lw))
                 ax2.set_xlabel('Force'); ax2.set_ylabel(f'{mn} Activation')
                 ax2.grid(True, alpha=0.3); ax2.legend(loc='best')
 
@@ -949,7 +978,8 @@ class CurvePlotter:
 
                 # 位置误差 vs EMG误差
                 ax1t = axes1[0, mi]
-                ax1t.scatter(pev, eev, s=15, alpha=0.6, label=f'{lw}kg (r={pe_corr:.2f})',
+                ax1t.scatter(pev, eev, s=15, alpha=0.6,
+                             label=f'{_load_label(lw)} (r={pe_corr:.2f})',
                              c=vel[valid], cmap='coolwarm', edgecolors='k', linewidths=0.5)
                 if len(pev) > 2:
                     z = np.polyfit(pev, eev, 1); p = np.poly1d(z)
@@ -985,7 +1015,8 @@ class CurvePlotter:
 
                 # 速度误差 vs EMG误差
                 ax2t = axes2[0, mi]
-                ax2t.scatter(vev, eev, s=15, alpha=0.6, label=f'{lw}kg (r={ve_corr:.2f})',
+                ax2t.scatter(vev, eev, s=15, alpha=0.6,
+                             label=f'{_load_label(lw)} (r={ve_corr:.2f})',
                              c=pos[valid], cmap='viridis', edgecolors='k', linewidths=0.5)
                 if len(vev) > 2:
                     z = np.polyfit(vev, eev, 1); p = np.poly1d(z)
@@ -1125,7 +1156,8 @@ class CurvePlotter:
                         axp.plot(xr, p_fn(xr), 'r-', linewidth=2, alpha=0.8)
                     except: pass
                 axp.set_xlabel('Position Error (m)'); axp.set_ylabel('EMG Error (mV)')
-                axp.set_title(f'{lw}kg\nr = {pe_corr:.3f}', fontweight='bold')
+                axp.set_title(f'{_load_label(lw)}\nr = {pe_corr:.3f}',
+                              fontweight='bold')
                 axp.grid(True, alpha=0.3, linestyle='--')
                 axp.axhline(y=0, color='k', linewidth=0.5, alpha=0.5)
                 axp.axvline(x=0, color='k', linewidth=0.5, alpha=0.5)
@@ -1140,7 +1172,8 @@ class CurvePlotter:
                         axv.plot(xr, p_fn(xr), 'r-', linewidth=2, alpha=0.8)
                     except: pass
                 axv.set_xlabel('Velocity Error (m/s)'); axv.set_ylabel('EMG Error (mV)')
-                axv.set_title(f'{lw}kg\nr = {ve_corr:.3f}', fontweight='bold')
+                axv.set_title(f'{_load_label(lw)}\nr = {ve_corr:.3f}',
+                              fontweight='bold')
                 axv.grid(True, alpha=0.3, linestyle='--')
                 axv.axhline(y=0, color='k', linewidth=0.5, alpha=0.5)
                 axv.axvline(x=0, color='k', linewidth=0.5, alpha=0.5)
@@ -1177,7 +1210,7 @@ class CurvePlotter:
                 for cd in analysis_results[mn].get('load_correlations', []):
                     pc.append(cd['pos_emg_corr'])
                     vc.append(cd['vel_emg_corr'])
-                    labels.append(f"{mn}\n{cd['load']}kg")
+                    labels.append(f"{mn}\n{_load_label(cd['load'])}")
 
         x = np.arange(len(pc))
         bars1 = axes[0].bar(x, pc, alpha=0.7, color='blue')

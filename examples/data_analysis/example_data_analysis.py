@@ -36,9 +36,15 @@ USE_INSOLE_INFO_TIMESTAMP = True
 EXTRA_SENSOR_COLS = ['grf_l', 'grf_r']
 
 
+# 用带 _xsens 的那份 config：只有它含全部 9 组（IM-1 / IK-0.3 / IK-0.15
+# 与 6 个定负载组）。之前指向 20260513_squat_FTS09.json，那份里没有
+# 等长 / 等速组，所以本脚本从来看不到它们。
+CONFIG_FILE = '../config/20260513_squat_FTS09_xsens.json'
+
+
 def main():
     # subject = Subject('config/20251009_BenchPress_Yuetian.json')
-    subject = Subject('../config/20260513_squat_FTS09.json')
+    subject = Subject(CONFIG_FILE)
     pipeline = MultiLoadPipeline(subject)
     pipeline.debug = True
 
@@ -66,7 +72,6 @@ def main():
     #     target_muscles=emg_muscles)
     # pipeline.analyze_muscle_kinematic_errors_individual(                      # 单肌肉误差
     #     target_muscles=emg_muscles)
-
     plt.show()
 
 

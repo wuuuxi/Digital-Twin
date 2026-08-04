@@ -22,6 +22,64 @@ import pandas as pd
 LOAD_COLORS = plt.cm.tab10.colors
 VLOAD_COLORS = plt.cm.Set2.colors
 
+# 左右侧的固定配色/线型，所有图中保持一致：红实线 = 右，蓝虚线 = 左
+SIDE_STYLE = {
+    '_r': {'color': 'tab:red', 'linestyle': '-'},
+    '_l': {'color': 'tab:blue', 'linestyle': '--'},
+}
+
+
+def _lr_base(joint):
+    """'knee_angle_r' -> 'knee_angle'；无左右后缀则原样返回。"""
+    return joint[:-2] if joint.endswith(('_r', '_l')) else joint
+
+
+def _lr_pair(joint):
+    """'knee_angle_r' -> ['knee_angle_r', 'knee_angle_l']。
+
+    单侧绘图无法回答“不对称是否存在于原始数据”，因此把所有
+    只接受单个关节名的图都展开成左右两条。
+    """
+    base = _lr_base(joint)
+    if base == joint:
+        return [joint]
+    return [f'{base}_r', f'{base}_l']
+
+
+def _side_style(joint):
+    return SIDE_STYLE['_l' if joint.endswith('_l') else '_r']
+
+
+def _as_float(key):
+    """组名转 float；转不了返回 None。
+
+    等长 / 等速组的组名是 'IM-1' / 'IK-0.3'，float() 会抛 ValueError。
+    以前直接 sorted(..., key=lambda x: float(x))，于是只要 config 里有
+    这两类组，整个图就画不出来。
+    """
+    try:
+        f = float(key)
+    except (TypeError, ValueError):
+        return None
+    return f if np.isfinite(f) else None
+
+
+def _sort_key(key):
+    """排序用：定负载组按数值升序在前，等长 / 等速组按名称排在后。"""
+    f = _as_float(key)
+    if f is None:
+        return (1, 0.0, str(key))
+    return (0, f, str(key))
+
+
+def _sorted_keys(results):
+    return sorted(results.keys(), key=_sort_key)
+
+
+def _load_label(key):
+    """图例 / 坐标标签。只有数值组才能拼 'kg'。"""
+    return f'{key} kg' if _as_float(key) is not None else str(key)
+
 
 def _get_motion_defaults(target_motion):
     """根据运动类型返回默认参数"""
@@ -42,7 +100,7 @@ def _get_motion_defaults(target_motion):
 def build_data_groups(fixed_results, vload_results=None):
     """构建统一的 data_groups 列表"""
     groups = []
-    for k in sorted(fixed_results.keys(), key=lambda x: float(x)):
+    for k in _sorted_keys(fixed_results):
         groups.append({'key': k, 'data': fixed_results[k], 'is_vload': False})
     if vload_results:
         for k in vload_results.keys():
@@ -51,7 +109,7 @@ def build_data_groups(fixed_results, vload_results=None):
 
 
 def _title(g):
-    return f'VLoad: {g["key"]}' if g['is_vload'] else f'{g["key"]}kg'
+    return f'VLoad: {g["key"]}' if g['is_vload'] else _load_label(g['key'])
 
 
 def _title_color(g):
@@ -91,12 +149,21 @@ def plot_alignment(data_groups, target_emg, xsens_joint):
                 if mc in ad.columns:
                     ax.plot(ad['time'], ad[mc], '--',
                             label=f'EMG {mc.replace("emg_", "")}', alpha=0.7)
-            if xsens_col in ad.columns:
-                xv = ad[xsens_col].values
-                xmax = np.nanmax(np.abs(xv)) + 1e-10
-                ax.plot(ad['time'], xv / xmax, ':',
-                        label=f'{xsens_joint} (norm)', alpha=0.8,
-                        linewidth=1.5, color='purple')
+            # 左右同时绘制，且共用同一个归一化系数。
+            # 若各自除以自己的峰值，幅值差异恰好被抹掉，而幅值差异
+            # 正是我们要查的东西。
+            pair = _lr_pair(xsens_joint)
+            present = [f'xsens_{j}' for j in pair if f'xsens_{j}' in ad.columns]
+            if present:
+                xmax = max(np.nanmax(np.abs(ad[c].values)) for c in present) + 1e-10
+                for j in pair:
+                    c = f'xsens_{j}'
+                    if c not in ad.columns:
+                        continue
+                    st = _side_style(j)
+                    ax.plot(ad['time'], ad[c].values / xmax,
+                            linestyle=st['linestyle'], color=st['color'],
+                            label=f'{j} (norm)', alpha=0.85, linewidth=1.5)
 
         ax.set_title(_title(g), color=_title_color(g))
         ax.set_xlabel('Time (s)'); ax.set_ylabel('Normalized Signal')
@@ -113,11 +180,11 @@ def plot_movement_segments(data_groups, muscle_col, xsens_joint):
     """运动切片 5行 × N列"""
     n = len(data_groups)
     if n == 0: return
-    xsens_col = f'xsens_{xsens_joint}'
-    cols = ['vel_l', 'pos_l', 'force_l', muscle_col, xsens_col]
-    labels = ['Velocity', 'Position', 'Force',
-              muscle_col.replace('emg_', '') + ' Activation',
-              f'{xsens_joint} (deg)']
+    pair = _lr_pair(xsens_joint)
+    cols = ['vel_l', 'pos_l', 'force_l', muscle_col] + [f'xsens_{j}' for j in pair]
+    labels = (['Velocity', 'Position', 'Force',
+               muscle_col.replace('emg_', '') + ' Activation']
+              + [f'{j} (deg)' for j in pair])
     nr = len(cols)
 
     # 全局 Y 范围
@@ -133,7 +200,17 @@ def plot_movement_segments(data_groups, muscle_col, xsens_joint):
         if gy[c][0] != float('inf'):
             r = (gy[c][1] - gy[c][0]) * 0.1; gy[c][0] -= r; gy[c][1] += r
 
-    fig, axes = plt.subplots(nr, n, figsize=(17, 8))
+    # 左右两行强制共用同一 Y 轴范围。若让 matplotlib 各自缩放，
+    # 幅值不对称会被自动缩放抹平，看上去反而“很对称”。
+    xs_cols = [f'xsens_{j}' for j in pair]
+    finite = [c for c in xs_cols if c in gy and gy[c][0] != float('inf')]
+    if len(finite) > 1:
+        lo = min(gy[c][0] for c in finite)
+        hi = max(gy[c][1] for c in finite)
+        for c in finite:
+            gy[c] = [lo, hi]
+
+    fig, axes = plt.subplots(nr, n, figsize=(17, 1.7 * nr + 1.5))
     if n == 1: axes = axes.reshape(nr, 1)
     cc = plt.cm.tab10.colors
 
@@ -179,9 +256,11 @@ def plot_position_scatter(data_groups, muscle_col, xsens_joint):
             v = np.abs(cd['vel_l'].values); gv = [min(gv[0], np.min(v)), max(gv[1], np.max(v))]
         if muscle_col in cd.columns:
             e = np.abs(cd[muscle_col].values); ge = [min(ge[0], np.min(e)), max(ge[1], np.max(e))]
-        if xsens_col in cd.columns:
-            xv = cd[xsens_col].dropna().values
-            if len(xv): gx = [min(gx[0], np.min(xv)), max(gx[1], np.max(xv))]
+        for j in _lr_pair(xsens_joint):
+            c = f'xsens_{j}'
+            if c in cd.columns:
+                xv = cd[c].dropna().values
+                if len(xv): gx = [min(gx[0], np.min(xv)), max(gx[1], np.max(xv))]
     for g_ in [gv, ge]:
         if g_[0] != float('inf'): r = (g_[1]-g_[0])*0.1; g_[0] = max(0, g_[0]-r); g_[1] += r
         else: g_[0], g_[1] = 0, 1
@@ -217,13 +296,17 @@ def plot_position_scatter(data_groups, muscle_col, xsens_joint):
         if ci == n-1: ax2.legend(fontsize=7)
         ax2.grid(True, alpha=0.3)
 
+        # 第 3 行改成“左 vs 右”而不是“向心 vs 离心”：同一张图里叠加两
+        # 侧曲线，不对称会直接表现为两束散点分开。
         ax3 = axes[2, ci]
-        if xsens_col in cd.columns:
-            xv = cd[xsens_col].values; valid = ~np.isnan(xv)
-            ax3.scatter(pos[pm & valid], xv[pm & valid], alpha=0.6, s=10, label='Con')
-            ax3.scatter(pos[nm & valid], xv[nm & valid], alpha=0.6, s=10, label='Ecc')
+        for j in _lr_pair(xsens_joint):
+            c = f'xsens_{j}'
+            if c not in cd.columns: continue
+            xv = cd[c].values; valid = ~np.isnan(xv)
+            ax3.scatter(pos[valid], xv[valid], alpha=0.45, s=8,
+                        color=_side_style(j)['color'], label=j)
         ax3.set_ylim(gx); ax3.set_xlabel('Position')
-        if ci == 0: ax3.set_ylabel(f'{xsens_joint} (deg)')
+        if ci == 0: ax3.set_ylabel(f'{_lr_base(xsens_joint)} (deg)')
         if ci == n-1: ax3.legend(fontsize=7)
         ax3.grid(True, alpha=0.3)
     fig.tight_layout()
@@ -237,7 +320,7 @@ def plot_position_scatter(data_groups, muscle_col, xsens_joint):
 def plot_joint_scatter_lr(fixed_results, joint_bases, vload_results=None):
     """2行 × N列：上行 Right，下行 Left。不同负载不同颜色。"""
     nj = len(joint_bases)
-    fixed_keys = sorted(fixed_results.keys(), key=lambda x: float(x))
+    fixed_keys = _sorted_keys(fixed_results)
     vload_keys = list(vload_results.keys()) if vload_results else []
 
     fig, axes = plt.subplots(2, nj, figsize=(3 * nj, 5), squeeze=False)
@@ -258,7 +341,7 @@ def plot_joint_scatter_lr(fixed_results, joint_bases, vload_results=None):
                 if cd is None or 'pos_l' not in cd.columns or col not in cd.columns: continue
                 p, v = cd['pos_l'].values, cd[col].values; m = ~np.isnan(v)
                 if np.any(m): ax.scatter(p[m], v[m], color=LOAD_COLORS[i % len(LOAD_COLORS)],
-                    alpha=0.5, s=10, label=f'{lw} kg' if ji == 0 else None)
+                    alpha=0.5, s=10, label=_load_label(lw) if ji == 0 else None)
             if ri == 0: ax.set_title(jbase, fontsize=10)
             ax.set_xlabel('Position (m)', fontsize=8); ax.grid(True, alpha=0.3); ax.tick_params(labelsize=7)
             if ji == 0:
@@ -275,7 +358,7 @@ def plot_joint_scatter_lr(fixed_results, joint_bases, vload_results=None):
 def plot_joint_bar_lr(fixed_results, joint_bases, vload_results=None):
     """3行 × N列：Row1 Right，Row2 Left，Row3 |R-L| 差异。柱状图 ± std。"""
     nj = len(joint_bases)
-    fixed_keys = sorted(fixed_results.keys(), key=lambda x: float(x))
+    fixed_keys = _sorted_keys(fixed_results)
     vload_keys = list(vload_results.keys()) if vload_results else []
 
     fig, axes = plt.subplots(3, nj, figsize=(3 * nj, 6), squeeze=False)
@@ -293,7 +376,7 @@ def plot_joint_bar_lr(fixed_results, joint_bases, vload_results=None):
             for i, lw in enumerate(fixed_keys):
                 v = _collect(fixed_results[lw].get('cutted_data'), col)
                 if v is None or len(v) == 0: continue
-                bm.append(np.mean(v)); bs.append(np.std(v)); bl.append(f'{lw} kg')
+                bm.append(np.mean(v)); bs.append(np.std(v)); bl.append(_load_label(lw))
                 bc.append(LOAD_COLORS[i % len(LOAD_COLORS)]); bh.append('')
             for j, vk in enumerate(vload_keys):
                 v = _collect(vload_results[vk].get('cutted_data'), col)
@@ -314,7 +397,7 @@ def plot_joint_bar_lr(fixed_results, joint_bases, vload_results=None):
             rv, lv = cd[col_r].values, cd[col_l].values; m = ~np.isnan(rv) & ~np.isnan(lv)
             if not np.any(m): continue
             d = np.abs(rv[m] - lv[m])
-            bm.append(np.mean(d)); bs.append(np.std(d)); bl.append(f'{lw} kg')
+            bm.append(np.mean(d)); bs.append(np.std(d)); bl.append(_load_label(lw))
             bc.append(LOAD_COLORS[i % len(LOAD_COLORS)]); bh.append('')
         for j, vk in enumerate(vload_keys):
             cd = vload_results[vk].get('cutted_data')
@@ -337,7 +420,7 @@ def plot_joint_bar_lr(fixed_results, joint_bases, vload_results=None):
 def plot_joint_vel_scatter_lr(fixed_results, joint_bases, vload_results=None):
     """2行 × N列：上行 Right vel，下行 Left vel。不同负载不同颜色。"""
     nj = len(joint_bases)
-    fixed_keys = sorted(fixed_results.keys(), key=lambda x: float(x))
+    fixed_keys = _sorted_keys(fixed_results)
     vload_keys = list(vload_results.keys()) if vload_results else []
 
     fig, axes = plt.subplots(2, nj, figsize=(3 * nj, 5), squeeze=False)
@@ -358,7 +441,7 @@ def plot_joint_vel_scatter_lr(fixed_results, joint_bases, vload_results=None):
                 if cd is None or 'pos_l' not in cd.columns or col not in cd.columns: continue
                 p, v = cd['pos_l'].values, cd[col].values; m = ~np.isnan(v)
                 if np.any(m): ax.scatter(p[m], v[m], color=LOAD_COLORS[i % len(LOAD_COLORS)],
-                    alpha=0.5, s=10, label=f'{lw} kg' if ji == 0 else None)
+                    alpha=0.5, s=10, label=_load_label(lw) if ji == 0 else None)
             if ri == 0: ax.set_title(jbase, fontsize=10)
             ax.set_xlabel('Position (m)', fontsize=8); ax.grid(True, alpha=0.3); ax.tick_params(labelsize=7)
             if ji == 0:
@@ -375,7 +458,7 @@ def plot_joint_vel_scatter_lr(fixed_results, joint_bases, vload_results=None):
 def plot_joint_vel_bar_lr(fixed_results, joint_bases, vload_results=None):
     """3行 × N列：Row1 Right vel，Row2 Left vel，Row3 |R-L| vel 差异。"""
     nj = len(joint_bases)
-    fixed_keys = sorted(fixed_results.keys(), key=lambda x: float(x))
+    fixed_keys = _sorted_keys(fixed_results)
     vload_keys = list(vload_results.keys()) if vload_results else []
 
     fig, axes = plt.subplots(3, nj, figsize=(3 * nj, 6), squeeze=False)
@@ -394,7 +477,7 @@ def plot_joint_vel_bar_lr(fixed_results, joint_bases, vload_results=None):
             for i, lw in enumerate(fixed_keys):
                 v = _collect(fixed_results[lw].get('cutted_data'), col)
                 if v is None or len(v) == 0: continue
-                bm.append(np.mean(np.abs(v))); bs.append(np.std(np.abs(v))); bl.append(f'{lw} kg')
+                bm.append(np.mean(np.abs(v))); bs.append(np.std(np.abs(v))); bl.append(_load_label(lw))
                 bc.append(LOAD_COLORS[i % len(LOAD_COLORS)]); bh.append('')
             for j, vk in enumerate(vload_keys):
                 v = _collect(vload_results[vk].get('cutted_data'), col)
@@ -414,7 +497,7 @@ def plot_joint_vel_bar_lr(fixed_results, joint_bases, vload_results=None):
             rv, lv = cd[col_r].values, cd[col_l].values; m = ~np.isnan(rv) & ~np.isnan(lv)
             if not np.any(m): continue
             d = np.abs(np.abs(rv[m]) - np.abs(lv[m]))
-            bm.append(np.mean(d)); bs.append(np.std(d)); bl.append(f'{lw} kg')
+            bm.append(np.mean(d)); bs.append(np.std(d)); bl.append(_load_label(lw))
             bc.append(LOAD_COLORS[i % len(LOAD_COLORS)]); bh.append('')
         for j, vk in enumerate(vload_keys):
             cd = vload_results[vk].get('cutted_data')

@@ -51,7 +51,7 @@ from digitaltwin.analysis.result_analysis import (
 #  配置
 # ============================================================
 
-CONFIG_FILE = '../config/20260513_squat_FTS09_xsens.json'
+CONFIG_FILE = '../../config/20260513_squat_FTS09_xsens.json'
 
 # None = 全部；也可以指定，如 ['20', '38', '56']
 LOAD_KEYS = None

@@ -3,9 +3,25 @@ insole_processor.py
 
 读取足底压力鞋垫数据。
 
-文件格式：CSV，跳过前 3 行，
-  第 1 列: time (s)
-  第 2 列: value (N, 正方向向上，代表地面对人的支撑力)
+支持两类文件：
+
+1. 汇总力文件 `Medilogic Insoles-XT Force.csv`
+   CSV，跳过前 3 行，
+     第 1 列: time (s)
+     第 2 列: value (N, 正方向向上，代表地面对人的支撑力)
+   由 load() 读取。
+
+2. 逐点压力图 `Medilogic Insoles-XT Medilogic Insoles G2. Foot.csv`
+   signal_matrix 格式，由 load_pressure_map() 读取。
+     第 1 行: 元数据字段名
+     第 2 行: 元数据值 (frequency / count / units / cell_count_x /
+              cell_count_y / cell_size_mm_x / cell_size_mm_y)
+     第 3 行: 空行
+     第 4 行: 列头 time,x1..xN
+     之后每一帧 = cell_count_y 行 x cell_count_x 列压强，
+     仅每帧第一行带时间戳，帧与帧之间以空行分隔。
+   压强单位通常为 N/cm2；乘单元面积后求和即该脚总力，
+   同时可由压强分布求逐帧压心 COP。
 
 默认时间处理：
   - 先读取鞋垫文件同目录下的 info.csv；
@@ -18,6 +34,8 @@ insole_processor.py
 import os
 import numpy as np
 import pandas as pd
+
+from digitaltwin.utils.logger import beauty_print
 
 
 class InsoleProcessor:
@@ -316,6 +334,312 @@ class InsoleProcessor:
         except Exception as e:
             log(f'  [Insole] 读取失败: {e}')
             return None, None
+
+    # ------------------------------------------------------------------
+    # 逐点压力图分支 (Medilogic Insoles G2. Foot.csv)
+    # ------------------------------------------------------------------
+
+    MAP_HEADER_ROWS = 4      # 元数据名 / 元数据值 / 空行 / 列头
+    MAP_MIN_FORCE_N = 20.0   # 求 COP 的最小总力，低于此值视为悬空
+
+    @staticmethod
+    def _read_lines_any_encoding(file_path, verbose=True):
+        '''按常见编码逐一尝试读取文本行，返回 (lines, encoding)。'''
+        encodings = ('utf-8-sig', 'utf-8', 'latin1', 'cp1252', 'gbk')
+        for enc in encodings:
+            try:
+                with open(file_path, 'r', encoding=enc) as fh:
+                    return fh.readlines(), enc
+            except (UnicodeDecodeError, LookupError):
+                continue
+        InsoleProcessor._log(
+            '  [InsoleMap] 无法以任何已知编码读取: ' + str(file_path), verbose)
+        return None, None
+
+    @staticmethod
+    def read_pressure_map_header(file_path, verbose=True):
+        '''
+        读取逐点压力图的元数据行。
+
+        Returns
+        -------
+        dict or None
+            name / frequency / count / units / begin_time /
+            n_cols / n_rows / cell_dx_cm / cell_dy_cm /
+            cell_area_cm2 / width_cm / length_cm
+        '''
+        import csv
+
+        lines, _ = InsoleProcessor._read_lines_any_encoding(
+            file_path, verbose=verbose)
+        if lines is None or len(lines) < 2:
+            return None
+
+        try:
+            keys = next(csv.reader([lines[0].rstrip()]))
+            vals = next(csv.reader([lines[1].rstrip()]))
+        except Exception as e:
+            InsoleProcessor._log(
+                '  [InsoleMap] 元数据行解析失败: ' + str(e), verbose)
+            return None
+
+        meta_raw = {}
+        for k, v in zip(keys, vals):
+            meta_raw[str(k).strip()] = str(v).strip()
+
+        def as_float(key, default=None):
+            try:
+                return float(meta_raw.get(key, ''))
+            except (TypeError, ValueError):
+                return default
+
+        def as_int(key, default=None):
+            value = as_float(key, None)
+            return default if value is None else int(round(value))
+
+        n_cols = as_int('cell_count_x')
+        n_rows = as_int('cell_count_y')
+        dx_mm = as_float('cell_size_mm_x')
+        dy_mm = as_float('cell_size_mm_y')
+
+        if not n_cols or not n_rows or not dx_mm or not dy_mm:
+            InsoleProcessor._log(
+                '  [InsoleMap] 元数据缺少网格尺寸字段: ' + str(file_path),
+                verbose)
+            return None
+
+        dx_cm = dx_mm / 10.0
+        dy_cm = dy_mm / 10.0
+
+        return {
+            'type': meta_raw.get('type', ''),
+            'name': meta_raw.get('name', ''),
+            'frequency': as_float('frequency'),
+            'count': as_int('count'),
+            'units': meta_raw.get('units', ''),
+            'begin_time': as_float('begin_time', 0.0),
+            'n_cols': n_cols,
+            'n_rows': n_rows,
+            'cell_dx_cm': dx_cm,
+            'cell_dy_cm': dy_cm,
+            'cell_area_cm2': dx_cm * dy_cm,
+            'width_cm': n_cols * dx_cm,
+            'length_cm': n_rows * dy_cm,
+        }
+
+    @staticmethod
+    def _parse_pressure_frames(lines, n_rows, n_cols, verbose=True):
+        '''
+        解析帧块，返回 (time, matrix)，matrix 形状 (n_frames, n_rows, n_cols)。
+
+        行数不完整的帧会被丢弃并计数告警。
+        '''
+        import csv
+
+        times = []
+        frames = []
+        state = {'rows': None, 'time': None, 'bad': 0}
+
+        def close_frame():
+            rows = state['rows']
+            if rows is None:
+                return
+            if len(rows) == n_rows and state['time'] is not None:
+                times.append(state['time'])
+                frames.append(rows)
+            else:
+                state['bad'] += 1
+            state['rows'] = None
+            state['time'] = None
+
+        for line in lines:
+            stripped = line.strip()
+            if stripped == '' or set(stripped) <= {','}:
+                close_frame()
+                continue
+
+            try:
+                parts = next(csv.reader([line.rstrip()]))
+            except Exception:
+                continue
+            if not parts:
+                continue
+
+            head = parts[0].strip()
+
+            if head != '':
+                close_frame()
+                try:
+                    state['time'] = float(head)
+                except ValueError:
+                    state['time'] = None
+                    continue
+                state['rows'] = []
+
+            if state['rows'] is None:
+                continue
+
+            row = []
+            for v in parts[1:1 + n_cols]:
+                v = v.strip()
+                try:
+                    row.append(float(v) if v != '' else 0.0)
+                except ValueError:
+                    row.append(0.0)
+            while len(row) < n_cols:
+                row.append(0.0)
+
+            state['rows'].append(row)
+
+        close_frame()
+
+        if state['bad']:
+            beauty_print(
+                '  [InsoleMap] 丢弃行数不完整的帧: {} 帧'.format(state['bad']),
+                type='warning')
+
+        if not frames:
+            return None, None
+
+        return np.asarray(times, dtype=float), np.asarray(frames, dtype=float)
+
+    @staticmethod
+    def load_pressure_map(file_path, verbose=True, use_info_timestamp=True,
+                          robot_file=None, robot_folder=None, folder=None,
+                          toe_first=True, min_force=None,
+                          return_matrix=True):
+        '''
+        读取逐点压力图文件，返回总力与逐帧压心。
+
+        Parameters
+        ----------
+        file_path : str
+            `... Medilogic Insoles G2. Foot.csv` 完整路径。
+        toe_first : bool, default True
+            网格行号 0 是否位于足趾端。判定依据：最宽的行是跖骨头，
+            压强最高且略窄的行是足跟。若某侧鞋垫方向相反，置为 False。
+        min_force : float, optional
+            求 COP 的最小总力阈值，默认 MAP_MIN_FORCE_N。
+            低于阈值的帧 COP 记为 nan。
+        return_matrix : bool, default True
+            是否保留完整压强矩阵（较占内存）。
+
+        Returns
+        -------
+        dict or None
+            time     : (n,)  修正后的时间轴 (s)
+            force    : (n,)  由压强积分得到的总力 (N)
+            cop_ant  : (n,)  压心距足跟端的前向距离 (m)
+            cop_lat  : (n,)  压心距网格第 0 列的横向距离 (m)
+            pressure : (n, n_rows, n_cols) 压强，return_matrix=True 时给出
+            meta     : dict，见 read_pressure_map_header
+        '''
+        if not os.path.exists(file_path):
+            beauty_print('  [InsoleMap] 文件不存在: ' + str(file_path),
+                         type='warning')
+            return None
+
+        meta = InsoleProcessor.read_pressure_map_header(
+            file_path, verbose=verbose)
+        if meta is None:
+            beauty_print('  [InsoleMap] 元数据解析失败: ' + str(file_path),
+                         type='warning')
+            return None
+
+        lines, used_enc = InsoleProcessor._read_lines_any_encoding(
+            file_path, verbose=verbose)
+        if lines is None:
+            return None
+
+        n_rows = meta['n_rows']
+        n_cols = meta['n_cols']
+
+        time, matrix = InsoleProcessor._parse_pressure_frames(
+            lines[InsoleProcessor.MAP_HEADER_ROWS:],
+            n_rows, n_cols, verbose=verbose)
+
+        if matrix is None:
+            beauty_print('  [InsoleMap] 未解析到任何完整帧: ' + str(file_path),
+                         type='warning')
+            return None
+
+        declared = meta['count']
+        if declared and len(time) != declared:
+            beauty_print(
+                '  [InsoleMap] 帧数与元数据不一致: 解析 {} / 声明 {}'.format(
+                    len(time), declared),
+                type='warning')
+
+        # 压强 -> 力。units 含 cm2 时需乘单元面积
+        units = str(meta.get('units', '')).lower().replace(' ', '')
+        if 'cm2' in units or 'cm^2' in units:
+            scale = meta['cell_area_cm2']
+        elif 'mm2' in units or 'mm^2' in units:
+            scale = meta['cell_dx_cm'] * meta['cell_dy_cm'] * 100.0
+        else:
+            scale = 1.0
+            beauty_print(
+                '  [InsoleMap] 未识别的单位 {}，按已是力处理，'
+                '不乘单元面积'.format(meta.get('units')),
+                type='warning')
+
+        force = matrix.sum(axis=(1, 2)) * scale
+
+        # 逐帧压心
+        thr = (InsoleProcessor.MAP_MIN_FORCE_N
+               if min_force is None else min_force)
+        xs = (np.arange(n_cols) + 0.5) * meta['cell_dx_cm']
+        ys = (np.arange(n_rows) + 0.5) * meta['cell_dy_cm']
+
+        tot = matrix.sum(axis=(1, 2))
+        with np.errstate(invalid='ignore', divide='ignore'):
+            cop_row = (matrix.sum(axis=2) @ ys) / tot
+            cop_col = (matrix.sum(axis=1) @ xs) / tot
+
+        invalid = ~(force >= thr)
+        cop_row[invalid] = np.nan
+        cop_col[invalid] = np.nan
+
+        # 行号 0 在足趾端时，距足跟端的前向距离 = 全长 - 行向坐标
+        cop_ant_cm = (meta['length_cm'] - cop_row) if toe_first else cop_row
+
+        # 边缘列若有明显压强，说明脚踩到垫边，力有溢出丢失
+        col_mean = matrix.mean(axis=(0, 1))
+        edge = max(col_mean[0], col_mean[-1])
+        if col_mean.max() > 0 and edge > 0.05 * col_mean.max():
+            beauty_print(
+                '  [InsoleMap] 边缘列存在明显压强 (边缘 {:.3f} vs 峰值 {:.3f})，'
+                '脚可能踩出感应区，总力与 COP 均会偏低'.format(
+                    edge, col_mean.max()),
+                type='warning')
+
+        time = InsoleProcessor.align_time_with_info(
+            time, file_path,
+            robot_file=robot_file,
+            robot_folder=robot_folder,
+            folder=folder,
+            use_info_timestamp=use_info_timestamp,
+            verbose=verbose)
+
+        n_valid = int((~invalid).sum())
+        InsoleProcessor._log(
+            '  [InsoleMap] 已加载 ({}): {}  ({} frames, {}x{} cells, '
+            '有效 COP {} 帧)'.format(
+                used_enc, os.path.basename(file_path), len(time),
+                n_rows, n_cols, n_valid),
+            verbose)
+
+        result = {
+            'time': time,
+            'force': force,
+            'cop_ant': cop_ant_cm / 100.0,
+            'cop_lat': cop_col / 100.0,
+            'meta': meta,
+        }
+        if return_matrix:
+            result['pressure'] = matrix
+
+        return result
 
     @staticmethod
     def resample(time, force, target_times):

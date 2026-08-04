@@ -3,6 +3,8 @@ import pandas as pd
 from scipy.interpolate import interp1d, CubicSpline
 from scipy.optimize import curve_fit
 
+from digitaltwin.utils.logger import beauty_print
+
 
 class CurveAnalyzer:
     """
@@ -34,14 +36,30 @@ class CurveAnalyzer:
         dict
             {load: {phase: {'emg_curves': {...}, 'vel_curves': {...}, 'n_segments': int}}}
         """
+        # 这里绝不能抛异常：pipeline._process_single_load 会把异常吃掉并
+        # 整组 return None，导致该组连 robot_data / aligned_data 一起被丢掉。
+        # 等长（杆不动）组本来就可能切不出片段，属可预期情况，报告后跳过即可。
+        if data_df is None or len(data_df) == 0:
+            beauty_print(
+                '切片数据为空，跳过平均曲线计算（返回空结果）。'
+                '等长试次若连力阈值窗口都切不出持续用力区间会走到这里。',
+                type="warning")
+            return {}
+
         required_columns = ['pos_l', 'movement_phase']
-        for col in required_columns:
-            if col not in data_df.columns:
-                raise ValueError(f"数据框中缺少必要列: {col}")
+        missing = [col for col in required_columns if col not in data_df.columns]
+        if missing:
+            beauty_print(
+                '切片数据缺少必要列 {}，跳过平均曲线计算（返回空结果）。'.format(missing),
+                type="warning")
+            return {}
 
         emg_columns = [col for col in data_df.columns if col.startswith('EMG') or col.startswith('emg')]
         if not emg_columns:
-            raise ValueError("数据框中未找到EMG数据列")
+            beauty_print(
+                '切片数据中未找到 EMG 列，跳过平均曲线计算（返回空结果）。',
+                type="warning")
+            return {}
 
         if print_label:
             print(f"找到 {len(emg_columns)} 个EMG通道: {emg_columns}")
@@ -50,6 +68,11 @@ class CurveAnalyzer:
             print("警告: 数据框中没有负载信息，将使用单一负载处理")
             data_df = data_df.copy()
             data_df['load'] = 'default_load'
+
+        if 'load_weight' not in data_df.columns:
+            data_df = data_df.copy()
+            data_df['load_weight'] = (
+                data_df['load'] if 'load' in data_df.columns else 'default_load')
 
         unique_loads = data_df['load_weight'].unique()
         unique_phases = data_df['movement_phase'].unique()

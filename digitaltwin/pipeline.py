@@ -42,6 +42,7 @@ from digitaltwin.visualization.heatmap import (
     plot_compare_load_sensitivity_2d,
 )
 from digitaltwin.visualization.vload.variable_load_plot import plot_variable_load_result
+from digitaltwin.utils.logger import beauty_print
 
 
 class MultiLoadPipeline:
@@ -100,7 +101,9 @@ class MultiLoadPipeline:
         all_results = {}
 
         for load_weight, file_info in robot_files.items():
-            self._log(f"处理负载 {load_weight}kg...")
+            # 不再拼 "kg"：等长 / 等速组的组名是 IM-1 / IK-0.3，写成
+            # "IM-1kg" 会让日志看起来像是 1 kg 的定负载组。
+            self._log(f"处理负载 {load_weight}...")
             result = self._process_single_load(
                 load_weight, file_info, include_xsens, include_insole,
                 use_insole_info_timestamp)
@@ -116,6 +119,35 @@ class MultiLoadPipeline:
 
         return all_results
 
+    @staticmethod
+    def _numeric_load_value(load_weight, file_info=None):
+        """把组名解析成数值负载 (kg)；解析不出来返回 nan。
+
+        为什么不能直接 float(load_weight)：等长 / 等速组的组名是
+        'IM-1' / 'IK-0.3'，float() 会抛 ValueError。而且这一步在 try 外面，
+        异常会直接穿出 run()，把整个流水线（包括所有定负载组）一起打挂。
+
+        也不能从组名里抽数字：'IM-1' 的 1 是杆高 1.0 m，
+        'IK-0.3' 的 0.3 是最高速度 0.3 m/s，都不是负载。误用会把
+        等长组当成 1 kg 的定负载组静静带进热力图拟合。
+        这两类组的实际负载必须由受力反推，因此先给 nan。
+        """
+        info = file_info or {}
+        for key in ('load_kg', 'load'):
+            value = info.get(key)
+            if value is None:
+                continue
+            try:
+                f = float(value)
+            except (TypeError, ValueError):
+                continue
+            if np.isfinite(f):
+                return f
+        try:
+            return float(load_weight)
+        except (TypeError, ValueError):
+            return float('nan')
+
     def _process_single_load(self, load_weight, file_info, include_xsens,
                              include_insole=False,
                              use_insole_info_timestamp=True):
@@ -127,7 +159,7 @@ class MultiLoadPipeline:
 
         result = {
             'load_weight': load_weight,
-            'load_value': float(load_weight),
+            'load_value': self._numeric_load_value(load_weight, file_info),
             'robot_data': None,
             'emg_data': None,
             'xsens_data': None,
@@ -140,7 +172,8 @@ class MultiLoadPipeline:
             robot_data = RobotProcessor.process(
                 robot_file, load_weight,
                 self.subject.modeling_robot_folder, self.subject.folder,
-                turn_position=self.subject.turn_position)
+                turn_position=self.subject.turn_position,
+                load_value=result['load_value'])
             if robot_data is None:
                 self._log(f"负载 {load_weight}kg: 机器人数据处理失败")
                 return None
@@ -190,9 +223,16 @@ class MultiLoadPipeline:
             cutted = self.aligner.cut_aligned_data(aligned)
             result['cutted_data'] = cutted
 
-            # 9. 计算平均曲线
-            average = self.curve_analyzer.process_for_curves(cutted)
-            result['average_data'] = average
+            # 9. 计算平均曲线（切片为空时跳过，不能让异常把整组数据打掉）
+            if cutted is None or (hasattr(cutted, '__len__') and len(cutted) == 0):
+                beauty_print(
+                    '负载 {}：切片为空，跳过平均曲线计算。该组仍保留 robot_data / '
+                    'aligned_data，可用力阈值窗口（result_analysis.get_action_windows）'
+                    '继续分析。'.format(load_weight),
+                    type="warning")
+                result['average_data'] = {}
+            else:
+                result['average_data'] = self.curve_analyzer.process_for_curves(cutted)
 
             result['metadata']['load_weight'] = load_weight
             result['metadata']['processing_time'] = (
@@ -284,7 +324,8 @@ class MultiLoadPipeline:
             if result['aligned_data'] is not None:
                 df = result['aligned_data'].copy()
                 df['load_weight'] = load_weight
-                df['load_value'] = float(load_weight)
+                df['load_value'] = result.get(
+                    'load_value', self._numeric_load_value(load_weight))
                 all_aligned.append(df)
 
         if all_aligned:
@@ -380,8 +421,13 @@ class MultiLoadPipeline:
         if load_weights is None:
             data = self.aligned_data[available_cols].copy()
         else:
-            mask = self.aligned_data['load'].isin(
-                [float(lw) for lw in load_weights])
+            wanted = []
+            for lw in load_weights:
+                try:
+                    wanted.append(float(lw))
+                except (TypeError, ValueError):
+                    wanted.append(lw)
+            mask = self.aligned_data['load'].isin(wanted)
             data = self.aligned_data.loc[mask, available_cols].copy()
         if emg_col in data.columns:
             data.rename(columns={emg_col: 'emg_activation'}, inplace=True)
@@ -454,7 +500,8 @@ class MultiLoadPipeline:
                 cd = pd.concat(cd, ignore_index=True)
             df = cd.copy()
             if 'load' not in df.columns:
-                df['load'] = float(load_weight)
+                df['load'] = result.get(
+                    'load_value', self._numeric_load_value(load_weight))
             frames.append(df)
 
         if not frames:
@@ -465,7 +512,14 @@ class MultiLoadPipeline:
 
         if movement_types is not None and 'movement_type' in combined.columns:
             before = len(combined)
-            combined = combined[combined['movement_type'].isin(movement_types)]
+            # 只有 upward/downward 才属于“运动阶段”，isometric / isokinetic 是
+            # 模式而非阶段：等长组的 movement_type 直接记为 'isometric'（杆不动，
+            # 走力阈值切段，见 alignment._cut_by_force_threshold），没有任何
+            # 向上/向下阶段。因此请求阶段过滤时，必须把这些模式的组一并保留，
+            # 否则 isometric 会被 ['upward'] 之类全部过滤掉、图上不显示。
+            keep_phase = combined['movement_type'].isin(movement_types)
+            keep_mode  = combined['movement_type'].isin(('isometric', 'isokinetic'))
+            combined = combined[keep_phase | keep_mode]
             self._log(f"运动阶段过滤 {movement_types}: {before} -> {len(combined)} 行")
 
         if len(combined) == 0:
@@ -526,6 +580,28 @@ class MultiLoadPipeline:
         if data is None:
             self._log("无法加载切片数据，热力图生成终止。")
             return {}
+
+        # 等长 / 等速组的标称负载是 nan（要由受力反推）。
+        # 热力图以负载为自变量，必须先把这些行剔除，且得显式报告，
+        # 不能静静丢掉整组数据。
+        load_col_check = 'load' if 'load' in data.columns else 'load_value'
+        if load_col_check in data.columns:
+            bad = ~np.isfinite(pd.to_numeric(data[load_col_check],
+                                             errors='coerce'))
+            if bool(bad.any()):
+                dropped = sorted(set(
+                    data.loc[bad, 'load_weight'].astype(str)
+                )) if 'load_weight' in data.columns else ['?']
+                beauty_print(
+                    '热力图已剔除无标称负载的组: {}（{} 行）。\n'
+                    '等长 / 等速组的负载靠受力反推，不能当成定负载直接拟合；'
+                    '需要纳入时请改用 generate_heatmaps_with_estimated_load()。'.format(
+                        dropped, int(bad.sum())),
+                    type="warning")
+                data = data[~bad].reset_index(drop=True)
+            if len(data) == 0:
+                self._log('剔除无标称负载的组后数据为空，热力图生成终止。')
+                return {}
 
         # 打印切片数据的高度范围（方便填写 heatmap_settings.height_range）
         if 'pos_l' in data.columns:

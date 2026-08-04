@@ -20,6 +20,7 @@ import pandas as pd
 from digitaltwin.subject import Subject
 from digitaltwin.pipeline import MultiLoadPipeline
 from digitaltwin.analysis.alignment import DataAligner
+from digitaltwin.utils.logger import beauty_print
 
 
 def _canonical_load_key(value):
@@ -383,6 +384,252 @@ def get_segment_from_results(pipeline_results, load_key,
     return df
 
 
+def find_force_windows(time, force, min_force=None, force_frac=0.3,
+                       min_duration=0.5, merge_gap=1.0):
+    '''
+    按「力超过阈值的连续区间」切段。
+
+    用于等长（isometric）试次：杆不动，vel_l 几乎恒为 0，
+    DataAligner.cut_aligned_data 靠速度过零点切不出任何有效片段。
+    但发力与不发力在力信号上是分得很开的，所以改用力阈值。
+
+    Parameters
+    ----------
+    time, force : array-like
+        同一时间轴上的时间与力（通常是 force_l + force_r）。
+    min_force : float, optional
+        给定时直接用它作为绝对阈值 (N)。
+    force_frac : float
+        未给 min_force 时，阈值 = force_frac x 力的 95 分位数。
+        用分位数而不是最大值，是为了不被单帧尖刺拉高阈值。
+    min_duration : float
+        短于此时长的区间丢弃（s），滤掉碰一下、调整姿势等杂帧。
+    merge_gap : float
+        相邻区间间隔小于此值时合并（s）。力在阈值附近抖动
+        会把一次发力切碎，不合并就会得到几十个碎片。
+
+    Returns
+    -------
+    list[tuple[float, float]]
+        [(t0, t1), ...]，按时间升序。没有符合条件的区间时返回 []。
+    '''
+    time = np.asarray(time, dtype=float)
+    force = np.asarray(force, dtype=float)
+    ok = np.isfinite(time) & np.isfinite(force)
+    if int(ok.sum()) < 10:
+        return []
+
+    t = time[ok]
+    f = force[ok]
+    order = np.argsort(t)
+    t, f = t[order], f[order]
+
+    if min_force is None:
+        thr = float(force_frac) * float(np.nanpercentile(f, 95))
+    else:
+        thr = float(min_force)
+    if not np.isfinite(thr) or thr <= 0:
+        return []
+
+    mask = f >= thr
+    if not mask.any():
+        return []
+
+    flips = np.flatnonzero(np.diff(mask.astype(int)))
+    starts = [0] if mask[0] else []
+    ends = []
+    for i in flips:
+        if mask[i + 1]:
+            starts.append(i + 1)
+        else:
+            ends.append(i)
+    if mask[-1]:
+        ends.append(len(mask) - 1)
+
+    merged = []
+    for i0, i1 in zip(starts, ends):
+        w = (float(t[i0]), float(t[i1]))
+        if merged and w[0] - merged[-1][1] <= merge_gap:
+            merged[-1] = (merged[-1][0], w[1])
+        else:
+            merged.append(w)
+
+    return [w for w in merged if (w[1] - w[0]) >= min_duration]
+
+
+def _aligned_data_for_load(subject, pipeline_results, load_key):
+    '''取单组的 aligned_data（未切片）。先看 pipeline 结果，再读缓存 CSV。'''
+    key = _canonical_load_key(load_key)
+
+    result = (pipeline_results or {}).get(key)
+    if result is None:
+        for k, v in (pipeline_results or {}).items():
+            if _canonical_load_key(k) == key:
+                result = v
+                break
+    if result is not None:
+        aligned = result.get('aligned_data')
+        if aligned is not None and len(aligned) > 0:
+            return aligned
+
+    path = os.path.join(subject.result_folder, 'aligned_data.csv')
+    if not os.path.exists(path):
+        return None
+
+    df = pd.read_csv(path)
+    for col in ('load_weight', 'load', 'load_value'):
+        if col in df.columns:
+            sel = df[df[col].map(_canonical_load_key) == key]
+            if len(sel) > 0:
+                return sel.reset_index(drop=True)
+    return None
+
+
+def get_action_windows(config_path, load_keys,
+                       movement_types=('upward', 'downward'),
+                       force_cols=('force_l', 'force_r'),
+                       min_force=None, force_frac=0.3,
+                       min_duration=0.5, merge_gap=1.0,
+                       include_insole=False,
+                       cache_name='cutted_data.csv',
+                       debug=False):
+    '''
+    每组的动作时间窗（机器人时钟），自动适配三种负载模式。
+
+    优先用运动切片（定负载与等速都适用：等速只限了最高速度，
+    杆照样上下走）；取不到时退回力阈值窗口（等长组）。
+
+    同时处理一个很容易静默出错的坑：切片缓存是按 load_weight 存的，
+    config 里的组名一旦改过（如 0.3 -> IK-0.3），旧缓存里就一个都对不上，
+    表现为每组都「未取到窗口」。这里会检测到并自动 force_rebuild。
+
+    Returns
+    -------
+    dict
+        {load_key: {'window': (t0, t1) or None,
+                    'source': 'movement' | 'force' | None,
+                    'sub_windows': list[(t0, t1)]  # 仅 force 模式
+                    'detail': str}}
+        window 是首至末的包络区间。
+    '''
+    def _load_results(force_rebuild):
+        '''取切片结果；流水线整体失败时不让异常穿出去。
+
+        一个组的问题（例如 float('IM-1') 抛 ValueError）不应该把所有组
+        的窗口一起带掉。拿不到切片时至少要保证 subject 可用，
+        后面还能读 aligned_data.csv 走力阈值切段。
+        '''
+        try:
+            return load_or_create_cutted_pipeline_results(
+                config_path, include_xsens=False,
+                include_insole=include_insole, debug=debug,
+                force_rebuild=force_rebuild, cache_name=cache_name)
+        except Exception as exc:
+            beauty_print(
+                '切片流水线整体失败（{}: {}）。\n'
+                '这会让所有组一起失去动作窗口，所以改为只读 '
+                'aligned_data，各组退回力阈值切段。'.format(
+                    type(exc).__name__, exc),
+                type="warning")
+            try:
+                return Subject(config_path), None, {}
+            except Exception:
+                return None, None, {}
+
+    subject, _pipeline, results = _load_results(False)
+
+    wanted = [str(k) for k in load_keys]
+    available = {_canonical_load_key(k) for k in (results or {}).keys()}
+    missing = [k for k in wanted if _canonical_load_key(k) not in available]
+
+    if missing:
+        beauty_print(
+            '切片缓存 {} 里没有这些组: {}\n'
+            '缓存里实际有的是: {}\n'
+            '最常见的原因是 config 里的组名改过（例如 0.3 -> IK-0.3），'
+            '而缓存里的 load_weight 还是旧名，于是每组都取不到窗口。\n'
+            '正在用 force_rebuild=True 重建缓存（会重跑一次完整 pipeline）。'.format(
+                cache_name, missing, sorted(available)),
+            type="warning")
+        subject_new, pipeline_new, results_new = _load_results(True)
+        if results_new:
+            subject, _pipeline, results = subject_new, pipeline_new, results_new
+        elif subject_new is not None:
+            # 重建失败：保留旧 results（至少旧名的组还能用），
+            # 但 subject 要用新的，否则连 aligned_data 都读不到。
+            subject = subject_new
+
+    out = {}
+    for load_key in wanted:
+        try:
+            seg = get_segment_from_results(results, load_key,
+                                           movement_types=movement_types)
+        except Exception as exc:
+            beauty_print('组 {} 取运动切片时出错（{}: {}），'
+                         '改用力阈值切段。'.format(
+                             load_key, type(exc).__name__, exc),
+                         type="warning")
+            seg = None
+        if seg is not None and len(seg) > 0 and 'time' in seg.columns:
+            out[load_key] = {
+                'window': (float(seg['time'].min()), float(seg['time'].max())),
+                'source': 'movement',
+                'sub_windows': [],
+                'detail': '运动切片 {} -> {:.2f}-{:.2f}s，{} 帧'.format(
+                    list(movement_types), float(seg['time'].min()),
+                    float(seg['time'].max()), len(seg)),
+            }
+            continue
+
+        # 运动切片拿不到：很可能是等长组。改用未切片的 aligned_data + 力阈值。
+        aligned = _aligned_data_for_load(subject, results, load_key)
+        if aligned is None or 'time' not in getattr(aligned, 'columns', []):
+            out[load_key] = {
+                'window': None, 'source': None, 'sub_windows': [],
+                'detail': '既无运动切片，也拿不到 aligned_data'}
+            beauty_print(
+                '组 {} 既没有运动切片，也拿不到 aligned_data，'
+                '无法划定动作窗口。'.format(load_key), type="warning")
+            continue
+
+        cols = [c for c in force_cols if c in aligned.columns]
+        if not cols:
+            out[load_key] = {
+                'window': None, 'source': None, 'sub_windows': [],
+                'detail': 'aligned_data 中没有力列 {}'.format(list(force_cols))}
+            beauty_print(
+                '组 {} 的 aligned_data 里没有 {}，无法用力阈值切段。'.format(
+                    load_key, list(force_cols)), type="warning")
+            continue
+
+        total = aligned[cols].sum(axis=1).values.astype(float)
+        windows = find_force_windows(
+            aligned['time'].values, total, min_force=min_force,
+            force_frac=force_frac, min_duration=min_duration,
+            merge_gap=merge_gap)
+
+        if not windows:
+            out[load_key] = {
+                'window': None, 'source': None, 'sub_windows': [],
+                'detail': '力阈值没切出任何区间（力列 {}）'.format(cols)}
+            beauty_print(
+                '组 {} 用力阈值也没切出区间；请检查 {} 是否全为零或异常。'.format(
+                    load_key, cols), type="warning")
+            continue
+
+        out[load_key] = {
+            'window': (windows[0][0], windows[-1][1]),
+            'source': 'force',
+            'sub_windows': windows,
+            'detail': '力阈值切出 {} 段，包络 {:.2f}-{:.2f}s（力列 {}，'
+                      '总时长 {:.2f}s）'.format(
+                          len(windows), windows[0][0], windows[-1][1], cols,
+                          sum(w[1] - w[0] for w in windows)),
+        }
+
+    return out
+
+
 def interpolate_column_to_segment(table_df, segment_df, value_col,
                                   time_col='time'):
     """
@@ -410,6 +657,20 @@ def interpolate_column_to_segment(table_df, segment_df, value_col,
     valid_dst = np.isfinite(dst_t)
     if valid_src.sum() < 2 or valid_dst.sum() == 0:
         return None
+
+    # 越界保护：np.interp 会用 left/right 端点常值静默填充越界样本，
+    # 这会在不报错的情况下抹平负载效应，因此必须显式警告。
+    src_lo = float(src_t[valid_src].min())
+    src_hi = float(src_t[valid_src].max())
+    dst_valid = dst_t[valid_dst]
+    n_out = int(np.sum((dst_valid < src_lo) | (dst_valid > src_hi)))
+    if n_out > 0:
+        print(f'[WARN] interpolate_column_to_segment: '
+              f'{n_out}/{len(dst_valid)} '
+              f'({100.0 * n_out / len(dst_valid):.1f}%) 个目标时间点越界，'
+              f'源区间=[{src_lo:.3f}, {src_hi:.3f}], '
+              f'目标区间=[{dst_valid.min():.3f}, {dst_valid.max():.3f}], '
+              f'列={value_col}；这些点已被端点常值填充。')
 
     out = np.full(len(dst_t), np.nan, dtype=float)
     out[valid_dst] = np.interp(

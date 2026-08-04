@@ -52,6 +52,12 @@
     "emg_folder": "emg",
     "xsens_folder": "xsens",
     "insole_folder": "Sorted",
+    "isometric_data": {
+      "IM": {
+        "robot_file": "robot/RobotUdp_FTS09_Squat_IM_1_20260513_173420.csv",
+        "emg_file": "EMG_FTS09_Squat_IM_1_2026-05-13_05-34-13.csv"
+      }
+    },
     "data": {
       "20": {
         "robot_file": "robot/RobotUdp_FTS09_Squat_15p_3_20260513_165830.csv",
@@ -94,6 +100,38 @@
         "xsens_file": "MVN-006_FTS09.xlsx",
         "insole_file_l": "2026-05-13-17-19_squat85p/Medilogic Insoles-LT Force.csv",
         "insole_file_r": "2026-05-13-17-19_squat85p/Medilogic Insoles-RT Force.csv"
+      }
+    }
+  },
+
+  "fatigue_file": {
+    "emg_folder": "fatigue/emg",
+    "robot_folder": "fatigue/robot",
+    "fatigue_data": {
+      "fatigue1": {
+        "robot_file": "RobotUdp_FTS09_V1_20260527_161334.csv",
+        "emg_file": "EMG_FTS09_Squat_V1_1_2026-05-27_04-13-23.csv",
+        "load_file": "Msquat_multi muslce.csv"
+      },
+      "fatigue2": {
+        "robot_file": "RobotUdp_FTS09_c2_20260603_154935.csv",
+        "emg_file": "EMG_FTS09_c2_1_2026-06-03_03-49-29.csv",
+        "load_file": "Msquat_multi middle_elastic.csv"
+      },
+      "fatigue3": {
+        "robot_file": "RobotUdp_FTS09_V3_20260527_170145.csv",
+        "emg_file": "EMG_FTS09_Squat_V3_1_2026-05-27_05-01-37.csv",
+        "load_file": "Msquat_multi middle_mean.csv"
+      },
+      "fatigue4": {
+        "robot_file": "RobotUdp_FTS09_c1_20260603_152015.csv",
+        "emg_file": "EMG_FTS09_c1_1_2026-06-03_03-20-46.csv",
+        "load_file": "Msquat_multi middle_mean.csv"
+      },
+      "fatigue5": {
+        "robot_file": "RobotUdp_FTS09_c3_20260603_161939.csv",
+        "emg_file": "EMG_FTS09_c3_3_2026-06-03_04-19-28.csv",
+        "load_file": "Msquat_multi muslce.csv"
       }
     }
   },

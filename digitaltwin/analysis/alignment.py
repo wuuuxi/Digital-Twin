@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 
+from digitaltwin.utils.logger import beauty_print
+
 
 def filter_movement_types(df, movement_types):
     """按 movement_type 列过滤切片数据。
@@ -22,7 +24,13 @@ def filter_movement_types(df, movement_types):
         return df
     if 'movement_type' not in df.columns:
         return df
-    return df[df['movement_type'].isin(movement_types)]
+    # isometric / isokinetic 是负载模式而非运动阶段：等长组的 movement_type
+    # 直接为 'isometric'（杆不动，走力阈值切段），不参与 upward/downward
+    # 阶段过滤。按阶段过滤时仍应保留这两类组，否则混合模式数据里 isometric
+    # 会被 ['upward'] 之类全部过滤掉。
+    keep_phase = df['movement_type'].isin(movement_types)
+    keep_mode = df['movement_type'].isin(('isometric', 'isokinetic'))
+    return df[keep_phase | keep_mode]
 
 
 class DataAligner:
@@ -150,6 +158,26 @@ class DataAligner:
         # 识别完整运动周期
         complete_movements = self._identify_complete_movements(filtered_segments)
 
+        # 两边都空时不能直接 pd.concat（会抛 ValueError）。
+        # 这种情况本身就是一个需要报告的事实：没有任何可用的运动周期。
+        if not complete_movements and not filtered_segments:
+            # 等长（isometric）试次杆不动，速度过零点切不出片段，这是正常的。
+            # 直接返回空切片会让下游（CurveAnalyzer / 窗口划定）全部失效，
+            # 因此这里自动改用“合力超过阈值的连续窗口”切段。
+            fallback = self._cut_by_force_threshold(data)
+            if fallback is not None and len(fallback) > 0:
+                print(
+                    '速度过零点切不出有效运动片段（等长试次杆不动，属正常）。'
+                    '已自动改用力阈值窗口切段：{} 段 / {} 行，'
+                    'movement_type 与 movement_phase 记为 isometric。'.format(
+                        int(fallback['segment_id'].nunique()), len(fallback)))
+                return fallback
+            beauty_print(
+                '未切出任何有效运动片段，力阈值窗口也没切出任何持续用力区间。'
+                '请检查该组的 vel_l / force_l / force_r 是否正常。返回空切片。',
+                type="warning")
+            return data.iloc[0:0].copy()
+
         if not complete_movements:
             self.print_debug_info(f"找到 {len(filtered_segments)} 个运动片段")
             result_df = pd.concat(filtered_segments, ignore_index=True)
@@ -159,6 +187,82 @@ class DataAligner:
         result_df = self._postprocess_position_standardization(result_df, print_label=False)
 
         return result_df
+
+    def _cut_by_force_threshold(self, data, force_cols=('force_l', 'force_r'),
+                                min_force=None, force_frac=0.3,
+                                min_duration=0.5, merge_gap=1.0):
+        """等长（杆不动）试次的切段：按合力超过阈值的连续窗口切。
+
+        与 result_analysis.find_force_windows 用同一套判据（force_frac ×
+        95 百分位、最短持续、间隔合并），区别是这里直接产出与速度切片
+        同构的 DataFrame（movement_type / movement_phase / segment_id /
+        cycle_id / start_time / end_time ...），下游 CurveAnalyzer、
+        filter_movement_types、get_segment_from_results 都能照常用。
+
+        Returns
+        -------
+        pd.DataFrame or None
+            切不出任何窗口时返回 None。
+        """
+        if data is None or 'time' not in data.columns:
+            return None
+        cols = [c for c in force_cols if c in data.columns]
+        if not cols:
+            return None
+
+        time = data['time'].values.astype(float)
+        force = data[cols].sum(axis=1).values.astype(float)
+        finite = force[np.isfinite(force)]
+        if finite.size == 0:
+            return None
+
+        if min_force is None:
+            min_force = force_frac * float(np.nanpercentile(finite, 95))
+
+        active = np.isfinite(force) & (force >= min_force)
+        if not active.any():
+            return None
+
+        idx = np.flatnonzero(active)
+        breaks = np.flatnonzero(np.diff(idx) > 1)
+        starts = np.concatenate(([idx[0]], idx[breaks + 1]))
+        ends = np.concatenate((idx[breaks], [idx[-1]]))
+
+        # 合并间隔过小的相邻窗口（用力过程中的瞬时掉点不该断成两段）
+        merged = []
+        for s, e in zip(starts, ends):
+            if merged and time[s] - time[merged[-1][1]] <= merge_gap:
+                merged[-1][1] = e
+            else:
+                merged.append([s, e])
+
+        segments = []
+        for s, e in merged:
+            if time[e] - time[s] < min_duration:
+                continue
+            seg = data.iloc[s:e + 1].copy()
+            seg['movement_type'] = 'isometric'
+            seg['movement_phase'] = 'isometric'
+            seg['segment_id'] = len(segments)
+            seg['cycle_id'] = len(segments)
+            seg['movement_duration'] = time[e] - time[s]
+            if 'vel_l' in data.columns:
+                v = data['vel_l'].values[s:e + 1].astype(float)
+                seg['max_velocity'] = float(np.nanmax(np.abs(v)))
+                seg['avg_velocity'] = float(np.nanmean(v))
+            else:
+                seg['max_velocity'] = 0.0
+                seg['avg_velocity'] = 0.0
+            seg['start_time'] = time[s]
+            seg['end_time'] = time[e]
+            seg['is_complete'] = True
+            segments.append(seg)
+
+        if not segments:
+            return None
+
+        # 不做位置标准化截断：等长组位置几乎不变，按位置裁剪没有意义。
+        return pd.concat(segments, ignore_index=True)
 
     def _is_valid_movement_segment(self, start_idx, end_idx, velocity, time):
         """检查是否是一个有效的运动片段"""
@@ -188,6 +292,13 @@ class DataAligner:
     def _filter_movement_segments(self, segments, velocity, time):
         """过滤无效的运动片段"""
         filtered = []
+        if not segments:
+            # 等长（isometric）试次里杆不动，速度过零点切出的片段会被
+            # _is_valid_movement_segment 全部判为无效，segments 为空。
+            # 下面的 np.max 在空数组上会抛异常，而这个异常会被
+            # pipeline._process_single_load 的 try 吃掉，整组返回 None，
+            # 连 aligned_data 一起丢掉。必须先返回空列表。
+            return filtered
         position_ranges = np.asarray([np.max(s['pos_l']) - np.min(s['pos_l']) for s in segments])
         max_range = np.max(position_ranges)
 

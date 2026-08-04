@@ -16,7 +16,7 @@ import os
 from digitaltwin.osim.scaling import scale_from_config
 
 
-CONFIG_FILE = '../config/20260513_squat_FTS09_xsens.json'
+CONFIG_FILE = '../../config/20260513_squat_FTS09_xsens.json'
 
 
 def main():
