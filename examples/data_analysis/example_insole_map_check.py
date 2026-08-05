@@ -58,6 +58,12 @@ TOE_FIRST = True                 # 网格行 0 位于足趾端
 SIDES = (('l', 'insole_file_l', 'insole_map_l'),
          ('r', 'insole_file_r', 'insole_map_r'))
 
+# 方向诊断：判定两侧的 toe_first 是否真的都是 True，以及列坐标是否互为镜像。
+# 这是逐帧 COP 进入逆动力学前必须先过的一关：行方向搞反会让 COP 前后
+# 整个翻转，膝力矩的结论会直接反过来，而且因为结果“看起来也很合理”，
+# 很难在下游被发现。
+CHECK_ORIENTATION = True
+
 # 按负载模式筛选。None = 全部；('isotonic',) = 只跑定负载组；
 # 也可以写 ('isokinetic', 'isometric') 只看等速与等长组。
 # 用这个代替以前硬写的 EXCLUDE_LOAD_KEYS=['0.15','0.3']，
@@ -561,6 +567,11 @@ def main():
                 window=windows.get(str(load_key)),
                 robot_file=seg.get('robot_file'))
 
+        if CHECK_ORIENTATION:
+            InsoleProcessor.diagnose_orientation(
+                side_results, toe_first_used=TOE_FIRST,
+                min_force=MIN_FORCE_N, verbose=True)
+
         all_results[load_key] = side_results
 
     # 热图必须等所有组都读完再画：色标上限要取全体的最大值，
@@ -598,6 +609,12 @@ def main():
     print('  - M6 不通过：单元格在上限堆积，高负荷下总力会被削顶。')
     print('  - [窗口] 一行显示“退回整段”：该组的 COP 统计里混了非深蹲帧，'
           '不可用于跳组比较。')
+    print('  - [Orient] suggest 与 used 不一致：该侧 toe_first 传错了，'
+          '先改对再做逐帧 COP。')
+    print('  - [Orient] 前后(行)判为 mirrored：两侧 COP 之和接近鞋垫全长，'
+          '说明有一侧行顺序是反的。')
+    print('  - [Orient] 列坐标为 anatomical：两只脚各自按解剖方向存储，'
+          '换算到模型左右轴时需把一侧列翻转（只影响额状面）。')
 
     if PLOT_SHOW and (PLOT_HEATMAP or PLOT_ACROSS_LOADS):
         plt.show()

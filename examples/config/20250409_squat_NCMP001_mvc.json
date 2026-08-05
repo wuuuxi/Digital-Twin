@@ -75,23 +75,73 @@
     "data": {
       "20": {
         "robot_file": "robot/NCMP-001_15R_20250409_161018.csv",
-        "emg_file": "test 2025_04_09 16_09_46.csv"
+        "emg_file": "test 2025_04_09 16_09_46.csv",
+        "mode": "isotonic",
+        "load_kg": 20.0
       },
       "35": {
         "robot_file": "robot/NCMP-001_30R_20250409_160611.csv",
-        "emg_file": "test 2025_04_09 16_05_43.csv"
+        "emg_file": "test 2025_04_09 16_05_43.csv",
+        "mode": "isotonic",
+        "load_kg": 35.0
       },
       "50": {
         "robot_file": "robot/NCMP-001_45R_20250409_160359.csv",
-        "emg_file": "test 2025_04_09 16_02_34.csv"
+        "emg_file": "test 2025_04_09 16_02_34.csv",
+        "mode": "isotonic",
+        "load_kg": 50.0
       },
       "65": {
         "robot_file": "robot/NCMP-001_60R_20250409_161159.csv",
-        "emg_file": "test 2025_04_09 16_11_30.csv"
+        "emg_file": "test 2025_04_09 16_11_30.csv",
+        "mode": "isotonic",
+        "load_kg": 65.0
       },
       "95": {
         "robot_file": "robot/NCMP-001_85R_20250409_160758.csv",
-        "emg_file": "test 2025_04_09 16_07_34.csv"
+        "emg_file": "test 2025_04_09 16_07_34.csv",
+        "mode": "isotonic",
+        "load_kg": 95.0
+      }
+    },
+    "load_modes": {
+      "isotonic": {
+        "description": "定负载深蹲。配重已知，直接读 load_kg。",
+        "load_source": "nominal",
+        "required_fields": [
+          "load_kg"
+        ],
+        "example_entry": {
+          "mode": "isotonic",
+          "load_kg": 20.0,
+          "robot_file": "robot/xxx.csv"
+        }
+      },
+      "isokinetic": {
+        "description": "等速深蹲。限定最高速度，发力较大时杆接近恒速运动，加速度为 0，此时杆力全部用于平衡重力，可由受力反推等效负载。load_kg 写 null。",
+        "load_source": "force",
+        "required_fields": [
+          "target_velocity"
+        ],
+        "example_entry": {
+          "mode": "isokinetic",
+          "target_velocity": 0.3,
+          "load_kg": null,
+          "robot_file": "robot/xxx.csv"
+        }
+      },
+      "isometric": {
+        "description": "等长。杆固定在某高度不动，受试者在该位置发最大力，速度与加速度均为 0，同样由受力反推等效负载。load_kg 写 null。",
+        "load_source": "force",
+        "required_fields": [
+          "bar_height"
+        ],
+        "example_entry": {
+          "mode": "isometric",
+          "bar_height": 1.0,
+          "load_kg": null,
+          "robot_file": "robot/xxx.csv"
+        }
       }
     }
   },
@@ -156,10 +206,14 @@
     ],
     "goal": [
       0.65,
-      0.70,
+      0.7,
       0.71
     ],
-    "over_activate_threshold": [0.8, 0.8, 0.8],
+    "over_activate_threshold": [
+      0.8,
+      0.8,
+      0.8
+    ],
     "epsilons": [
       1.5
     ],

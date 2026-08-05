@@ -20,6 +20,7 @@ import numpy as np
 import opensim as osim
 
 from digitaltwin.data.insole_processor import InsoleProcessor
+from digitaltwin.utils.logger import beauty_print
 
 
 def get_ext_forces_dir(config, base_dir, load_key):
@@ -45,7 +46,9 @@ def generate_external_loads(config, base_dir, load_key, mot_path,
         F_bar = force_l + force_r + Mb*g + Mb * avg(acc_l, acc_r)
 
       足底 GRF（施加到左右 calcn，+Y 向上）：
-        从 insole_file_l / insole_file_r 读取
+        大小从 insole_file_l / insole_file_r 读取；
+        作用点默认从 insole_map_l / insole_map_r 的逐帧压心算出，
+        得不到时才退回 insole_contact_point 恒定值
 
     opensim_settings 可选字段：
       bar_mass              (float, kg,  默认 20.0)
@@ -137,6 +140,16 @@ def generate_external_loads(config, base_dir, load_key, mot_path,
     insole_pt     = osim_cfg.get('insole_contact_point',  [0.0, 0.0, 0.0])
     ipx, ipy, ipz = float(insole_pt[0]), float(insole_pt[1]), float(insole_pt[2])
 
+    # ---- 逐帧 COP 配置 ----
+    # insole_use_frame_cop : 是否用鞋垫压力图算出的逐帧压心作为作用点
+    # insole_heel_offset_x : 鞋垫足跟端在 calcn 局部坐标系里的 x 偏移 (m)
+    # insole_column_frame  : 鞋垫列坐标是 world 还是每只脚自己的 anatomical
+    use_frame_cop = bool(osim_cfg.get('insole_use_frame_cop', True))
+    heel_x        = float(osim_cfg.get('insole_heel_offset_x', 0.0))
+    col_frame     = str(osim_cfg.get('insole_column_frame', 'world')).lower()
+    cop_x_min     = float(osim_cfg.get('insole_cop_x_min', 0.02))
+    cop_x_max     = float(osim_cfg.get('insole_cop_x_max', 0.25))
+
     insole_folder = modeling.get('insole_folder', 'Sorted')
     insole_base   = os.path.join(folder, insole_folder)
 
@@ -165,6 +178,108 @@ def generate_external_loads(config, base_dir, load_key, mot_path,
 
     if not has_insole:
         log('  [EXT] 未找到鞋垫文件，仅包含杆件力')
+
+    # ---- 逐帧 COP：把恒定作用点换成实测压心 ----
+    #
+    # 恒定作用点等于假设力臂全程不变。敏感性测试给出膝力矩对 COP 前后
+    # 位置的斑度是 -491.6 N·m/m，也就是 1 cm 的力臂误差 = 4.9 N·m，
+    # 正好是膝力矩单调性违反量（1.5-10.9 N·m）的量级。所以这一步既是修复，
+    # 也是对“COP 假说”的可证伪检验：若真实逐帧 COP 的波动不足 1 cm，
+    # 那么 COP 就不可能是单调性问题的原因。
+    cop_px = {'l': np.full(len(mot_times), ipx),
+              'r': np.full(len(mot_times), ipx)}
+    cop_pz = {'l': np.full(len(mot_times), ipz),
+              'r': np.full(len(mot_times), ipz)}
+    cop_src = {'l': 'constant', 'r': 'constant'}
+
+    if use_frame_cop and has_insole:
+        for side, map_key in (('l', 'insole_map_l'), ('r', 'insole_map_r')):
+            rel = file_info.get(map_key)
+            if not rel:
+                beauty_print(
+                    '  [EXT] {} 侧未配置 {}，该侧仍用恒定作用点，'
+                    '膝力矩会继续带着力臂误差。'.format(
+                        side.upper(), map_key),
+                    type='warning')
+                continue
+
+            res = InsoleProcessor.load_pressure_map(
+                os.path.join(insole_base, rel),
+                verbose=verbose,
+                use_info_timestamp=use_insole_info_timestamp,
+                robot_file=robot_file,
+                robot_folder=folder,
+                folder=folder,
+                return_matrix=False)   # 只要 COP，不留矩阵，省内存
+            if res is None:
+                beauty_print(
+                    '  [EXT] {} 侧压力图读取失败: {}，退回恒定作用点。'.format(
+                        side.upper(), rel),
+                    type='warning')
+                continue
+
+            t_map = np.asarray(res['time'], dtype=float)
+            # 悬空帧的 COP 是 nan，必须用 nan-safe 插值：
+            # np.interp 不认识 nan，一个 nan 会把两侧邻域一起污染。
+            ant = InsoleProcessor.resample_nan_safe(
+                t_map, res['cop_ant'], mot_times, max_gap_s=0.2)
+            lat = InsoleProcessor.resample_nan_safe(
+                t_map, res['cop_lat'], mot_times, max_gap_s=0.2)
+            if ant is None or lat is None:
+                beauty_print(
+                    '  [EXT] {} 侧 COP 全为无效值（可能整段总力低于阈值），'
+                    '退回恒定作用点。'.format(side.upper()),
+                    type='warning')
+                continue
+
+            width_m = float(res['meta']['width_cm']) / 100.0
+            # 前后：cop_ant 是距足跟端的距离，calcn 局部 x 轴向前
+            px_side = ant + heel_x
+            # 内外：先换成相对鞋垫中线的偏移
+            dz_side = lat - width_m / 2.0
+            if col_frame == 'anatomical' and side == 'l':
+                # 按每只脚自己的解剖方向存储时，左脚的列需要翻转才能
+                # 对齐到模型的左右轴。只影响额状面，不影响矢状面膝力矩。
+                dz_side = -dz_side
+
+            cov = float(np.mean(np.isfinite(px_side)))
+            # 覆盖不到的帧（悬空/丢帧/鞋垫已停录）回填该侧均值。
+            # 不能留 nan（OpenSim 会拒读），也不能填 0（那等于把作用点
+            # 放到足跟原点）。反正这些帧的 GRF 本身也接近零，力矩贡献很小。
+            fill_x = float(np.nanmean(px_side)) if np.any(np.isfinite(px_side)) else ipx
+            fill_z = float(np.nanmean(dz_side)) if np.any(np.isfinite(dz_side)) else ipz
+            px_side = np.where(np.isfinite(px_side), px_side, fill_x)
+            dz_side = np.where(np.isfinite(dz_side), dz_side, fill_z)
+
+            cop_px[side] = px_side
+            cop_pz[side] = dz_side
+            cop_src[side] = os.path.basename(rel)
+
+            mean_x = float(np.mean(px_side))
+            log('  [EXT] {} 侧逐帧 COP: x 均值 {:.3f} m '
+                '(范围 {:.3f}~{:.3f}), z 均值 {:+.3f} m, '
+                '有效覆盖 {:.0%}'.format(
+                    side.upper(), mean_x, float(np.min(px_side)),
+                    float(np.max(px_side)), float(np.mean(dz_side)), cov))
+
+            # 自检：作用点落在 calcn 局部 x 的合理区间内。足长约 25-30 cm，
+            # COP 应在足跟到跖球之间；跑出区间通常意味着 heel_offset 或
+            # toe_first 设错，而不是受试者真的踩在那里。
+            if not (cop_x_min <= mean_x <= cop_x_max):
+                beauty_print(
+                    '  [EXT] {} 侧 COP 的 x 均值 {:.3f} m 超出合理区间 '
+                    '[{:.2f}, {:.2f}] m。请检查 toe_first 与 '
+                    'insole_heel_offset_x，否则膝力矩力臂会整体偏。'.format(
+                        side.upper(), mean_x, cop_x_min, cop_x_max),
+                    type='warning')
+            if cov < 0.5:
+                beauty_print(
+                    '  [EXT] {} 侧只有 {:.0%} 的帧有效 COP，其余帧用均值回填。'
+                    '若这些帧落在深蹲窗口内，力臂会失真。'.format(
+                        side.upper(), cov),
+                    type='warning')
+    elif not use_frame_cop:
+        log('  [EXT] insole_use_frame_cop=False，作用点使用恒定值')
 
     # ---- 写 .sto 文件 ----
     # OpenSim 4.x 列名前缀规则：
@@ -196,9 +311,12 @@ def generate_external_loads(config, base_dir, load_key, mot_path,
         for i, t in enumerate(mot_times):
             row = [
                 t,
-                0.0, F_bar_resampled[i], 0.0,   px,  py,  pz,  0.0, 0.0, 0.0,
-                0.0, grf_l_resampled[i], 0.0,  ipx, ipy, ipz,  0.0, 0.0, 0.0,
-                0.0, grf_r_resampled[i], 0.0,  ipx, ipy, ipz,  0.0, 0.0, 0.0,
+                0.0, F_bar_resampled[i], 0.0,
+                px, py, pz, 0.0, 0.0, 0.0,
+                0.0, grf_l_resampled[i], 0.0,
+                cop_px['l'][i], ipy, cop_pz['l'][i], 0.0, 0.0, 0.0,
+                0.0, grf_r_resampled[i], 0.0,
+                cop_px['r'][i], ipy, cop_pz['r'][i], 0.0, 0.0, 0.0,
             ]
             fh.write('\t'.join(f'{v:.6f}' for v in row) + '\n')
 
@@ -254,4 +372,5 @@ def generate_external_loads(config, base_dir, load_key, mot_path,
     log(f'  [EXT] 杆作用体: {bar_body},  作用点(local): {bar_point}')
     if has_insole:
         log(f'  [EXT] GRF 左脚: {insole_body_l},  右脚: {insole_body_r}')
+        log(f"  [EXT] GRF 作用点来源: L={cop_src['l']}, R={cop_src['r']}")
     return xml_path

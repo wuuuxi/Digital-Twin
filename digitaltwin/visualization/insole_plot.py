@@ -271,17 +271,23 @@ def plot_load_pressure_cop(side_results, load_key='', contact_point_m=None,
     fig.suptitle('Mean plantar pressure with COP trajectory    {}'.format(
         header), fontsize=12)
 
+    # 两个色条分开放：mean pressure 竖放在右边，COP 的力配色条平放在
+    # 最下方。之前两个都放在右侧，彼此挤在一起，还占掉太多横向空间，
+    # 把子图压窄、图例挤出图框。
     if im is not None:
         cbar = fig.colorbar(im, ax=axes, fraction=0.045, pad=0.04)
         cbar.set_label('mean pressure (N/cm2)')
     if lc is not None:
-        cbar2 = fig.colorbar(lc, ax=axes, fraction=0.045, pad=0.02)
+        cbar2 = fig.colorbar(lc, ax=axes, location='bottom',
+                             fraction=0.05, pad=0.08, aspect=30)
         cbar2.set_label('COP colour: total force (N)')
 
+    # 图例固定在左上角内侧（足趾区外侧），避开放大右侧色条与底部色条
+    # 的干扰；之前 loc='lower right' 在子图被两个右侧色条压窄时会溢出图框。
     handles, labels = axes[0].get_legend_handles_labels()
     if handles:
-        axes[0].legend(handles, labels, loc='lower right', fontsize=8,
-                       framealpha=0.85)
+        axes[0].legend(handles, labels, loc='upper left', fontsize=8,
+                       framealpha=0.85, borderaxespad=0.6)
 
     if save_dir:
         os.makedirs(save_dir, exist_ok=True)

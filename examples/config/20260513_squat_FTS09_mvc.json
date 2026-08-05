@@ -19,11 +19,56 @@
       "EMG_FTS09_MVC_Hip_L_3_2026-05-13_06-00-03.csv"
     ],
     "musc_label": [
-      "LTA", "LGL", "LSOL", "LFibLon", "LVL", "LRF", "LVM", "LAddl", "LBF", "LST", "LGlutMax", "LGlutMed",
-      "RTA", "RGL", "RSOL", "RFibLon", "RVL", "RRF",  "RVM", "RAddl", "RBF", "RST", "RGlutMax", "RGlutMed"],
+      "LTA",
+      "LGL",
+      "LSOL",
+      "LFibLon",
+      "LVL",
+      "LRF",
+      "LVM",
+      "LAddl",
+      "LBF",
+      "LST",
+      "LGlutMax",
+      "LGlutMed",
+      "RTA",
+      "RGL",
+      "RSOL",
+      "RFibLon",
+      "RVL",
+      "RRF",
+      "RVM",
+      "RAddl",
+      "RBF",
+      "RST",
+      "RGlutMax",
+      "RGlutMed"
+    ],
     "musc_mvc": [
-      0.2551, 0.1117, 0.0913, 0.1027, 0.2673, 0.1798, 0.3053, 0.0951, 0.1233, 0.1409, 0.1350, 0.0439,
-      0.1908, 0.1100, 0.0864, 0.1420, 0.0287, 0.1565, 0.2789, 0.0789, 0.0969, 0.1482, 0.0657, 0.1214
+      0.2551,
+      0.1117,
+      0.0913,
+      0.1027,
+      0.2673,
+      0.1798,
+      0.3053,
+      0.0951,
+      0.1233,
+      0.1409,
+      0.135,
+      0.0439,
+      0.1908,
+      0.11,
+      0.0864,
+      0.142,
+      0.0287,
+      0.1565,
+      0.2789,
+      0.0789,
+      0.0969,
+      0.1482,
+      0.0657,
+      0.1214
     ]
   },
   "motion_settings": {
@@ -35,37 +80,95 @@
   "modeling_file": {
     "emg_folder": "emg",
     "data": {
-      "0.3": {
-        "robot_file": "robot/RobotUdp_FTS09_Squat_IK0.3_20260513_172556.csv",
-        "emg_file": "EMG_FTS09_Squat_IK0.3_1_2026-05-13_05-25-52.csv"
-      },
-      "0.15": {
-        "robot_file": "robot/RobotUdp_FTS09_Squat_IK0.15_20260513_172927.csv",
-        "emg_file": "EMG_FTS09_Squat_IK0.15_1_2026-05-13_05-29-20.csv"
-      },
       "20": {
         "robot_file": "robot/RobotUdp_FTS09_Squat_15p_3_20260513_165830.csv",
-        "emg_file": "EMG_FTS09_Squat_15p_1_2026-05-13_04-58-13.csv"
+        "emg_file": "EMG_FTS09_Squat_15p_1_2026-05-13_04-58-13.csv",
+        "mode": "isotonic",
+        "load_kg": 20.0
       },
       "38": {
         "robot_file": "robot/RobotUdp_FTS09_Squat_30p_20260513_170034.csv",
-        "emg_file": "EMG_FTS09_Squat_30p_1_2026-05-13_05-00-23.csv"
+        "emg_file": "EMG_FTS09_Squat_30p_1_2026-05-13_05-00-23.csv",
+        "mode": "isotonic",
+        "load_kg": 38.0
       },
       "56": {
         "robot_file": "robot/RobotUdp_FTS09_Squat_45p_20260513_170310.csv",
-        "emg_file": "EMG_FTS09_Squat_45p_1_2026-05-13_05-02-42.csv"
+        "emg_file": "EMG_FTS09_Squat_45p_1_2026-05-13_05-02-42.csv",
+        "mode": "isotonic",
+        "load_kg": 56.0
       },
       "75": {
         "robot_file": "robot/RobotUdp_FTS09_Squat_60p_20260513_170907.csv",
-        "emg_file": "EMG_FTS09_Squat_60p_1_2026-05-13_05-08-52.csv"
+        "emg_file": "EMG_FTS09_Squat_60p_1_2026-05-13_05-08-52.csv",
+        "mode": "isotonic",
+        "load_kg": 75.0
       },
       "94": {
         "robot_file": "robot/RobotUdp_FTS09_Squat_75p_20260513_171545.csv",
-        "emg_file": "EMG_FTS09_Squat_75p_1_2026-05-13_05-15-37.csv"
+        "emg_file": "EMG_FTS09_Squat_75p_1_2026-05-13_05-15-37.csv",
+        "mode": "isotonic",
+        "load_kg": 94.0
       },
       "106": {
         "robot_file": "robot/RobotUdp_FTS09_Squat_85p_20260513_171938.csv",
-        "emg_file": "EMG_FTS09_Squat_85p_1_2026-05-13_05-19-31.csv"
+        "emg_file": "EMG_FTS09_Squat_85p_1_2026-05-13_05-19-31.csv",
+        "mode": "isotonic",
+        "load_kg": 106.0
+      },
+      "IK-0.3": {
+        "robot_file": "robot/RobotUdp_FTS09_Squat_IK0.3_20260513_172556.csv",
+        "emg_file": "EMG_FTS09_Squat_IK0.3_1_2026-05-13_05-25-52.csv",
+        "mode": "isokinetic",
+        "target_velocity": 0.3,
+        "load_kg": null
+      },
+      "IK-0.15": {
+        "robot_file": "robot/RobotUdp_FTS09_Squat_IK0.15_20260513_172927.csv",
+        "emg_file": "EMG_FTS09_Squat_IK0.15_1_2026-05-13_05-29-20.csv",
+        "mode": "isokinetic",
+        "target_velocity": 0.15,
+        "load_kg": null
+      }
+    },
+    "load_modes": {
+      "isotonic": {
+        "description": "定负载深蹲。配重已知，直接读 load_kg。",
+        "load_source": "nominal",
+        "required_fields": [
+          "load_kg"
+        ],
+        "example_entry": {
+          "mode": "isotonic",
+          "load_kg": 20.0,
+          "robot_file": "robot/xxx.csv"
+        }
+      },
+      "isokinetic": {
+        "description": "等速深蹲。限定最高速度，发力较大时杆接近恒速运动，加速度为 0，此时杆力全部用于平衡重力，可由受力反推等效负载。load_kg 写 null。",
+        "load_source": "force",
+        "required_fields": [
+          "target_velocity"
+        ],
+        "example_entry": {
+          "mode": "isokinetic",
+          "target_velocity": 0.3,
+          "load_kg": null,
+          "robot_file": "robot/xxx.csv"
+        }
+      },
+      "isometric": {
+        "description": "等长。杆固定在某高度不动，受试者在该位置发最大力，速度与加速度均为 0，同样由受力反推等效负载。load_kg 写 null。",
+        "load_source": "force",
+        "required_fields": [
+          "bar_height"
+        ],
+        "example_entry": {
+          "mode": "isometric",
+          "bar_height": 1.0,
+          "load_kg": null,
+          "robot_file": "robot/xxx.csv"
+        }
       }
     }
   },

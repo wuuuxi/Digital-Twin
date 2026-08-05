@@ -97,7 +97,7 @@ SCATTER_ALPHA = 0.45
 # ============================================================
 
 def get_base_dir():
-    return os.path.normpath(os.path.join(os.path.dirname(__file__), '../..'))
+    return os.path.normpath(os.path.join(os.path.dirname(__file__), '../../..'))
 
 
 def get_config_path():

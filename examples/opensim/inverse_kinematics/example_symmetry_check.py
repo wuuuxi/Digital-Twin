@@ -78,7 +78,8 @@ from digitaltwin.analysis.result_analysis import (
     find_id_moment_column,
     interpolate_column_to_segment,
 )
-from digitaltwin.config_manager import filter_load_keys
+from digitaltwin.config_manager import filter_load_keys, get_load_mode
+from digitaltwin.visualization.symmetry_plot import plot_symmetry_figures
 
 
 # ============================================================
@@ -96,12 +97,25 @@ LOAD_KEYS = None
 # 之前写的 EXCLUDE_LOAD_KEYS=['0.15','0.3'] 在组名改成 IK-0.15/IK-0.3 之后
 # 已经静默失效（不报错，但一个都没排除掉），所以改用模式筛选，
 # 以后新增等长/等速组不用再改这里。
-LOAD_MODES_FILTER = ('isotonic',)
+# 现在三种模式全部参与。但必须分清哪些检查吃得下全模式：
+#   S2/S3/S4/S5 与四张图 —— 全模式。它们比的是“同一时刻左右两侧”，
+#       不需要知道标称负载是多少。
+#   S1/S6/S7    —— 只能用定负载组。它们把外力对【配重】回归，
+#       而等速/等长组的“等效负载”本身就是从受力反推出来的，
+#       拿去做同一个回归等于用结果验证结果。
+# 所以不是“把筛选去掉”，而是把筛选从【取数】移到【具体检查】。
+LOAD_MODES_FILTER = None
+CALIBRATION_MODES = ('isotonic',)
 EXCLUDE_LOAD_KEYS = []
 
 # 同时用上升与下降。只用 upward 会系统性高估总力（加速度向上），
 # 两个阶段合起来惯性项在一个完整循环内大致抵消，均值才能与
 # 【体重 + 配重】直接比较。
+# 等长组的段标的是 movement_type='isometric'，不在这两类里。
+# 不需要在这里把 'isometric' 加进去：get_segment_from_results 已改为
+# 当请求类型一个都没命中、而该组只有等长段时自动回退到等长段
+# 并打印警告。把 'isometric' 硬加在这里反而会让定负载组也去混入
+# 可能存在的静止段，把均值拉低。
 MOVEMENT_TYPES = ('upward', 'downward')
 
 G = 9.81
@@ -145,6 +159,14 @@ MOMENT_BASES = ('knee_angle', 'hip_flexion', 'ankle_angle')
 # [S4] 用哪些关节角看运动学不对称
 ANGLE_BASES = ('knee_angle', 'hip_flexion', 'ankle_angle')
 
+# 五张对称性图（绘图实现在 digitaltwin/visualization/symmetry_plot.py）
+# 第五张是趋势图：SI 随【合力】与【杆高】的变化。横轴用合力而不是标称
+# 配重，等长/等速组的 load_kg 是 nan，按 nan 做横轴会把它们静默丢掉。
+PLOT_FIGURES = True
+SAVE_FIGURES = True
+# 蝴形图需要逐 cycle 的左右关节角曲线，重采样到这么多个点
+CYCLE_GRID_POINTS = 101
+
 
 def get_base_dir():
     return os.path.normpath(os.path.join(os.path.dirname(__file__), '../../..'))
@@ -160,6 +182,24 @@ def pick_force_source(seg):
         if col_l in seg.columns and col_r in seg.columns:
             return col_l, col_r, tag
     return None, None, None
+
+
+def _load_sort_key(item):
+    '''排序键：定负载按数值升序在前，等长/等速按名字排在后。
+
+    原来写的是 key=lambda kv: kv[1]['load_value']。引入等长/等速组后，
+    load_value 是 nan，而 nan 参与比较的结果是未定义的，
+    表现为表格行序每次不同、跟图里的颜色顺序对不上。
+    '''
+    key, rec = item
+    v = rec.get('load_value', np.nan)
+    try:
+        v = float(v)
+    except (TypeError, ValueError):
+        v = np.nan
+    if not np.isfinite(v):
+        return (1, 0.0, str(key))
+    return (0, v, str(key))
 
 
 def _canon_load_key(value):
@@ -225,7 +265,8 @@ def collect_side_data(config, base_dir, pipeline_results, load_keys):
             continue
 
         rec = {'segment': seg, 'source': tag,
-               'source_cols': (col_l, col_r)}
+               'source_cols': (col_l, col_r),
+               'mode': get_load_mode(config, load_key, warn=False)}
 
         fl = seg[col_l].values.astype(float)
         fr = seg[col_r].values.astype(float)
@@ -290,6 +331,44 @@ def collect_side_data(config, base_dir, pipeline_results, load_keys):
                                 w[cr].values.astype(float)))),
                         }
 
+                # 蝴形图需要的逐 cycle 曲线：把每一段在时间上归一化到
+                # 0-100%，再把 mot 里的左右关节角插值上去。
+                # 必须按段归一化而不是直接拼时间轴：各次深蹲时长不同，
+                # 不归一化就会把峰值错开平均掉，把真实差异抹成噪声。
+                rec['angle_curves'] = {}
+                grid = np.linspace(0.0, 100.0, CYCLE_GRID_POINTS)
+                mot_t = mot_df['time'].values.astype(float)
+                if 'segment_id' in seg.columns:
+                    seg_ids = list(seg['segment_id'].unique())
+                else:
+                    seg_ids = [None]
+
+                for base in ANGLE_BASES:
+                    cl, cr = f'{base}_l', f'{base}_r'
+                    if cl not in mot_df.columns or cr not in mot_df.columns:
+                        continue
+                    vl = mot_df[cl].values.astype(float)
+                    vr = mot_df[cr].values.astype(float)
+                    curves_l, curves_r = [], []
+                    for sid in seg_ids:
+                        sub = seg if sid is None else seg[seg['segment_id'] == sid]
+                        if len(sub) < 10:
+                            continue
+                        st0 = float(sub['time'].min())
+                        st1 = float(sub['time'].max())
+                        if not np.isfinite(st0) or not np.isfinite(st1) \
+                                or st1 <= st0:
+                            continue
+                        tt = st0 + (st1 - st0) * grid / 100.0
+                        curves_l.append(np.interp(tt, mot_t, vl))
+                        curves_r.append(np.interp(tt, mot_t, vr))
+                    if curves_l and curves_r:
+                        rec['angle_curves'][base] = {
+                            'grid': grid,
+                            'l': np.vstack(curves_l),
+                            'r': np.vstack(curves_r),
+                        }
+
         out[_canon_load_key(load_key)] = rec
 
     return out
@@ -326,7 +405,7 @@ def check_force_calibration(data, verdicts):
     totals = np.array([p[1] for p in pts], dtype=float)
     slope, intercept = np.polyfit(loads, totals, 1)
 
-    for load_key, r in sorted(data.items(), key=lambda kv: kv[1]['load_value']):
+    for load_key, r in sorted(data.items(), key=_load_sort_key):
         fit = slope * r['load_value'] + intercept
         resid = r['force_total_mean'] - fit
         print(f'{r["load_value"]:>10.1f}{r["force_total_mean"]:>16.1f}'
@@ -392,7 +471,7 @@ def check_share_consistency(data, verdicts):
           ''.join(f'{b.replace("_angle", "").replace("_flexion", ""):>12}'
                   for b in MOMENT_BASES) + '   判定')
 
-    for load_key, r in sorted(data.items(), key=lambda kv: kv[1]['load_value']):
+    for load_key, r in sorted(data.items(), key=_load_sort_key):
         f_share = _share(float(np.nanmean(r['force_l'])),
                          float(np.nanmean(r['force_r'])))
         row = f'{load_key:<8}{f_share:>10.1%}'
@@ -440,7 +519,7 @@ def check_kinematic_side(data, verdicts):
           f'{"峰值差":>10}   提示')
 
     hints = []
-    for load_key, r in sorted(data.items(), key=lambda kv: kv[1]['load_value']):
+    for load_key, r in sorted(data.items(), key=_load_sort_key):
         f_share = _share(float(np.nanmean(r['force_l'])),
                          float(np.nanmean(r['force_r'])))
         for base, pair in r['angles'].items():
@@ -482,7 +561,7 @@ def check_channel_health(data, verdicts):
     print(f'{"load":<8}{"side":>6}{"mean(N)":>12}{"std(N)":>12}'
           f'{"min(N)":>12}{"负值帧比":>12}   判定')
 
-    for load_key, r in sorted(data.items(), key=lambda kv: kv[1]['load_value']):
+    for load_key, r in sorted(data.items(), key=_load_sort_key):
         for side in ('l', 'r'):
             v = r[f'force_{side}']
             v = v[np.isfinite(v)]
@@ -625,7 +704,7 @@ def check_saturation(data, verdicts):
 
     pooled_f, pooled_s = [], []
     per_trial = []
-    for load_key, r in sorted(data.items(), key=lambda kv: kv[1]['load_value']):
+    for load_key, r in sorted(data.items(), key=_load_sort_key):
         l = np.asarray(r['force_l'], dtype=float)
         rr = np.asarray(r['force_r'], dtype=float)
         tot = l + rr
@@ -698,6 +777,7 @@ def main():
                                  modes=LOAD_MODES_FILTER,
                                  exclude=EXCLUDE_LOAD_KEYS)
     print(f'参与负载: {load_keys}（模式筛选: {LOAD_MODES_FILTER}）')
+    print(f'其中只有 {CALIBRATION_MODES} 组会进入 S1/S6/S7 的标定类回归。')
 
     # 必须 include_insole=True，否则切片里没有 grf_l / grf_r，
     # 只能退回到机器人力，而机器人力无法回答“哪条腿承重多”。
@@ -711,14 +791,43 @@ def main():
         beauty_print('没有任何负载收集到有效数据，无法校验。', type="warning")
         return
 
+    # 标定类检查只能吃定负载组（见顶部 CALIBRATION_MODES 的说明）；
+    # 对称性检查与四张图吃全部模式。
+    calib = {k: v for k, v in data.items()
+             if v.get('mode') in CALIBRATION_MODES}
+    skipped = sorted(set(data.keys()) - set(calib.keys()))
+    if skipped:
+        print(f'\n[S1/S6/S7] 仅用定负载组 {sorted(calib.keys())}；'
+              f'跳过 {skipped}（其等效负载本身就是从受力反推的，'
+              f'再拿去对受力回归是循环论证）。')
+
     verdicts = Verdicts()
-    check_force_calibration(data, verdicts)
+    if calib:
+        check_force_calibration(calib, verdicts)
+    else:
+        beauty_print('一个定负载组都没有，S1/S6/S7 全部跳过；'
+                     '外力总量标定本次无法验证。', type="warning")
+
     check_share_consistency(data, verdicts)
     check_kinematic_side(data, verdicts)
     check_channel_health(data, verdicts)
-    check_side_gain(data, verdicts)
-    check_saturation(data, verdicts)
+
+    if calib:
+        check_side_gain(calib, verdicts)
+        check_saturation(calib, verdicts)
+
     verdicts.report()
+
+    if PLOT_FIGURES:
+        out_dir = None
+        if SAVE_FIGURES and _subject is not None:
+            out_dir = os.path.join(_subject.result_folder, 'symmetry')
+        print('\n' + '=' * 80)
+        print('[图] 对称性五图：SI 热图 / 运动链传递 / 左-右散点 / 蝴形图 / '
+              'SI 趋势（vs 合力、vs 杆高）')
+        print('=' * 80)
+        plot_symmetry_figures(data, MOMENT_BASES, ANGLE_BASES,
+                              out_dir=out_dir, show=True)
 
 
 if __name__ == '__main__':

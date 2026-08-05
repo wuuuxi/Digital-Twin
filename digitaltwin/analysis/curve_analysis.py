@@ -100,16 +100,36 @@ class CurveAnalyzer:
                 all_segments_pos = []
                 all_segments_vel = []
 
+                # 等长（isometric）组要特殊处理两件事：
+                # 1) 杆不动，pos_l 几乎恒定。拿它做分箱轴会让所有 bin
+                #    边界重合，必然退化成“有效区间太少”。改用段内归一化
+                #    时间（0-100%）做横轴，曲线才有意义（看的是保持过程中
+                #    激活的漂移 / 疲劳，而不是位置依赖）。
+                # 2) 一次持续发力就是一段，没有上下往复，力阈值切段本来
+                #    就只切得出一段。对它要求 >= 2 段，等于把整个等长试次判死。
+                is_isometric = str(phase).lower() == 'isometric'
+
                 for seg_id in segment_ids:
                     segment_data = phase_data[phase_data['segment_id'] == seg_id]
                     if len(segment_data) < 5:
                         continue
-                    all_segments_pos.append(segment_data['pos_l'].values)
+                    if is_isometric:
+                        axis_values = np.linspace(0.0, 100.0, len(segment_data))
+                    else:
+                        axis_values = segment_data['pos_l'].values
+                    all_segments_pos.append(axis_values)
                     all_segments_vel.append(segment_data['vel_l'].values)
 
-                if len(all_segments_pos) < 2:
-                    print(f"负载 {load}, 阶段 {phase}: 有效片段太少 ({len(all_segments_pos)})")
+                # 其余相位仍要求 >= 2 段：平均曲线的 SD / SEM 至少要两条曲线
+                # 才有意义，否则会拿到恒为 0 的“假精度”。
+                min_segments = 1 if is_isometric else 2
+                if len(all_segments_pos) < min_segments:
+                    print(f"负载 {load}, 阶段 {phase}: 有效片段太少 "
+                          f"({len(all_segments_pos)} < {min_segments})")
                     continue
+                if is_isometric and len(all_segments_pos) == 1:
+                    print(f"负载 {load}, 阶段 {phase}: 仅 1 段（等长试次正常情况），"
+                          f"横轴已改为段内归一化时间；SD 反映的是段内波动而非试次间差异")
 
                 # 对每个EMG通道进行处理
                 emg_results = {}

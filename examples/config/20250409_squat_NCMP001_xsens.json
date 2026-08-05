@@ -1,18 +1,65 @@
 {
   "experiment_label": "20250409_squat_NCMP001",
   "folder": "C:/Users/PC/OneDrive/Experiment/20250409_HKSI/20250409 NCMP001/",
-
   "emg_settings": {
     "fs": 1000,
-    "musc_label": ["TA", "GL", "SOL", "FibLon", "VL", "RF", "Abs", "ES", "PMCla", "PMSte", "LD", "DelAnt", "VM", "Addl", "BF", "ST", "GlutMax", "GlutMed", "DelMed", "DelPos", "Bic", "TriLong", "TriLat", "BRD"],
-    "musc_mvc": [0.1276, 0.298, 0.3023, 0.3392, 0.3792, 0.3061, 0.7502, 0.2241, 0.226, 0.3334, 0.0539, 0.048, 0.1276, 0.298, 0.3023, 0.3392, 0.3792, 0.3061, 0.7502, 0.2241, 0.226, 0.3334, 0.0539, 0.048]
+    "musc_label": [
+      "TA",
+      "GL",
+      "SOL",
+      "FibLon",
+      "VL",
+      "RF",
+      "Abs",
+      "ES",
+      "PMCla",
+      "PMSte",
+      "LD",
+      "DelAnt",
+      "VM",
+      "Addl",
+      "BF",
+      "ST",
+      "GlutMax",
+      "GlutMed",
+      "DelMed",
+      "DelPos",
+      "Bic",
+      "TriLong",
+      "TriLat",
+      "BRD"
+    ],
+    "musc_mvc": [
+      0.1276,
+      0.298,
+      0.3023,
+      0.3392,
+      0.3792,
+      0.3061,
+      0.7502,
+      0.2241,
+      0.226,
+      0.3334,
+      0.0539,
+      0.048,
+      0.1276,
+      0.298,
+      0.3023,
+      0.3392,
+      0.3792,
+      0.3061,
+      0.7502,
+      0.2241,
+      0.226,
+      0.3334,
+      0.0539,
+      0.048
+    ]
   },
-
   "motion_settings": {
     "motion_flag": "all",
     "target_motion": "squat"
   },
-
   "modeling_file": {
     "emg_folder": "EMG",
     "xsens_folder": "xsens",
@@ -20,31 +67,80 @@
       "20": {
         "robot_file": "robot/NCMP-001_15R_20250409_161018.csv",
         "emg_file": "test 2025_04_09 16_09_46.csv",
-        "xsens_file": "MVN-004_NCMP001.xlsx"
+        "xsens_file": "MVN-004_NCMP001.xlsx",
+        "mode": "isotonic",
+        "load_kg": 20.0
       },
       "35": {
         "robot_file": "robot/NCMP-001_30R_20250409_160611.csv",
         "emg_file": "test 2025_04_09 16_05_43.csv",
-        "xsens_file": "MVN-002_NCMP001.xlsx"
+        "xsens_file": "MVN-002_NCMP001.xlsx",
+        "mode": "isotonic",
+        "load_kg": 35.0
       },
       "50": {
         "robot_file": "robot/NCMP-001_45R_20250409_160359.csv",
         "emg_file": "test 2025_04_09 16_02_34.csv",
-        "xsens_file": "MVN-001_NCMP001.xlsx"
+        "xsens_file": "MVN-001_NCMP001.xlsx",
+        "mode": "isotonic",
+        "load_kg": 50.0
       },
       "65": {
         "robot_file": "robot/NCMP-001_60R_20250409_161159.csv",
         "emg_file": "test 2025_04_09 16_11_30.csv",
-        "xsens_file": "MVN-005_NCMP001.xlsx"
+        "xsens_file": "MVN-005_NCMP001.xlsx",
+        "mode": "isotonic",
+        "load_kg": 65.0
       },
       "95": {
         "robot_file": "robot/NCMP-001_85R_20250409_160758.csv",
         "emg_file": "test 2025_04_09 16_07_34.csv",
-        "xsens_file": "MVN-003_NCMP001.xlsx"
+        "xsens_file": "MVN-003_NCMP001.xlsx",
+        "mode": "isotonic",
+        "load_kg": 95.0
+      }
+    },
+    "load_modes": {
+      "isotonic": {
+        "description": "定负载深蹲。配重已知，直接读 load_kg。",
+        "load_source": "nominal",
+        "required_fields": [
+          "load_kg"
+        ],
+        "example_entry": {
+          "mode": "isotonic",
+          "load_kg": 20.0,
+          "robot_file": "robot/xxx.csv"
+        }
+      },
+      "isokinetic": {
+        "description": "等速深蹲。限定最高速度，发力较大时杆接近恒速运动，加速度为 0，此时杆力全部用于平衡重力，可由受力反推等效负载。load_kg 写 null。",
+        "load_source": "force",
+        "required_fields": [
+          "target_velocity"
+        ],
+        "example_entry": {
+          "mode": "isokinetic",
+          "target_velocity": 0.3,
+          "load_kg": null,
+          "robot_file": "robot/xxx.csv"
+        }
+      },
+      "isometric": {
+        "description": "等长。杆固定在某高度不动，受试者在该位置发最大力，速度与加速度均为 0，同样由受力反推等效负载。load_kg 写 null。",
+        "load_source": "force",
+        "required_fields": [
+          "bar_height"
+        ],
+        "example_entry": {
+          "mode": "isometric",
+          "bar_height": 1.0,
+          "load_kg": null,
+          "robot_file": "robot/xxx.csv"
+        }
       }
     }
   },
-
   "variable_load_file": {
     "emg_folder": "EMG",
     "robot_folder": "robot/Model Test/DataSet2025_04_09",
@@ -59,7 +155,10 @@
         "vload_file": "FibLon_0.2_0.5.csv",
         "target_activation": 0.2,
         "start_time": 31.8,
-        "load_range": [42, 63],
+        "load_range": [
+          42,
+          63
+        ],
         "target_muscle": "FibLon"
       },
       "GL_0.1_0.2": {
@@ -69,7 +168,10 @@
         "vload_file": "GL_0.1_0.2.csv",
         "target_activation": 0.1,
         "start_time": 5.45,
-        "load_range": [15, 30],
+        "load_range": [
+          15,
+          30
+        ],
         "target_muscle": "GL"
       },
       "VL_0.3_0.5": {
@@ -79,19 +181,41 @@
         "vload_file": "VL_0.3_0.5.csv",
         "target_activation": 0.3,
         "start_time": 6.4,
-        "load_range": [19, 32],
+        "load_range": [
+          19,
+          32
+        ],
         "target_muscle": "VL"
       }
     }
   },
-
   "heatmap_settings": {
     "muscle_folder": "result/20250409_squat_NCMP001/20250409_164021",
-    "height_range": [1.3, 1.95],
-    "load_range": [20, 90],
-    "titles": ["FibLon", "GL", "VL"],
-    "goal": [0.2, 0.1, 0.3],
-    "epsilons": [0.5],
-    "max_iter": [10000, 10000, 10000]
+    "height_range": [
+      1.3,
+      1.95
+    ],
+    "load_range": [
+      20,
+      90
+    ],
+    "titles": [
+      "FibLon",
+      "GL",
+      "VL"
+    ],
+    "goal": [
+      0.2,
+      0.1,
+      0.3
+    ],
+    "epsilons": [
+      0.5
+    ],
+    "max_iter": [
+      10000,
+      10000,
+      10000
+    ]
   }
 }

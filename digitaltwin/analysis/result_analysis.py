@@ -39,6 +39,25 @@ def _canonical_load_key(value):
         return str(value)
 
 
+def _read_data_csv(path):
+    '''读取 aligned_data / cutted_data 缓存 CSV。
+
+    组名现在混有 '20' 与 'IM-1' 两类，pandas 默认分块（low_memory=True）
+    推断 dtype，同一列在不同块里得到不同类型，于是报
+    DtypeWarning: Columns (19) have mixed types。这不只是警告：它意味着
+    load_weight 可能部分行被读成 20.0、部分行是 '20'，后面按组名
+    匹配窗口时就会静静对不上。
+
+    因此统一：low_memory=False 全列一次性推断，并把 load_weight 转成
+    字符串（NaN 保留），再交由 _canonical_load_key 做格式归一。
+    '''
+    df = pd.read_csv(path, low_memory=False)
+    if 'load_weight' in df.columns:
+        df['load_weight'] = df['load_weight'].apply(
+            lambda v: v if pd.isna(v) else str(v))
+    return df
+
+
 # ============================================================
 #  OpenSim 表格读取
 # ============================================================
@@ -247,7 +266,7 @@ def load_or_create_cutted_pipeline_results(config_path,
     if os.path.exists(cutted_cache_path) and not force_rebuild:
         if debug:
             print(f'[cache] 读取切片缓存: {cutted_cache_path}')
-        cutted_df = pd.read_csv(cutted_cache_path)
+        cutted_df = _read_data_csv(cutted_cache_path)
         return subject, None, _segments_to_pipeline_results(cutted_df)
 
     # 如果已有 aligned_data.csv，不再跑完整 pipeline，只重新做标准切片。
@@ -256,7 +275,7 @@ def load_or_create_cutted_pipeline_results(config_path,
     if os.path.exists(aligned_cache_path) and not force_rebuild:
         if debug:
             print(f'[cache] 读取 aligned_data 并重新切片: {aligned_cache_path}')
-        aligned_df = pd.read_csv(aligned_cache_path)
+        aligned_df = _read_data_csv(aligned_cache_path)
 
         can_use_aligned_cache = True
         if include_insole and not {'grf_l', 'grf_r'}.issubset(aligned_df.columns):
@@ -328,8 +347,17 @@ def load_or_create_cutted_pipeline_results(config_path,
     return subject, pipeline, results
 
 
+# 等长组的段被标为 movement_type='isometric'，既不是 upward 也不是 downward。
+# 全项目里写死 ('upward','downward') 的调用点有十几处，逐个改既容易漏，
+# 以后新增模式又要再改一轮。因此在这个唯一的取段入口做回退：
+# 请求的类型一个都没命中、而该组只有等长段时，自动改用等长段并告知。
+# 这样就不会再出现“等长组静静消失”（返回 None，调用方当成无数据）。
+FALLBACK_MOVEMENT_TYPES = ('isometric',)
+
+
 def get_segment_from_results(pipeline_results, load_key,
-                             movement_types=('upward',)):
+                             movement_types=('upward',),
+                             allow_isometric_fallback=True):
     """
     从 MultiLoadPipeline.run() 的结果中取出指定 load 的运动切片。
 
@@ -342,6 +370,10 @@ def get_segment_from_results(pipeline_results, load_key,
     movement_types : tuple/list/None
         例如 ('upward',), ('downward',), ('upward', 'downward')。
         None 表示不过滤 movement_type。
+    allow_isometric_fallback : bool
+        请求的 movement_types 一个都没命中，但该组存在 'isometric' 段时，
+        是否自动改用等长段。只有在“必须是向上/向下运动”的场合
+        （例如按行程归一化的曲线对比）才应该关掉。
 
     Returns
     -------
@@ -373,7 +405,25 @@ def get_segment_from_results(pipeline_results, load_key,
     df = cutted.copy()
 
     if movement_types is not None and 'movement_type' in df.columns:
-        df = df[df['movement_type'].isin(list(movement_types))].copy()
+        wanted = [str(m) for m in movement_types]
+        sel = df[df['movement_type'].isin(wanted)]
+
+        if len(sel) == 0 and allow_isometric_fallback:
+            available = set(str(v) for v in
+                            df['movement_type'].dropna().unique())
+            fallback = [m for m in FALLBACK_MOVEMENT_TYPES
+                        if m in available and m not in wanted]
+            if fallback:
+                beauty_print(
+                    '组 {} 没有 {} 类型的段，但有 {} 段，已自动改用后者。\n'
+                    '等长试次杆不动，本来就不存在 upward/downward；'
+                    '若本次分析必须是往复运动（如按行程归一化的曲线对比），\n'
+                    '请显式传 allow_isometric_fallback=False 排除它。'.format(
+                        load_key, wanted, fallback),
+                    type="warning")
+                sel = df[df['movement_type'].isin(fallback)]
+
+        df = sel.copy()
 
     if len(df) == 0:
         return None
@@ -476,7 +526,7 @@ def _aligned_data_for_load(subject, pipeline_results, load_key):
     if not os.path.exists(path):
         return None
 
-    df = pd.read_csv(path)
+    df = _read_data_csv(path)
     for col in ('load_weight', 'load', 'load_value'):
         if col in df.columns:
             sel = df[df[col].map(_canonical_load_key) == key]

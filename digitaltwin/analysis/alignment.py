@@ -166,11 +166,11 @@ class DataAligner:
             # 因此这里自动改用“合力超过阈值的连续窗口”切段。
             fallback = self._cut_by_force_threshold(data)
             if fallback is not None and len(fallback) > 0:
-                print(
-                    '速度过零点切不出有效运动片段（等长试次杆不动，属正常）。'
-                    '已自动改用力阈值窗口切段：{} 段 / {} 行，'
-                    'movement_type 与 movement_phase 记为 isometric。'.format(
-                        int(fallback['segment_id'].nunique()), len(fallback)))
+                # print(
+                #     '速度过零点切不出有效运动片段（等长试次杆不动，属正常）。'
+                #     '已自动改用力阈值窗口切段：{} 段 / {} 行，'
+                #     'movement_type 与 movement_phase 记为 isometric。'.format(
+                #         int(fallback['segment_id'].nunique()), len(fallback)))
                 return fallback
             beauty_print(
                 '未切出任何有效运动片段，力阈值窗口也没切出任何持续用力区间。'
