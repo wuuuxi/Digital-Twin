@@ -10,6 +10,12 @@ from .result_analysis import (
     summarize_inverse_dynamics_moments,
     print_summary_table,
 )
+from .symmetry_check import (
+    run_symmetry_check,
+    SymmetryCheckOptions,
+    collect_side_data,
+    Verdicts,
+)
 
 # 子包重导出（heatmap 拟合 + 变负载）
 from .heatmap import (
@@ -39,6 +45,11 @@ __all__ = [
     'build_left_joint_coordinate_map',
     'summarize_inverse_dynamics_moments',
     'print_summary_table',
+    # symmetry check
+    'run_symmetry_check',
+    'SymmetryCheckOptions',
+    'collect_side_data',
+    'Verdicts',
     # heatmap fitting
     'rbf_function', 'rbf_fit', 'rbf_predict', 'predict_at',
     'fit_activation_map', 'fit_activation_map_3d',

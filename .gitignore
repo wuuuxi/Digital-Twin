@@ -1,0 +1,17 @@
+# 实验产物 / 结果
+result/
+
+# 旧代码备份
+backup/
+
+# IDE
+.idea/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# 数据缓存
+*.pkl

@@ -30,6 +30,7 @@ import os
 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.widgets import Button, CheckButtons
 
 from digitaltwin.utils.logger import beauty_print
 
@@ -83,6 +84,80 @@ def _thin(n, max_points):
     if n <= max_points:
         return np.arange(n)
     return np.linspace(0, n - 1, max_points).astype(int)
+
+
+# ============================================================
+#  图内组勾选面板
+# ============================================================
+
+def attach_group_selector(fig, group_artists, group_colors=None,
+                          title='Show groups', panel_width=0.15):
+    '''
+    在图窗右侧挂一列复选框，实时切换每个负载组的显隐。
+
+    为什么不在终端里选：终端选择只能在画图前决定一次，想换一组看就得
+    重跑整个脚本（含切片、读 mot、读 ID）。把开关做到图里，就变成纯渲染
+    层的 set_visible 切换，随时勾、随时取消，一次运行看完所有组合。
+
+    不能用重新画图来实现切换：散点可达几千点/组，重建 artist 会卡顿，
+    而且坐标轴范围会跟着变。只切 visible 能保持坐标轴不变，
+    选不同组时看到的位置是可比的。
+
+    Parameters
+    ----------
+    group_artists : dict {组名: [artist, ...]}
+        该组在图上的全部 artist（散点、拟合线、图例占位线）。
+    group_colors : dict {组名: color}
+        用来把复选框的文字染成与散点同色，不用对照图例也能认出是哪组。
+    '''
+    labels = [k for k, arts in group_artists.items() if arts]
+    if len(labels) < 2:
+        return None
+
+    fig.subplots_adjust(right=1.0 - panel_width - 0.02)
+
+    n = len(labels)
+    h = min(0.055 * n + 0.05, 0.86)
+    y_bottom = max((1.0 - h) / 2.0, 0.12)
+    ax_check = fig.add_axes([1.0 - panel_width, y_bottom,
+                             panel_width - 0.012, h], facecolor='0.97')
+    ax_check.set_title(title, fontsize=9)
+    check = CheckButtons(ax_check, labels, [True] * n)
+    if group_colors:
+        for lab in check.labels:
+            color = group_colors.get(lab.get_text())
+            if color:
+                lab.set_color(color)
+
+    def _apply(label):
+        idx = labels.index(label)
+        visible = bool(check.get_status()[idx])
+        for art in group_artists[label]:
+            art.set_visible(visible)
+        fig.canvas.draw_idle()
+
+    check.on_clicked(_apply)
+
+    def _set_all(state):
+        status = list(check.get_status())
+        for i in range(n):
+            if bool(status[i]) != bool(state):
+                check.set_active(i)   # 会触发 _apply
+
+    btn_w = (panel_width - 0.018) / 2.0
+    y_btn = max(y_bottom - 0.065, 0.02)
+    ax_all = fig.add_axes([1.0 - panel_width, y_btn, btn_w, 0.045])
+    ax_none = fig.add_axes([1.0 - panel_width + btn_w + 0.006, y_btn,
+                            btn_w, 0.045])
+    btn_all = Button(ax_all, 'All')
+    btn_none = Button(ax_none, 'None')
+    btn_all.on_clicked(lambda _evt: _set_all(True))
+    btn_none.on_clicked(lambda _evt: _set_all(False))
+
+    # 必须把控件挂在 fig 上留住引用：matplotlib 的 widget 只被回调闭包引用，
+    # 函数返回后若无人持有就会被 GC，表现为“框能画出来但点了没反应”。
+    fig._group_selector = (check, btn_all, btn_none)
+    return check
 
 
 def symmetry_index(left, right):
@@ -265,7 +340,8 @@ def plot_chain_transfer(data, save_path=None):
 #  ③ 左-右散点 + 恒等线
 # ============================================================
 
-def plot_lr_scatter(data, save_path=None, max_points_per_load=3000):
+def plot_lr_scatter(data, save_path=None, max_points_per_load=3000,
+                    select_groups=True):
     '''逐帧左右力散点，x = 左侧，y = 右侧，叠 y = x 恒等线。
 
     这张图的唯一目的是把两种不对称分开：
@@ -277,9 +353,12 @@ def plot_lr_scatter(data, save_path=None, max_points_per_load=3000):
     if not items:
         return None
 
-    cmap = plt.cm.viridis
-    fig, ax = plt.subplots(figsize=(7.5, 7.0))
+    fig, ax = plt.subplots(figsize=(8.6, 7.0))
 
+    # 逐组登记 artist，供右侧复选框实时切换显隐。
+    # 配色改用 GROUP_PALETTE：viridis 在 9 组时中段全是蓝绿，叠在一起分不出来。
+    group_artists = {}
+    group_colors = {}
     lo, hi = np.inf, -np.inf
     for i, (key, rec) in enumerate(items):
         l = np.asarray(rec.get('force_l'), dtype=float)
@@ -296,12 +375,15 @@ def plot_lr_scatter(data, save_path=None, max_points_per_load=3000):
             idx = np.linspace(0, l.size - 1, max_points_per_load).astype(int)
             l, r = l[idx], r[idx]
 
-        color = cmap(i / max(len(items) - 1, 1))
+        color = _group_color(i)
         slope, intercept = np.polyfit(l, r, 1)
-        ax.scatter(l, r, s=5, alpha=0.25, color=color)
+        pts = ax.scatter(l, r, s=5, alpha=0.25, color=color)
         xx = np.array([l.min(), l.max()])
-        ax.plot(xx, slope * xx + intercept, color=color, linewidth=1.8,
-                label='{}  k={:.2f}  b={:+.0f}N'.format(key, slope, intercept))
+        line, = ax.plot(xx, slope * xx + intercept, color=color, linewidth=1.8,
+                        label='{}  k={:.2f}  b={:+.0f}N'.format(
+                            key, slope, intercept))
+        group_artists[str(key)] = [pts, line]
+        group_colors[str(key)] = color
         lo = min(lo, l.min(), r.min())
         hi = max(hi, l.max(), r.max())
 
@@ -319,9 +401,13 @@ def plot_lr_scatter(data, save_path=None, max_points_per_load=3000):
     ax.grid(alpha=0.3)
     ax.legend(fontsize=7, loc='upper left')
     fig.tight_layout()
+    # 先存盘再挂选择面板：png 里不应该出现复选框，而且存的是全选状态。
     if save_path:
         fig.savefig(save_path, dpi=140)
         print('[fig] 左-右散点 -> {}'.format(save_path))
+    if select_groups:
+        attach_group_selector(fig, group_artists, group_colors,
+                              title='Show groups')
     return fig
 
 
@@ -457,9 +543,61 @@ def _group_force_mean(rec):
     return _safe_mean(l + r)
 
 
+def _shared_ylim(pools, pad=0.06, robust=99.0):
+    '''把若干组 y 数据合成一个共同的纵轴范围。
+
+    用分位数而不是 min/max：逐帧 SI = 100*(R-L)/(R+L)，分母是瞬时合力，
+    在动作起止的低力帧上会趋近 0，SI 因此能炸到几百甚至上千 %。
+    这种点没有物理意义，却会把量程整个撑开，把真正关心的 ±20% 区间
+    压成中间一条线。共享纵轴时这个问题会传染给三联全部，所以必须先截尾。
+    '''
+    vals = []
+    for arr in pools:
+        a = np.asarray(arr, dtype=float).ravel()
+        a = a[np.isfinite(a)]
+        if a.size:
+            vals.append(a)
+    if not vals:
+        return None
+    a = np.concatenate(vals)
+    lo = float(np.percentile(a, 100.0 - robust))
+    hi = float(np.percentile(a, robust))
+    if not np.isfinite(lo) or not np.isfinite(hi) or hi <= lo:
+        return None
+    span = hi - lo
+    return lo - pad * span, hi + pad * span
+
+
+def _harmonize_ylim(figs, n_axes=3):
+    '''把多张同构图【对应位置】的子图纵轴取并集。
+
+    用于⑤（全阶段）与⑥（仅上升）：两张图声称的唯一差别是“排掉了下降
+    阶段”，若量程还各画各的，肉眼看到的差异里就混进了量程差异，
+    把两张并排对比这件事本身变得不可靠。
+
+    只取前 n_axes 个坐标轴：勾选面板的控件也是 Axes，但它们是在
+    三个子图之后才 add 的，排在 fig.axes 尾部。
+    '''
+    figs = [f for f in figs if f is not None]
+    if len(figs) < 2:
+        return
+    for i in range(n_axes):
+        axes = [f.axes[i] for f in figs if len(f.axes) > i]
+        if len(axes) < 2:
+            continue
+        lo = min(ax.get_ylim()[0] for ax in axes)
+        hi = max(ax.get_ylim()[1] for ax in axes)
+        for ax in axes:
+            ax.set_ylim(lo, hi)
+
+
 def plot_si_trend(data, moment_bases, save_path=None,
-                  max_points_per_load=2500):
+                  max_points_per_load=2500, select_groups=True,
+                  share_y='all', title_suffix=''):
     '''不对称性的【趋势】图，三联。
+
+    share_y 控制纵轴是否统一：'all' 三联完全一致；
+    'frames' 只统一左、中两联（都是逐帧 SI）；'none' 各自独立。
 
     为什么要单独一张：热图给的是每组一个数，看不出规律；传递图看的是
     同一组沿运动链的走向。而“偏侧到底是恒定存在，还是被负载/深度
@@ -489,6 +627,15 @@ def plot_si_trend(data, moment_bases, save_path=None,
     fig, axes = plt.subplots(1, 3, figsize=(19.5, 5.8))
     ax_f, ax_h, ax_m = axes[0], axes[1], axes[2]
 
+    # 逐组登记 artist（左、中两联），供右侧复选框实时切换显隐。
+    # 右联是组级量（一组一个点、折线跨组相连），隐掉部分组会把折线截断、
+    # 反而误导，所以勾选只作用于逐帧散点的左、中两联。
+    group_artists = {}
+    group_colors = {}
+
+    # 收集三联实际画上去的 SI，用来算统一的纵轴范围
+    si_pool_f, si_pool_h, si_pool_m = [], [], []
+
     n_height = 0
     for i, (key, rec) in enumerate(items):
         color = _group_color(i)
@@ -503,16 +650,21 @@ def plot_si_trend(data, moment_bases, save_path=None,
             continue
         f = tot[m]
         si = 100.0 * (r[m] - l[m]) / f
+        si_pool_f.append(si)
 
         # ---- 左图：SI vs 逐帧合力 ----
+        arts = group_artists.setdefault(str(key), [])
+        group_colors[str(key)] = color
+
         idx = _thin(f.size, max_points_per_load)
-        ax_f.scatter(f[idx], si[idx], s=6, alpha=0.22, color=color,
-                     marker=marker, linewidths=0)
+        arts.append(ax_f.scatter(f[idx], si[idx], s=6, alpha=0.22, color=color,
+                                 marker=marker, linewidths=0))
         k, b = _linfit(f, si)
         lab = str(key)
         if np.isfinite(k):
             xx = np.array([float(np.nanmin(f)), float(np.nanmax(f))])
-            ax_f.plot(xx, k * xx + b, color=color, linewidth=2.2)
+            fit_line, = ax_f.plot(xx, k * xx + b, color=color, linewidth=2.2)
+            arts.append(fit_line)
             lab = '{}  {:+.1f} %/kN'.format(key, k * 1000.0)
         ax_f.plot([], [], color=color, marker=marker, linewidth=2.2,
                   label=lab)
@@ -534,14 +686,17 @@ def plot_si_trend(data, moment_bases, save_path=None,
             continue
         h = hh[mh]
         si_h = 100.0 * (rr[mh] - ll[mh]) / tt[mh]
+        si_pool_h.append(si_h)
         idx = _thin(h.size, max_points_per_load)
-        ax_h.scatter(h[idx], si_h[idx], s=6, alpha=0.22, color=color,
-                     marker=marker, linewidths=0)
+        arts.append(ax_h.scatter(h[idx], si_h[idx], s=6, alpha=0.22,
+                                 color=color, marker=marker, linewidths=0))
         kh, bh = _linfit(h, si_h)
         lab_h = str(key)
         if np.isfinite(kh):
             xx = np.array([float(np.nanmin(h)), float(np.nanmax(h))])
-            ax_h.plot(xx, kh * xx + bh, color=color, linewidth=2.2)
+            fit_line_h, = ax_h.plot(xx, kh * xx + bh, color=color,
+                                    linewidth=2.2)
+            arts.append(fit_line_h)
             lab_h = '{}  {:+.1f} %/m'.format(key, kh)
         ax_h.plot([], [], color=color, marker=marker, linewidth=2.2,
                   label=lab_h)
@@ -589,6 +744,7 @@ def plot_si_trend(data, moment_bases, save_path=None,
             continue
         xs = np.asarray(xs, dtype=float)
         ys = np.asarray(ys, dtype=float)
+        si_pool_m.append(ys)
         order = np.argsort(xs)
         color = cmap(i % 8)
 
@@ -614,11 +770,145 @@ def plot_si_trend(data, moment_bases, save_path=None,
     ax_m.grid(alpha=0.3)
     ax_m.legend(fontsize=8)
 
-    fig.tight_layout()
+    # ---- 纵轴统一 ----
+    # 三联画的是同一个物理量（SI，%），纵轴不一致时，“左边看着偏得厉害、
+    # 右边看着很平”可能纯粹是量程差异造成的错觉。统一之后跨联比较才有意义。
+    #   'all'    三联完全一致（含右联的组级 SI）
+    #   'frames' 只统一左、中两联（同一批逐帧 SI，只是换了个横轴）
+    #   'none'   各自独立（旧行为）
+    # 注意：组级 SI 的幅度通常比逐帧 SI 小一个量级（逐帧含 cycle 内的
+    # 来回摆动，组级已被整段平均掉），选 'all' 时右联会显得很平——
+    # 那不是画错，而是真实的量级关系；想看清右联的走向再切回 'frames'。
+    mode_y = str(share_y or 'none').lower()
+    if mode_y == 'all':
+        lim = _shared_ylim(si_pool_f + si_pool_h + si_pool_m)
+        targets = (ax_f, ax_h, ax_m)
+    elif mode_y == 'frames':
+        lim = _shared_ylim(si_pool_f + si_pool_h)
+        targets = (ax_f, ax_h)
+    else:
+        lim, targets = None, ()
+    if lim is not None:
+        for ax in targets:
+            ax.set_ylim(*lim)
+
+    if title_suffix:
+        fig.suptitle(title_suffix, y=0.995, fontsize=11)
+        fig.tight_layout(rect=(0, 0, 1, 0.955))
+    else:
+        fig.tight_layout()
+    # 先存盘再挂选择面板：png 里不应该出现复选框，而且存的是全选状态。
     if save_path:
         fig.savefig(save_path, dpi=140)
         print('[fig] 不对称性趋势图 -> {}'.format(save_path))
+    if select_groups:
+        attach_group_selector(fig, group_artists, group_colors,
+                              title='Show groups\n(left & middle)',
+                              panel_width=0.085)
     return fig
+
+
+# ============================================================
+#  图窗挑选
+# ============================================================
+
+def parse_figure_selection(text, n):
+    '''
+    把 '1,3,5-7' / 'all' / 'none' 解析成要展示的序号集合（从 1 开始）。
+
+    无法识别的片段直接忽略，不抛异常：这是交互输入，手滑打错一个字符
+    不应该让前面整段分析白跑。
+    '''
+    text = (text or '').strip().lower()
+    if text in ('', 'a', 'all', '*'):
+        return set(range(1, n + 1))
+    if text in ('n', 'no', 'none', 'q', '0'):
+        return set()
+
+    picked = set()
+    for token in text.replace(' ', '').split(','):
+        if not token:
+            continue
+        if '-' in token[1:]:
+            head, _, tail = token.partition('-')
+            try:
+                lo, hi = int(head), int(tail)
+            except ValueError:
+                continue
+            if lo > hi:
+                lo, hi = hi, lo
+            picked.update(range(max(lo, 1), min(hi, n) + 1))
+            continue
+        try:
+            idx = int(token)
+        except ValueError:
+            continue
+        if 1 <= idx <= n:
+            picked.add(idx)
+    return picked
+
+
+def select_and_show(labeled_figs, interactive=True, default='all',
+                    figsize_scale=1.5):
+    '''
+    先列出已画好的图，让使用者挑选展示哪几张，其余关闭。
+
+    为什么需要：五张图同时弹出时，每个窗口只分到屏幕的一小块。
+    第三张（左-右散点）是正方形且点很密，第五张（SI 趋势）是 19.5 英寸
+    宽的三联图，这两张被缩小后最先不可读。单独弹一张并放大就能解决，
+    不必改图本身的布局。
+
+    png 在各绘图函数内部就已经保存完毕，所以这里关闭窗口不会影响落盘文件。
+    无人值守（重定向输出、CI）时读不到 stdin，自动退回 default。
+
+    Parameters
+    ----------
+    labeled_figs : list[(str, Figure)]
+    '''
+    labeled_figs = [(lab, f) for lab, f in labeled_figs if f is not None]
+    if not labeled_figs:
+        return []
+
+    n = len(labeled_figs)
+    print('')
+    print('=' * 78)
+    print('已生成 {} 张图，选择要展示的编号：'.format(n))
+    print('=' * 78)
+    for i, (label, _) in enumerate(labeled_figs, start=1):
+        print('  {:>2}. {}'.format(i, label))
+    print('输入示例：3,5 只看第 3 和第 5 张；2-4 看一段；all 全看；none 都不看。')
+
+    answer = default
+    if interactive:
+        try:
+            answer = input('请输入 [默认 {}]: '.format(default))
+        except (EOFError, OSError):
+            print('  (无交互输入，按默认 {} 处理)'.format(default))
+            answer = default
+        if not (answer or '').strip():
+            answer = default
+
+    picked = parse_figure_selection(answer, n)
+    if not picked:
+        print('  未选择任何图，全部关闭。')
+        for _, fig in labeled_figs:
+            plt.close(fig)
+        return []
+
+    scale = float(figsize_scale or 1.0)
+    shown = []
+    for i, (label, fig) in enumerate(labeled_figs, start=1):
+        if i not in picked:
+            plt.close(fig)
+            continue
+        print('  [展示] {:>2}. {}'.format(i, label))
+        if scale > 1.0:
+            w, h = fig.get_size_inches()
+            fig.set_size_inches(w * scale, h * scale, forward=True)
+        shown.append(fig)
+
+    plt.show()
+    return shown
 
 
 # ============================================================
@@ -626,24 +916,63 @@ def plot_si_trend(data, moment_bases, save_path=None,
 # ============================================================
 
 def plot_symmetry_figures(data, moment_bases, angle_bases, out_dir=None,
-                          show=True):
-    '''依次画五张图。out_dir 为 None 时只显示不保存。'''
+                          show=True, select=True, select_default='all',
+                          figsize_scale=1.5, si_trend_share_y='all',
+                          data_upward=None):
+    '''
+    依次画五张图。out_dir 为 None 时只显示不保存。
+
+    select=True 时，五张图全部画完（并已存盘）后先列清单，
+    由使用者挑选展示哪几张；选中的按 figsize_scale 放大后弹出。
+    select=False 时行为与以前一致（show=True 就全部弹出）。
+    '''
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)
 
     def _p(name):
         return os.path.join(out_dir, name) if out_dir else None
 
-    figs = [
-        plot_si_heatmap(data, moment_bases, angle_bases,
-                        save_path=_p('symmetry_si_heatmap.png')),
-        plot_chain_transfer(data, save_path=_p('symmetry_chain.png')),
-        plot_lr_scatter(data, save_path=_p('symmetry_lr_scatter.png')),
-        plot_butterfly(data, angle_bases,
-                       save_path=_p('symmetry_butterfly.png')),
-        plot_si_trend(data, moment_bases,
-                      save_path=_p('symmetry_si_trend.png')),
+    labeled = [
+        ('SI 热图（通道 x 负载）  symmetry_si_heatmap.png',
+         plot_si_heatmap(data, moment_bases, angle_bases,
+                         save_path=_p('symmetry_si_heatmap.png'))),
+        ('运动链传递（GRF -> 踝 -> 膝 -> 髋）  symmetry_chain.png',
+         plot_chain_transfer(data, save_path=_p('symmetry_chain.png'))),
+        ('左-右逐帧散点 + y=x  symmetry_lr_scatter.png',
+         plot_lr_scatter(data, save_path=_p('symmetry_lr_scatter.png'))),
+        ('蝴形图（关节角逐 cycle）  symmetry_butterfly.png',
+         plot_butterfly(data, angle_bases,
+                        save_path=_p('symmetry_butterfly.png'))),
+        ('SI 趋势三联（vs 合力 / vs 杆高 / 组级力矩）  '
+         'symmetry_si_trend.png',
+         plot_si_trend(data, moment_bases,
+                       save_path=_p('symmetry_si_trend.png'),
+                       share_y=si_trend_share_y)),
     ]
+
+    # ⑥ 与⑤完全同构，唯一区别是只用上升（向心）阶段。
+    # 为什么值得单独一张而不是直接替掉⑤：上升与下降的偏侧机制不同——
+    # 下降是离心、受控下放，上升是向心、接近力竭时代偿最明显。两个阶段混在
+    # 一起取均值，恰好会把代偿冲淡；但全阶段那张也不能丢，惯性项只有在
+    # 一个完整循环内才大致抵消，只看上升会系统性高估总力。
+    # 等长组没有上升/下降之分，整组原样保留（由调用方的取数负责）。
+    if data_upward:
+        fig_up = plot_si_trend(
+            data_upward, moment_bases,
+            save_path=_p('symmetry_si_trend_upward.png'),
+            share_y=si_trend_share_y,
+            title_suffix='UPWARD (concentric) phase only'
+                         '  -  isometric groups kept in full')
+        labeled.append(('SI 趋势三联·仅上升阶段  '
+                        'symmetry_si_trend_upward.png', fig_up))
+        _harmonize_ylim([labeled[4][1], fig_up], n_axes=3)
+
+    figs = [f for _, f in labeled if f is not None]
+
+    if show and select:
+        return select_and_show(labeled, interactive=True,
+                              default=select_default,
+                              figsize_scale=figsize_scale)
     if show:
         plt.show()
-    return [f for f in figs if f is not None]
+    return figs
