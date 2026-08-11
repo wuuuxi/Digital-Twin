@@ -19,21 +19,13 @@ from digitaltwin.analysis.heatmap.rbf_fitting import (
     fit_activation_map, fit_activation_map_3d,
     save_rbf_params, compute_rmse_percentage, predict_at,
 )
+from digitaltwin.config_manager import numeric_load_value
 from digitaltwin.visualization.heatmap import (
     plot_activation_3d, draw_heatmap_2d, draw_load_sensitivity_heatmap_2d,
     plot_compare_activation_3d, plot_compare_heatmap_2d,
     plot_compare_load_sensitivity_2d,
 )
 from digitaltwin.utils.logger import beauty_print
-
-
-def _float_or_nan(value):
-    """把值解析成数值负载 (kg)；解析不出来返回 nan。"""
-    try:
-        f = float(value)
-    except (TypeError, ValueError):
-        return float('nan')
-    return f if np.isfinite(f) else float('nan')
 
 
 def estimate_load_from_df(df, g=9.81):
@@ -66,7 +58,7 @@ def estimate_load_from_df(df, g=9.81):
 
 
 def collect_cutted_data(results, movement_types=None, log=None,
-                        numeric_load=_float_or_nan):
+                        numeric_load=numeric_load_value):
     """
     从 results 收集切片数据并按运动阶段过滤。
 

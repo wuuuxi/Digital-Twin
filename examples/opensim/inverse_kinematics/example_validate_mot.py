@@ -49,8 +49,10 @@ from digitaltwin.osim.mot_pipeline import (
 from digitaltwin.analysis.result_analysis import (
     read_opensim_table,
     get_load_keys,
-    load_or_create_cutted_pipeline_results,
     get_segment_from_results,
+)
+from digitaltwin.pipelines.standard_analysis import (
+    load_or_create_cutted_pipeline_results,
     get_action_windows,
 )
 from digitaltwin.config_manager import filter_load_keys

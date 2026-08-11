@@ -38,8 +38,12 @@ from digitaltwin.osim.external_forces import (
     generate_external_loads,
     get_ext_forces_dir,
 )
-from digitaltwin.analysis.result_analysis import (
+# 编排层（跑流水线 / 带缓存的切片装载 / 动作窗口）
+from digitaltwin.pipelines.standard_analysis import (
     load_or_create_cutted_pipeline_results,
+)
+# 纯分析层（不依赖 Subject / MultiLoadPipeline）
+from digitaltwin.analysis.result_analysis import (
     get_segment_from_results,
     read_opensim_table,
     interpolate_column_to_segment,
@@ -60,7 +64,7 @@ LOAD_KEYS = None
 MOVEMENT_TYPES = ('upward',)
 
 # 外力设置
-MB = 20.0
+MB = 0.0
 REGENERATE_EXTERNAL_FORCES = True
 
 # 切片缓存设置
@@ -71,16 +75,10 @@ REGENERATE_EXTERNAL_FORCES = True
 FORCE_REBUILD_CUTTED_CACHE = False
 INCLUDE_INSOLE_GRF = True
 
-# 鞋垫时间戳处理：默认 True。
-# True  = 使用 info.csv measurement_date + robot_file 第一帧时间修正鞋垫时间；
-# False = 退回鞋垫文件原始相对时间。
-USE_INSOLE_INFO_TIMESTAMP = True
-
-CUTTED_CACHE_NAME = (
-    'cutted_data_with_grf_info_time.csv'
-    if USE_INSOLE_INFO_TIMESTAMP else
-    'cutted_data_with_grf_raw_time.csv'
-)
+# 鞋垫时间轴只认 json 采集组里的 insole_time_offset，因此缓存只有一份。
+# （以前要分 info_time / raw_time 两份，是因为存在两套时间轴口径。）
+# 重新标定过 offset 后，请把 FORCE_REBUILD_CUTTED_CACHE 置 True 跑一次。
+CUTTED_CACHE_NAME = 'cutted_data_with_grf.csv'
 
 # 只打印平均 magnitude 大于该阈值的 external force。
 # 设为 0 会打印所有识别到的 force，包括全 0 的 GRF。
@@ -158,7 +156,6 @@ def summarize_external_forces_for_load(config, base_dir, load_key,
             mot_path=mot_path,
             Mb=MB,
             verbose=True,
-            use_insole_info_timestamp=USE_INSOLE_INFO_TIMESTAMP,
         )
 
     segment_df = get_segment_from_results(
@@ -438,7 +435,6 @@ def main():
         config_path,
         include_xsens=False,
         include_insole=INCLUDE_INSOLE_GRF,
-        use_insole_info_timestamp=USE_INSOLE_INFO_TIMESTAMP,
         debug=True,
         force_rebuild=FORCE_REBUILD_CUTTED_CACHE,
         cache_name=CUTTED_CACHE_NAME,

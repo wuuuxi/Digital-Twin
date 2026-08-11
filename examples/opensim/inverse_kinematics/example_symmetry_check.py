@@ -2,7 +2,7 @@
 example_symmetry_check.py
 
 校验【外力信息】与【关节信息】是否相互吻合（S1-S7 的详细说明、
-判据与绘图实现都在 digitaltwin/analysis/symmetry_check.py 里，
+判据与绘图实现都在 digitaltwin/pipelines/symmetry_check.py 里，
 本文件只负责填参数并调用）。
 
 为什么需要它：ID 力矩是「运动学 + 外力」两路信息合成的结果。
@@ -31,14 +31,14 @@ S3 拿一个恒为 50% 的量去卡 ID 力矩分担。现已改为优先用 grf_
 """
 import os
 
-from digitaltwin.analysis.symmetry_check import (
+from digitaltwin.pipelines.symmetry_check import (
     run_symmetry_check,
     SymmetryCheckOptions,
 )
 
 
 # ============================================================
-#  配置（参数输入，逻辑在 digitaltwin/analysis/symmetry_check.py）
+#  配置（参数输入，逻辑在 digitaltwin/pipelines/symmetry_check.py）
 # ============================================================
 
 CONFIG_FILE = '../../config/20260513_squat_FTS09_xsens.json'

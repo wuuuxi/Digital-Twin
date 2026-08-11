@@ -15,6 +15,7 @@
 """
 import matplotlib.pyplot as plt
 from digitaltwin import Subject, MultiLoadPipeline
+from digitaltwin.data.insole import check_insole_offsets
 
 # ============================================================
 #  ★ 在此修改目标肌肉（短名，无需 emg_ 前缀）
@@ -28,10 +29,9 @@ target_muscles = ['VL', 'FibLon', 'RF']
 # 并在 aligned_data / cutted_data 中加入 grf_l / grf_r 两列。
 INCLUDE_INSOLE_GRF = True
 
-# 鞋垫时间戳处理：默认 True。
-# True  = 使用 info.csv measurement_date + robot_file 第一帧时间修正鞋垫时间；
-# False = 退回鞋垫文件原始相对时间。
-USE_INSOLE_INFO_TIMESTAMP = True
+# 鞋垫时间轴：只认 json 采集组里的 insole_time_offset（由
+# example_insole_sync_offset.py 互相关标定得到）。本脚本会在跑流水线
+# 前先用 check_insole_offsets 把缺标定的组一次性报出来。
 
 EXTRA_SENSOR_COLS = ['grf_l', 'grf_r']
 
@@ -48,10 +48,12 @@ def main():
     pipeline = MultiLoadPipeline(subject)
     pipeline.debug = True
 
+    if INCLUDE_INSOLE_GRF:
+        check_insole_offsets(subject)
+
     results = pipeline.run(
         include_xsens=False,
-        include_insole=INCLUDE_INSOLE_GRF,
-        use_insole_info_timestamp=USE_INSOLE_INFO_TIMESTAMP)
+        include_insole=INCLUDE_INSOLE_GRF)
 
     # 将短名转为 emg_ 前缀形式，交由 _resolve_muscle_cols 做数据列匹配
     emg_muscles = [f'emg_{m}' for m in target_muscles]

@@ -60,8 +60,12 @@ from digitaltwin.osim.external_forces import (
     get_ext_forces_dir,
 )
 from digitaltwin.osim.inverse_dynamics import run_inverse_dynamics
-from digitaltwin.analysis.result_analysis import (
+# 编排层（跑流水线 / 带缓存的切片装载 / 动作窗口）
+from digitaltwin.pipelines.standard_analysis import (
     load_or_create_cutted_pipeline_results,
+)
+# 纯分析层
+from digitaltwin.analysis.result_analysis import (
     build_left_joint_coordinate_map,
     get_load_keys,
     get_segment_from_results,

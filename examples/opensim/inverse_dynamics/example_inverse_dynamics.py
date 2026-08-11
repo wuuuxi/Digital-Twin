@@ -44,8 +44,12 @@ from digitaltwin.osim.mot_pipeline import (
     load_dropout_intervals,
     in_intervals,
 )
-from digitaltwin.analysis.result_analysis import (
+# 编排层（跑流水线 / 带缓存的切片装载 / 动作窗口）
+from digitaltwin.pipelines.standard_analysis import (
     load_or_create_cutted_pipeline_results,
+)
+# 纯分析层
+from digitaltwin.analysis.result_analysis import (
     build_left_joint_coordinate_map,
     summarize_inverse_dynamics_moments,
     print_summary_table,

@@ -9,7 +9,7 @@
   - 变负载优化
 
 特征注入逻辑已拆分到 analysis/feature_injector.py
-变负载处理已拆分到 vload_pipeline.py
+变负载处理已拆分到 pipelines/vload.py
 热力图生成已拆分到 analysis/heatmap/heatmap_generator.py
 """
 import os
@@ -21,7 +21,8 @@ from datetime import datetime
 from digitaltwin.data.robot_processor import RobotProcessor
 from digitaltwin.data.emg_processor import EMGProcessor
 from digitaltwin.data.xsens_processor import XsensProcessor
-from digitaltwin.data.insole_processor import InsoleProcessor
+from digitaltwin.data.insole import (InsoleProcessor, has_offset,
+                                     resolve_time_offset)
 from digitaltwin.analysis.alignment import DataAligner
 from digitaltwin.analysis.curve_analysis import CurveAnalyzer
 from digitaltwin.analysis.feature_injector import (
@@ -32,7 +33,8 @@ from digitaltwin.analysis.heatmap.heatmap_generator import (
     HeatmapGenerator, estimate_load_from_df,
 )
 from digitaltwin.analysis.vload.variable_load import generate_variable_load
-from digitaltwin.vload_pipeline import VLoadPipeline
+from digitaltwin.config_manager import numeric_load_value
+from digitaltwin.pipelines.vload import VLoadPipeline
 from digitaltwin.visualization.plot_curves import CurvePlotter
 from digitaltwin.visualization.vload.variable_load_plot import plot_variable_load_result
 from digitaltwin.utils.logger import beauty_print
@@ -64,7 +66,7 @@ class MultiLoadPipeline:
     # ==================== 核心流水线 ====================
 
     def run(self, robot_files=None, include_xsens=True,
-            include_insole=False, use_insole_info_timestamp=True):
+            include_insole=False):
         """
         执行完整的多负载数据处理流水线。
 
@@ -78,10 +80,9 @@ class MultiLoadPipeline:
             是否可选注入鞋垫 GRF 数据。
             若 True，会读取 modeling_file.data[*].insole_file_l / insole_file_r，
             并插值到 aligned_data 的 time 轴，生成 grf_l / grf_r 列。
-        use_insole_info_timestamp : bool, default True
-            是否使用鞋垫文件同目录 info.csv 中的 measurement_date，
-            结合 robot_file 第一帧时间修正鞋垫时间轴。默认开启；
-            如需退回鞋垫文件原始相对时间，可置为 False。
+            鞋垫时间轴只由采集组里的 insole_time_offset 决定（由
+            example_insole_sync_offset.py 互相关标定得到）；没有该参数的组
+            会 beauty_print 告警并使用鞋垫文件的原始相对时间。
 
         Returns
         -------
@@ -99,8 +100,7 @@ class MultiLoadPipeline:
             # "IM-1kg" 会让日志看起来像是 1 kg 的定负载组。
             self._log(f"处理负载 {load_weight}...")
             result = self._process_single_load(
-                load_weight, file_info, include_xsens, include_insole,
-                use_insole_info_timestamp)
+                load_weight, file_info, include_xsens, include_insole)
             if result is not None:
                 all_results[load_weight] = result
 
@@ -117,34 +117,12 @@ class MultiLoadPipeline:
     def _numeric_load_value(load_weight, file_info=None):
         """把组名解析成数值负载 (kg)；解析不出来返回 nan。
 
-        为什么不能直接 float(load_weight)：等长 / 等速组的组名是
-        'IM-1' / 'IK-0.3'，float() 会抛 ValueError。而且这一步在 try 外面，
-        异常会直接穿出 run()，把整个流水线（包括所有定负载组）一起打挂。
-
-        也不能从组名里抽数字：'IM-1' 的 1 是杆高 1.0 m，
-        'IK-0.3' 的 0.3 是最高速度 0.3 m/s，都不是负载。误用会把
-        等长组当成 1 kg 的定负载组静静带进热力图拟合。
-        这两类组的实际负载必须由受力反推，因此先给 nan。
+        统一实现见 config_manager.numeric_load_value。
         """
-        info = file_info or {}
-        for key in ('load_kg', 'load'):
-            value = info.get(key)
-            if value is None:
-                continue
-            try:
-                f = float(value)
-            except (TypeError, ValueError):
-                continue
-            if np.isfinite(f):
-                return f
-        try:
-            return float(load_weight)
-        except (TypeError, ValueError):
-            return float('nan')
+        return numeric_load_value(load_weight, file_info)
 
     def _process_single_load(self, load_weight, file_info, include_xsens,
-                             include_insole=False,
-                             use_insole_info_timestamp=True):
+                             include_insole=False):
         """处理单个负载的数据"""
         robot_file = file_info.get("robot_file", "")
         emg_file = file_info.get("emg_file", "")
@@ -203,8 +181,7 @@ class MultiLoadPipeline:
             # 6. 可选注入其他传感器，例如鞋垫 GRF
             if include_insole:
                 aligned = self._inject_insole_grf(
-                    aligned, file_info, load_weight,
-                    use_insole_info_timestamp=use_insole_info_timestamp)
+                    aligned, file_info, load_weight)
 
             # 7. 注入 Xsens 关节角度
             if include_xsens and xsens_file and result.get('xsens_data'):
@@ -240,38 +217,26 @@ class MultiLoadPipeline:
             return None
 
     def _resolve_modeling_insole_path(self, insole_file):
-        """解析 modeling_file 中的鞋垫文件路径。"""
-        if not insole_file:
-            return None
-        if os.path.isabs(insole_file):
-            return insole_file if os.path.exists(insole_file) else None
+        """解析 modeling_file 中的鞋垫文件路径（委托给 insole.io）。"""
+        return InsoleProcessor.resolve_insole_path(self.subject, insole_file)
 
-        modeling = self.subject.config.get('modeling_file', {})
-        insole_folder = modeling.get('insole_folder', 'Sorted')
-        if os.path.isabs(insole_folder):
-            candidates = [
-                os.path.join(insole_folder, insole_file),
-                os.path.join(self.subject.folder, insole_file),
-            ]
-        else:
-            candidates = [
-                os.path.join(self.subject.folder, insole_folder, insole_file),
-                os.path.join(self.subject.folder, insole_file),
-            ]
-
-        for path in candidates:
-            if os.path.exists(path):
-                return path
-        return None
-
-    def _inject_insole_grf(self, aligned, file_info, load_weight,
-                           use_insole_info_timestamp=True):
+    def _inject_insole_grf(self, aligned, file_info, load_weight):
         """
         将鞋垫 GRF 数据插值到 aligned_data 时间轴。
 
         生成列：
           - grf_l: 左脚 GRF，+Y 向上，单位 N
           - grf_r: 右脚 GRF，+Y 向上，单位 N
+
+        时间轴：只认采集组里的 insole_time_offset（或分侧的
+        insole_time_offset_l / insole_time_offset_r），直接
+        raw_time + offset。该值由 example_insole_sync_offset.py 在深蹲段上
+        做互相关标定得到，精度到亚采样点。
+
+        没有标定过的组不再退回 info.csv，而是【用鞋垫文件原始相对时间】
+        并告警。退回 info.csv 看上去很贴心，实际上更危险：它会把一个
+        分钟级精度的偏移默默加上去，使结果看起来“已经对过齐”，
+        反而掩盖了未标定这个事实。
         """
         if aligned is None or 'time' not in aligned.columns:
             return aligned
@@ -279,10 +244,21 @@ class MultiLoadPipeline:
         out = aligned.copy()
         target_times = out['time'].values.astype(float)
 
+        if not has_offset(file_info):
+            beauty_print(
+                '负载 {}：config 中没有 insole_time_offset，鞋垫与机器人很可能'
+                '没有对齐。本组按鞋垫文件原始相对时间处理，grf_l / grf_r 与 '
+                'force_l / force_r 的时相不可信。请先跑 '
+                'example_insole_sync_offset.py 完成标定。'.format(load_weight),
+                type="warning")
+
         for side, key, col in [
             ('L', 'insole_file_l', 'grf_l'),
             ('R', 'insole_file_r', 'grf_r'),
         ]:
+            offset = resolve_time_offset(
+                file_info, side=side.lower(), load_key=load_weight,
+                warn=False)
             insole_file = file_info.get(key)
             if not insole_file:
                 self._log(f"负载 {load_weight}kg: 无 {key}，跳过 {col}")
@@ -294,12 +270,7 @@ class MultiLoadPipeline:
                 continue
 
             t_s, f_s = InsoleProcessor.load(
-                insole_path,
-                verbose=self.debug,
-                use_info_timestamp=use_insole_info_timestamp,
-                robot_file=file_info.get('robot_file'),
-                robot_folder=self.subject.modeling_robot_folder,
-                folder=self.subject.folder)
+                insole_path, verbose=self.debug, time_offset=offset)
             if t_s is None or f_s is None:
                 self._log(f"负载 {load_weight}kg: {side} 鞋垫数据读取失败")
                 continue

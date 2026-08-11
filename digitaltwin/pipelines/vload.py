@@ -1,7 +1,7 @@
 """
 变负载数据处理流水线。
 
-从 pipeline.py 中拆出，负责 run_vload 的全部逻辑：
+从 multi_load.py 中拆出，负责 run_vload 的全部逻辑：
 加载变负载的 robot、EMG、Xsens 数据 → 对齐 → 特征注入 → 切片。
 """
 import numpy as np

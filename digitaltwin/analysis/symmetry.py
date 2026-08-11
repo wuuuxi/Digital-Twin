@@ -1,5 +1,5 @@
 """
-symmetry_check.py
+symmetry.py — 左右对称性校验的【算法层】（纯分析）。
 
 校验【外力信息】与【关节信息】是否相互吻合。
 
@@ -22,69 +22,42 @@ S3 拿一个恒为 50% 的量去卡 ID 力矩分担。现已改为优先用 grf_
   (a) 鞋垫 GRF 分担    grf_l / grf_r
   (b) ID 关节力矩分担   knee/hip/ankle 的 _l / _r moment
   (c) 运动学不对称      .mot 里左右关节角的峰值差
-三者的逻辑关系并不对等，必须分开对待：
-  (a) -> (b) 是【硬约束】，但仅当 (a) 真的是鞋垫 GRF 时才成立。
-            ID 的外力就是 grf 贴到两只脚上的，所以两者必须指向同一侧。
-            方向相反 = 接线错（grf_l/grf_r 接反或贴错 body），必须报错。
-            注意分担差值【不】是硬约束：力矩还取决于力臂，而力臂由 COP
-            与关节中心位置决定，两侧未必相同。
-  (a) -> (c) 是【软关联】。受力多的一侧不一定蹲得更深，所以只提示，
-            不当错误。只有当两者都强烈且方向相反时才值得怀疑。
+三者判断为独立、不等价，逻辑关系已标注在各项内部：
 
 检查项：
   [S1] 外力总量标定：总力对配重回归，斜率应等于 g = 9.81 N/kg。
-       斜率不需要知道体重（体重只进截距）。截距的期望值取决于数据源：
-         鞋垫 GRF -> 截距/g ≈ 体重；
-         机器人力   -> 截距 ≈ 0（本来就不含体重）。
+       截距的期望值取决于数据源：鞋垫 GRF -> 截距/g ≈ 体重；机器人力 -> ≈0。
   [S2] 左右力分担：share_r = mean(R) / (mean(L) + mean(R))。
-  [S3] 力分担 vs ID 力矩分担：只把【方向相反】判为错误；
-       差值大只作为 COP 可疑的线索输出，不计 FAIL。
+  [S3] 力分担 vs ID 力矩分担：只把【方向相反】判为错误。
   [S4] 力分担 vs 运动学不对称（软关联，仅提示）。
   [S5] 单侧通道失效：某侧恒为常数 / 几乎为零 / 出现负值。
-       鞋垫 GRF 不可能为负；机器人力在轻载下因钢缆松弛可以为负，
-       因此负值判据会根据数据源自动切换严格/宽松。
-  [S6] 【每侧增量增益】用实测杆力而非名义配重做闭合检验。
-       物理上 GRF_total = 体重 + 杆力，所以把 GRF 对杆力回归：
-         总斜率应 = 1.0（每多压 1 N 到杠上，地面就多受 1 N）
-         单侧斜率应 ≈ 0.5（新增载荷应该两腿平分）
-         截距/g 应 = 体重（且与 S1 的估计一致）
-       这比 S1 严格：S1 用名义配重，假定杆力就等于配重×g；
-       S6 用实测杆力，把杆侧的误差完全排除在外。
-       单侧斜率偏离 0.5 -> 新增载荷没有两腿平分，要么是受试者真的
-       向一侧转移，要么是那侧鞋垫在高压下欠读。两者由 S7 区分。
-  [S7] 【饱和 vs 策略】区分器。把所有试次的逐帧数据汇到一起，
-       看左侧占比随【瞬时总力】如何变化。
-         若各试次塌缩在同一条曲线上（组间偏移小）-> 占比只由力的大小
-           决定，与哪个试次无关，这是传感器压缩非线性的指纹；
-         若每个试次各自一条线（组间偏移大）-> 是姿势/策略差异。
-       仅输出证据，不判 FAIL——最终要靠鞋垫逐点数据看有无单元格顶值。
-
-运行时机：example_validate_mot.py 通过之后、相信 ID 结果之前。
+  [S6] 每侧增量增益：GRF 对【实测杆力】回归，总斜率=1.0、单侧≈0.5。
+  [S7] 饱和 vs 策略区分器：各试次是否塌缩到同一条 share(F) 曲线。
 
 对外接口：
-  run_symmetry_check()    — 整个校验流程的唯一入口
-  SymmetryCheckOptions()  — 所有判据阈值 / 坐标集合的配置对象，
-                            由 example 按采集实际情况填写
-  collect_side_data()     — 单步取数（含 movement_types 过滤），
-                            需要单独复用时可直接调用
+  SymmetryCheckOptions() — 所有判据阈值 / 坐标集合的配置对象，
+                           由 example 按采集实际情况填写
+  collect_side_data()    — 单步取数（含 movement_types 过滤）
+  Verdicts / check_*()   — 汇总与各项检查
+
+注意：主流程入口 run_symmetry_check()（加载流水线结果 + 触发绘图）在
+digitaltwin/pipelines/symmetry_check.py，本模块只提供纯计算部分。
 """
 import os
-import json
 
 import numpy as np
 
+from digitaltwin.utils.data_io import canonical_load_key
 from digitaltwin.utils.logger import beauty_print
 from digitaltwin.osim.mot_pipeline import get_mot_files
 from digitaltwin.analysis.result_analysis import (
     read_opensim_table,
-    load_or_create_cutted_pipeline_results,
     get_segment_from_results,
     get_inverse_dynamics_path,
     find_id_moment_column,
     interpolate_column_to_segment,
 )
-from digitaltwin.config_manager import filter_load_keys, get_load_mode
-from digitaltwin.visualization.symmetry_plot import plot_symmetry_figures
+from digitaltwin.config_manager import get_load_mode
 
 
 G = 9.81
@@ -205,14 +178,7 @@ def _load_sort_key(item):
     return (0, v, str(key))
 
 
-def _canon_load_key(value):
-    try:
-        f = float(value)
-        if np.isfinite(f) and abs(f - round(f)) < 1e-9:
-            return str(int(round(f)))
-        return f'{f:g}'
-    except Exception:
-        return str(value)
+_canon_load_key = canonical_load_key
 
 
 class Verdicts:
@@ -806,128 +772,6 @@ def check_saturation(data, verdicts, options):
 
 
 # ============================================================
-#  主流程
+#  主流程入口已移至 digitaltwin/pipelines/symmetry_check.py
+#  （它加载切片流水线结果并触发绘图；本模块只剩纯计算部分）
 # ============================================================
-
-def run_symmetry_check(config_path, options=None, *,
-                       load_keys=None,
-                       exclude_load_keys=None,
-                       load_modes_filter=None,
-                       plot_figures=True,
-                       save_figures=True,
-                       si_trend_share_y='all',
-                       upward_only_trend=True,
-                       upward_movement_types=('upward',),
-                       plot_select=False,
-                       plot_select_default='all',
-                       plot_select_figsize_scale=1.5,
-                       show=True):
-    """
-    外力信息 vs 关节信息 一致性校验（S1-S7）+ 对称性图。
-
-    Parameters
-    ----------
-    config_path : str -- config json 的完整路径
-    options : SymmetryCheckOptions, optional -- 判据阈值配置，None 用默认
-    load_keys : list[str], optional -- 参与的负载组，None = 全部
-    exclude_load_keys : list[str], optional -- 排除的负载组
-    load_modes_filter : tuple[str], optional -- 按负载模式筛选
-        （None = 全部；('isotonic',) = 只跑定负载组）
-    plot_figures : bool -- 是否画五张对称性图
-    save_figures : bool -- 是否把图存到 result/<subject>/symmetry/
-    si_trend_share_y : {'all', 'frames', 'none'} -- 第五张三联的纵轴统一方式
-    upward_only_trend : bool -- 是否另取一份仅上升阶段的数据画第六张图
-    upward_movement_types : tuple -- 第六张图的段类型
-    plot_select : bool -- 是否在弹图前按编号挑选展示哪几张
-    plot_select_default : {'all', 'none'} -- 非交互环境的默认选择
-    plot_select_figsize_scale : float -- 被选中图的放大倍数
-    show : bool -- 结束时是否 plt.show()
-
-    Returns
-    -------
-    bool -- True 全部检查通过
-    """
-    if options is None:
-        options = SymmetryCheckOptions()
-
-    if not os.path.exists(config_path):
-        beauty_print(f'找不到配置文件: {config_path}', type='warning')
-        return False
-
-    with open(config_path, 'r', encoding='utf-8') as f:
-        config = json.load(f)
-
-    base_dir = _find_base_dir()
-
-    load_keys = filter_load_keys(config, load_keys=load_keys,
-                                 modes=load_modes_filter,
-                                 exclude=exclude_load_keys)
-    print(f'参与负载: {load_keys}（模式筛选: {load_modes_filter}）')
-    print(f'其中只有 {options.calibration_modes} 组会进入 S1/S6/S7 的标定类回归。')
-
-    # 必须 include_insole=True，否则切片里没有 grf_l / grf_r，
-    # 只能退回到机器人力，而机器人力无法回答“哪条腿承重多”。
-    _subject, _pipeline, pipeline_results = \
-        load_or_create_cutted_pipeline_results(
-            config_path, include_xsens=False, include_insole=True,
-            debug=False, cache_name=options.cache_name)
-
-    data = collect_side_data(config, base_dir, pipeline_results, load_keys,
-                             options)
-    if not data:
-        beauty_print('没有任何负载收集到有效数据，无法校验。', type="warning")
-        return False
-
-    # 标定类检查只能吃定负载组；对称性检查与四张图吃全部模式。
-    calib = {k: v for k, v in data.items()
-             if v.get('mode') in options.calibration_modes}
-    skipped = sorted(set(data.keys()) - set(calib.keys()))
-    if skipped:
-        print(f'\n[S1/S6/S7] 仅用定负载组 {sorted(calib.keys())}；'
-              f'跳过 {skipped}（其等效负载本身就是从受力反推的，'
-              f'再拿去对受力回归是循环论证）。')
-
-    verdicts = Verdicts()
-    if calib:
-        check_force_calibration(calib, verdicts, options)
-    else:
-        beauty_print('一个定负载组都没有，S1/S6/S7 全部跳过；'
-                     '外力总量标定本次无法验证。', type="warning")
-
-    check_share_consistency(data, verdicts, options)
-    check_kinematic_side(data, verdicts, options)
-    check_channel_health(data, verdicts, options)
-
-    if calib:
-        check_side_gain(calib, verdicts, options)
-        check_saturation(calib, verdicts, options)
-
-    all_ok = verdicts.report()
-
-    if plot_figures:
-        out_dir = None
-        if save_figures and _subject is not None:
-            out_dir = os.path.join(_subject.result_folder, 'symmetry')
-        print('\n' + '=' * 80)
-        print('[图] 对称性：SI 热图 / 运动链传递 / 左-右散点 / 蝴形图 / '
-              'SI 趋势（vs 合力、vs 杆高）' +
-              (' / SI 趋势·仅上升阶段' if upward_only_trend else ''))
-        print('=' * 80)
-
-        data_up = None
-        if upward_only_trend:
-            print(f'[图6] 另取一份仅 {upward_movement_types} 的数据（等长组无'
-                  f'上升/下降之分，会自动回退到等长段，整组保留）…')
-            data_up = collect_side_data(config, base_dir, pipeline_results,
-                                        load_keys, options,
-                                        movement_types=upward_movement_types)
-
-        plot_symmetry_figures(data, options.moment_bases, options.angle_bases,
-                              out_dir=out_dir, show=show,
-                              select=plot_select,
-                              select_default=plot_select_default,
-                              figsize_scale=plot_select_figsize_scale,
-                              si_trend_share_y=si_trend_share_y,
-                              data_upward=data_up)
-
-    return all_ok

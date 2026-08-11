@@ -30,12 +30,13 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 
-from digitaltwin.data.insole_processor import InsoleProcessor
+from digitaltwin.data.insole import (InsoleProcessor, has_offset,
+                                     resolve_time_offset)
 from digitaltwin.utils.logger import beauty_print
 from digitaltwin.visualization.insole_plot import (
     plot_load_pressure_cop, plot_cop_across_loads,
     global_pressure_vmax, global_force_range)
-from digitaltwin.analysis.result_analysis import get_action_windows
+from digitaltwin.pipelines.standard_analysis import get_action_windows
 from digitaltwin.config_manager import filter_load_keys, safe_load_key
 
 # ----------------------------------------------------------------------
@@ -75,7 +76,9 @@ LOAD_MODES_FILTER = None
 # 但不属于被评估的动作，会同时抬高 COP 摆动范围并污染组间比较。
 # 窗口直接复用 pipeline 已有的动作切片，与 example_validate_mot.py 同一套。
 # 注意：启用窗口后，鞋垫时间轴必须先对齐到机器人时钟，
-# 所以两个鞋垫文件都改成 use_info_timestamp=True 并传入 robot_file。
+# 所以两个鞋垫文件都传入采集组里的 insole_time_offset。
+# 该参数由 example_insole_sync_offset.py 标定；没有它时只能按原始相对
+# 时间处理，窗口与数据不在同一时间基准上，会被下面的重叠度检查拦下。
 RESTRICT_TO_SQUAT = True
 SQUAT_MOVEMENT_TYPES = ('upward', 'downward')
 
@@ -185,7 +188,8 @@ def get_squat_windows(config_path, load_keys):
     '''
     {load_key: (t0, t1)}：每组动作的时间窗（机器人时钟）。
 
-    切分逻辑不在这里实现，而是调 result_analysis.get_action_windows：
+    切分逻辑不在这里实现，而是调
+    pipelines.standard_analysis.get_action_windows：
       - 定负载 / 等速组：用 movement_type 的 upward/downward 切片包络。
         等速只限了最高速度，杆照样上下走，这套切分依然适用。
       - 等长组：杆不动，速度过零点切不出片段，改用力阈值的连续区间。
@@ -227,8 +231,9 @@ def slice_result_to_window(result, window, load_key, side):
     '''
     把 load_pressure_map 的返回值裁到深蹲窗口。返回 (result, 说明)。
 
-    如果鞋垫时间轴与窗口几乎不重叠，说明 info.csv 对齐失败（而不是
-    真的没有深蹲），这种情况必须报错，不能静静地裁出一段空数据。
+    如果鞋垫时间轴与窗口几乎不重叠，说明这组缺 insole_time_offset
+    或标定失败（而不是真的没有深蹲），这种情况必须报错，
+    不能静静地裁出一段空数据。
     '''
     if result is None:
         return result, '无数据'
@@ -244,7 +249,7 @@ def slice_result_to_window(result, window, load_key, side):
     if overlap <= 0 or overlap < 0.5 * span:
         beauty_print(
             '  [窗口] load={} {} : 鞋垫时间轴 {:.2f}-{:.2f}s 与深蹲窗口 '
-            '{:.2f}-{:.2f}s 重叠只有 {:.0%}。info.csv 对齐很可能失败，'
+            '{:.2f}-{:.2f}s 重叠只有 {:.0%}。insole_time_offset 可能缺失或标错，'
             '本组退回整段统计，COP 均值不可用于跳组比较。'.format(
                 load_key, side.upper(), t[0], t[-1], t0, t1,
                 max(overlap, 0.0) / span),
@@ -382,7 +387,7 @@ def report_cop(result, load_key, side):
 # 主流程
 # ----------------------------------------------------------------------
 def compare_one_side(config, load_key, side, force_rel, map_rel, verdicts,
-                     window=None, robot_file=None):
+                     window=None, time_offset=None):
     force_path = resolve_insole_path(config, force_rel)
     map_path = resolve_insole_path(config, map_rel)
 
@@ -400,15 +405,12 @@ def compare_one_side(config, load_key, side, force_rel, map_rel, verdicts,
                      '找不到压力图文件: {}'.format(map_path))
         return
 
-    # 两个文件来自同一套采集软件，共用同一个相对时钟，
-    # 因此这里不做 info.csv 对齐，直接比原始时间轴
-    # 两个文件在同一个文件夹里，共用同一份 info.csv 与同一个 robot_file，
-    # 所以两边拿到的时间修正量完全相同，M2 比的仍然是两者的相对关系。
-    # 之前用 use_info_timestamp=False 是因为只需要相对比较；现在要用深蹲窗口
-    # 截取，必须先对齐到机器人时钟，否则窗口和数据不在同一个时间基准上。
+    # 两个文件来自同一套采集软件，共用同一个相对时钟，且这里给两边传的
+    # 是同一个 insole_time_offset，因此 M2 比的仍然是两者的相对关系，
+    # 不会因为加了 offset 而变。之所以还是要加，是因为后面用深蹲窗口
+    # 截取，窗口在机器人时钟上，两者必须同一个时间基准。
     t_force, f_force = InsoleProcessor.load(
-        force_path, verbose=False, use_info_timestamp=True,
-        robot_file=robot_file, folder=config.get('folder', ''))
+        force_path, verbose=False, time_offset=time_offset)
     if t_force is None:
         verdicts.add('M1 文件', load_key, side, False,
                      '汇总力文件解析失败: {}'.format(
@@ -416,8 +418,7 @@ def compare_one_side(config, load_key, side, force_rel, map_rel, verdicts,
         return
 
     result = InsoleProcessor.load_pressure_map(
-        map_path, verbose=False, use_info_timestamp=True,
-        robot_file=robot_file, folder=config.get('folder', ''),
+        map_path, verbose=False, time_offset=time_offset,
         toe_first=TOE_FIRST, min_force=MIN_FORCE_N, return_matrix=True)
     if result is None:
         verdicts.add('M1 文件', load_key, side, False,
@@ -559,13 +560,25 @@ def main():
         print('load = {}'.format(load_key))
         print('-' * 78)
 
+        if not has_offset(seg):
+            beauty_print(
+                '组 {}：配置中没有 insole_time_offset，鞋垫按原始相对时间处理。'
+                'M1-M5 比的是两个鞋垫文件之间的关系，仍然有效；但深蹲窗口'
+                '截取与 COP 统计会失效。请先跑 example_insole_sync_offset.py。'
+                .format(load_key),
+                type='warning')
+
+        offset = resolve_time_offset(seg, load_key=load_key, warn=False)
+
         side_results = {}
         for side, force_key, map_key in SIDES:
             side_results[side] = compare_one_side(
                 config, load_key, side,
                 seg.get(force_key), seg.get(map_key), verdicts,
                 window=windows.get(str(load_key)),
-                robot_file=seg.get('robot_file'))
+                time_offset=resolve_time_offset(
+                    seg, side=side, load_key=load_key, warn=False)
+                or offset)
 
         if CHECK_ORIENTATION:
             InsoleProcessor.diagnose_orientation(

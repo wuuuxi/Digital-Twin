@@ -2,16 +2,21 @@ from .alignment import DataAligner, filter_movement_types
 from .curve_analysis import CurveAnalyzer
 from .result_analysis import (
     read_opensim_table,
-    run_standard_data_pipeline,
-    load_or_create_cutted_pipeline_results,
     get_segment_from_results,
     interpolate_column_to_segment,
     build_left_joint_coordinate_map,
     summarize_inverse_dynamics_moments,
     print_summary_table,
 )
-from .symmetry_check import (
-    run_symmetry_check,
+
+# 编排层重导出（实现位于 digitaltwin/pipelines/，此处保留旧路径兼容）
+from digitaltwin.pipelines.standard_analysis import (
+    run_standard_data_pipeline,
+    load_or_create_cutted_pipeline_results,
+    get_action_windows,
+)
+from digitaltwin.pipelines.symmetry_check import run_symmetry_check
+from .symmetry import (
     SymmetryCheckOptions,
     collect_side_data,
     Verdicts,

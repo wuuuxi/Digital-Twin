@@ -2,6 +2,8 @@ import os
 import numpy as np
 import pandas as pd
 
+from digitaltwin.config_manager import numeric_load_value
+
 
 class RobotProcessor:
     """
@@ -31,17 +33,11 @@ class RobotProcessor:
         会抛 ValueError，被 process() 的 except 吞掉后整组返回 None。
         也不能从组名里抽数字（'IM-1' 的 1 是杆高 m，'IK-0.3' 的 0.3 是
         速度 m/s，都不是负载），这两类组的负载必须由受力反推，先给 nan。
+
+        统一实现见 config_manager.numeric_load_value。
         """
-        for value in (load_value, load_weight):
-            if value is None:
-                continue
-            try:
-                f = float(value)
-            except (TypeError, ValueError):
-                continue
-            if np.isfinite(f):
-                return f
-        return float('nan')
+        return numeric_load_value(
+            load_weight, {'load_kg': load_value} if load_value is not None else None)
 
     @staticmethod
     def process(robot_file, load_weight, robot_folder, folder,

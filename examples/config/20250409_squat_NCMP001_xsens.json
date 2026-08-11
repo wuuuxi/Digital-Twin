@@ -63,41 +63,67 @@
   "modeling_file": {
     "emg_folder": "EMG",
     "xsens_folder": "xsens",
+    "insole_folder": "insole/SquatDTtest/NCMP, 001",
     "data": {
       "20": {
         "robot_file": "robot/NCMP-001_15R_20250409_161018.csv",
         "emg_file": "test 2025_04_09 16_09_46.csv",
         "xsens_file": "MVN-004_NCMP001.xlsx",
         "mode": "isotonic",
-        "load_kg": 20.0
+        "load_kg": 20.0,
+        "insole_file_l": "2025-04-09-16-09_15S/Medilogic Insoles-左 力.csv",
+        "insole_file_r": "2025-04-09-16-09_15S/Medilogic Insoles-右 力.csv",
+        "insole_map_l": "2025-04-09-16-09_15S/Medilogic Insoles-左 Medilogic Insoles G2.脚.csv",
+        "insole_map_r": "2025-04-09-16-09_15S/Medilogic Insoles-右 Medilogic Insoles G2.脚.csv",
+        "insole_time_offset": -8.1565
       },
       "35": {
         "robot_file": "robot/NCMP-001_30R_20250409_160611.csv",
         "emg_file": "test 2025_04_09 16_05_43.csv",
         "xsens_file": "MVN-002_NCMP001.xlsx",
         "mode": "isotonic",
-        "load_kg": 35.0
+        "load_kg": 35.0,
+        "insole_file_l": "2025-04-09-16-05_30r/Medilogic Insoles-左 力.csv",
+        "insole_file_r": "2025-04-09-16-05_30r/Medilogic Insoles-右 力.csv",
+        "insole_map_l": "2025-04-09-16-05_30r/Medilogic Insoles-左 Medilogic Insoles G2.脚.csv",
+        "insole_map_r": "2025-04-09-16-05_30r/Medilogic Insoles-右 Medilogic Insoles G2.脚.csv",
+        "insole_time_offset": -7.231
       },
       "50": {
         "robot_file": "robot/NCMP-001_45R_20250409_160359.csv",
         "emg_file": "test 2025_04_09 16_02_34.csv",
         "xsens_file": "MVN-001_NCMP001.xlsx",
         "mode": "isotonic",
-        "load_kg": 50.0
+        "load_kg": 50.0,
+        "insole_file_l": "2025-04-09-16-03_45r/Medilogic Insoles-左 力.csv",
+        "insole_file_r": "2025-04-09-16-03_45r/Medilogic Insoles-右 力.csv",
+        "insole_map_l": "2025-04-09-16-03_45r/Medilogic Insoles-左 Medilogic Insoles G2.脚.csv",
+        "insole_map_r": "2025-04-09-16-03_45r/Medilogic Insoles-右 Medilogic Insoles G2.脚.csv",
+        "insole_time_offset": -2.983
       },
       "65": {
         "robot_file": "robot/NCMP-001_60R_20250409_161159.csv",
         "emg_file": "test 2025_04_09 16_11_30.csv",
         "xsens_file": "MVN-005_NCMP001.xlsx",
         "mode": "isotonic",
-        "load_kg": 65.0
+        "load_kg": 65.0,
+        "insole_file_l": "2025-04-09-16-11_60R/Medilogic Insoles-左 力.csv",
+        "insole_file_r": "2025-04-09-16-11_60R/Medilogic Insoles-右 力.csv",
+        "insole_map_l": "2025-04-09-16-11_60R/Medilogic Insoles-左 Medilogic Insoles G2.脚.csv",
+        "insole_map_r": "2025-04-09-16-11_60R/Medilogic Insoles-右 Medilogic Insoles G2.脚.csv",
+        "insole_time_offset": -9.9045
       },
       "95": {
         "robot_file": "robot/NCMP-001_85R_20250409_160758.csv",
         "emg_file": "test 2025_04_09 16_07_34.csv",
         "xsens_file": "MVN-003_NCMP001.xlsx",
         "mode": "isotonic",
-        "load_kg": 95.0
+        "load_kg": 95.0,
+        "insole_file_l": "2025-04-09-16-07_85R/Medilogic Insoles-左 力.csv",
+        "insole_file_r": "2025-04-09-16-07_85R/Medilogic Insoles-右 力.csv",
+        "insole_map_l": "2025-04-09-16-07_85R/Medilogic Insoles-左 Medilogic Insoles G2.脚.csv",
+        "insole_map_r": "2025-04-09-16-07_85R/Medilogic Insoles-右 Medilogic Insoles G2.脚.csv",
+        "insole_time_offset": -4.8926
       }
     },
     "load_modes": {

@@ -3,6 +3,8 @@ import json
 import os
 import re
 
+import numpy as np
+
 from digitaltwin.utils.logger import beauty_print
 
 G = 9.81
@@ -68,6 +70,42 @@ def safe_load_key(load_key) -> str:
         text = text.replace(ch, '_')
     text = text.replace(' ', '_')
     return text or 'unnamed'
+
+
+def numeric_load_value(load_key, file_info=None):
+    """把组名解析成数值负载 (kg)；解析不出来返回 nan。
+
+    为什么不能直接 float(load_key)：等长 / 等速组的组名是
+    'IM-1' / 'IK-0.3'，float() 会抛 ValueError。而且这一步在 try 外面，
+    异常会直接穿出流水线，把整批组一起打挂。
+
+    也不能从组名里抽数字：'IM-1' 的 1 是杆高 1.0 m，
+    'IK-0.3' 的 0.3 是最高速度 0.3 m/s，都不是负载。误用会把
+    等长组当成 1 kg 的定负载组静静带进热力图拟合。
+    这两类组的实际负载必须由受力反推，因此先给 nan。
+
+    Parameters
+    ----------
+    load_key : str
+        组名。
+    file_info : dict, optional
+        采集组配置，优先取其 'load_kg' 或 'load' 字段再回退组名。
+    """
+    info = file_info or {}
+    for key in ('load_kg', 'load'):
+        value = info.get(key)
+        if value is None:
+            continue
+        try:
+            f = float(value)
+        except (TypeError, ValueError):
+            continue
+        if np.isfinite(f):
+            return f
+    try:
+        return float(load_key)
+    except (TypeError, ValueError):
+        return float('nan')
 
 
 def _infer_legacy_mode(load_key: str) -> Dict[str, Any]:
@@ -162,8 +200,6 @@ def estimate_load_kg(force_l, force_r, acc=None, bar_mass: float = 0.0,
     -------
     float -- 等效负载 (kg)
     """
-    import numpy as np
-
     total = np.asarray(force_l, dtype=float) + np.asarray(force_r, dtype=float)
 
     if acc is None:

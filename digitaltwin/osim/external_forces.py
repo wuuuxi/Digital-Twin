@@ -19,7 +19,8 @@ import os
 import numpy as np
 import opensim as osim
 
-from digitaltwin.data.insole_processor import InsoleProcessor
+from digitaltwin.data.insole import (InsoleProcessor, has_offset,
+                                     resolve_time_offset)
 from digitaltwin.utils.logger import beauty_print
 
 
@@ -36,8 +37,7 @@ def get_ext_forces_dir(config, base_dir, load_key):
 
 
 def generate_external_loads(config, base_dir, load_key, mot_path,
-                             Mb=20.0, verbose=True,
-                             use_insole_info_timestamp=True):
+                             Mb=20.0, verbose=True):
     """
     从机器人数据和鞋垫数据生成 OpenSim ExternalLoads 文件。
 
@@ -66,10 +66,10 @@ def generate_external_loads(config, base_dir, load_key, mot_path,
     mot_path : str   -- 用于获取时间轴
     Mb       : float -- 杆质量默认值（会被 opensim_settings.bar_mass 覆盖）
     verbose  : bool
-    use_insole_info_timestamp : bool, default True
-        是否使用鞋垫文件同目录 info.csv 中的 measurement_date，
-        结合 robot_file 第一帧时间修正鞋垫时间轴。默认开启；
-        如需退回鞋垫文件原始相对时间，可置为 False。
+
+    鞋垫时间轴：只认采集组里的 insole_time_offset（由
+    example_insole_sync_offset.py 互相关标定得到），raw_time + offset。
+    没有该参数时会 beauty_print 告警并使用鞋垫文件的原始相对时间。
 
     Returns
     -------
@@ -90,6 +90,14 @@ def generate_external_loads(config, base_dir, load_key, mot_path,
     if file_info is None:
         log(f'  [EXT] load_key={load_key} 不在 modeling_file.data 中')
         return None
+
+    if not has_offset(file_info):
+        beauty_print(
+            '  [EXT] 组 {}：配置中没有 insole_time_offset，鞋垫 GRF 与杆力'
+            '很可能没有对齐。本组按鞋垫文件原始相对时间处理，生成的'
+            'ExternalLoads 时相不可信。请先跑 example_insole_sync_offset.py '
+            '完成标定。'.format(load_key),
+            type='warning')
 
     # ---- 杆件力配置 ----
     bar_body  = osim_cfg.get('bar_contact_body',  'torso')
@@ -160,13 +168,12 @@ def generate_external_loads(config, base_dir, load_key, mot_path,
     for side, key in [('L', 'insole_file_l'), ('R', 'insole_file_r')]:
         insole_rel = file_info.get(key)
         if insole_rel:
+            offset = resolve_time_offset(
+                file_info, side=side.lower(), load_key=load_key, warn=False)
             t_s, f_s = InsoleProcessor.load(
                 os.path.join(insole_base, insole_rel),
                 verbose=verbose,
-                use_info_timestamp=use_insole_info_timestamp,
-                robot_file=robot_file,
-                robot_folder=folder,
-                folder=folder)
+                time_offset=offset)
             if t_s is not None:
                 resampled = InsoleProcessor.resample(t_s, f_s, mot_times)
                 log(f'  [EXT] {side} 足底 GRF 范围: [{f_s.min():.1f}, {f_s.max():.1f}] N')
@@ -206,10 +213,8 @@ def generate_external_loads(config, base_dir, load_key, mot_path,
             res = InsoleProcessor.load_pressure_map(
                 os.path.join(insole_base, rel),
                 verbose=verbose,
-                use_info_timestamp=use_insole_info_timestamp,
-                robot_file=robot_file,
-                robot_folder=folder,
-                folder=folder,
+                time_offset=resolve_time_offset(
+                    file_info, side=side, load_key=load_key, warn=False),
                 return_matrix=False)   # 只要 COP，不留矩阵，省内存
             if res is None:
                 beauty_print(

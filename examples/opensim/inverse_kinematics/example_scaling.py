@@ -16,12 +16,12 @@ import os
 from digitaltwin.osim.scaling import scale_from_config
 
 
-CONFIG_FILE = '../../config/20260513_squat_FTS09_xsens.json'
+CONFIG_FILE = '../../config/20250409_squat_NCMP001_xsens.json'
 
 
 def main():
     config_path = os.path.normpath(os.path.join(os.path.dirname(__file__), CONFIG_FILE))
-    base_dir    = os.path.normpath(os.path.join(os.path.dirname(__file__), '../..'))
+    base_dir    = os.path.normpath(os.path.join(os.path.dirname(__file__), '../../..'))
     overwrite_bar_contact_point = False
 
     print(f'配置文件: {config_path}')

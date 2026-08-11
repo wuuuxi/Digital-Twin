@@ -36,7 +36,7 @@ CONFIG_FILE = '../config/20260513_squat_FTS09_xsens.json'
 # 深蹲可选：hip_flexion / hip_adduction / hip_rotation /
 #           knee_angle / ankle_angle / subtalar_angle / mtp_angle
 # 卧推可选：arm_flex / arm_add / arm_rot / elbow_flex
-JOINT_TO_PLOT = 'ankle_angle'
+JOINT_TO_PLOT = 'knee_angle_r'
 
 # 图 4/5 画哪些关节。None = 用该运动类型的默认列表。
 JOINT_BASES_TO_PLOT = None
