@@ -33,10 +33,17 @@ example_inverse_dynamics_diagnostics.py
   欧拉角绕接（wrap）翻转同样在 Step1 用 unwrap_degrees() 修正，而不在这里排除负载。
 """
 import os
+import sys
 import json
 
 import numpy as np
 import pandas as pd
+
+# 让脚本从 examples/... 目录直接运行时也能找到项目根下的 digitaltwin 包
+_BASE_DIR = os.path.normpath(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../..'))
+if _BASE_DIR not in sys.path:
+    sys.path.insert(0, _BASE_DIR)
 
 from digitaltwin.osim.inverse_dynamics import run_step3_inverse_dynamics
 from digitaltwin.osim.mot_pipeline import (
@@ -51,6 +58,7 @@ from digitaltwin.pipelines.standard_analysis import (
 # 纯分析层
 from digitaltwin.analysis.result_analysis import (
     build_left_joint_coordinate_map,
+    build_bilateral_joint_coordinate_map,
     summarize_inverse_dynamics_moments,
     print_summary_table,
     get_load_keys,
@@ -66,14 +74,13 @@ from digitaltwin.analysis.result_analysis import (
 #  配置
 # ============================================================
 
-CONFIG_FILE = '../../config/20260513_squat_FTS09_xsens.json'
+CONFIG_FILE = '../../config/20250409_squat_NCMP001_xsens.json'
 
 # None = 全部；也可以指定，如 ['20', '38', '56']
 LOAD_KEYS = None
 
 # 排除非负载试验（例如 MVC / 空杆 / 标定 trial）。
-# 0.15 与 0.3 明显不是深蹲负载量级，且会污染单调性判断，默认排除。
-EXCLUDE_LOAD_KEYS = ['0.15', '0.3']
+EXCLUDE_LOAD_KEYS = None
 
 # 诊断开关
 RUN_DIAGNOSTICS = True
@@ -656,18 +663,20 @@ def main():
         if removed:
             print(f'已排除非负载试验: {removed}')
 
-    coord_map = build_left_joint_coordinate_map(
+    # 左右两侧共 6 个关节坐标（hip/knee/ankle × l/r）都要计算并打印，
+    # 不能只统计左腿。
+    coord_map = build_bilateral_joint_coordinate_map(
         config,
         joint_bases=JOINT_BASES_TO_PRINT,
     )
 
     if not coord_map:
         raise ValueError(
-            '未找到可统计的左腿关节坐标；请检查 '
+            '未找到可统计的左右关节坐标；请检查 '
             'opensim_settings.muscle_analysis_coordinates'
         )
 
-    print('\n将统计以下左腿关节坐标：')
+    print('\n将统计以下左右关节坐标：')
     for joint_base, coord in coord_map.items():
         print(f'  {joint_base}: {coord}')
 

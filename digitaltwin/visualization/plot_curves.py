@@ -306,6 +306,20 @@ class CurvePlotter:
                     tc = (['emg_TriLat'] if subject and subject.target_motion == 'benchpress'
                           else ['emg_FibLon', 'emg_VL', 'emg_RF'])
 
+                # 非 EMG 的传感器列（如 grf_l / grf_r）必须共用同一个归一化
+                # 分母，否则各自被独立拉伸到自己的 [-1,1]，视觉幅度一样但
+                # 实际数值比例被破坏，无法比较左右差异。
+                non_emg_cols = [c for c in tc
+                                if c in ad.columns and not c.startswith('emg_')]
+                shared_denom = 0.0
+                for c in non_emg_cols:
+                    yy = ad[c].values.astype(float)
+                    ok = np.isfinite(yy)
+                    if ok.any():
+                        shared_denom = max(shared_denom,
+                                           float(np.nanmax(np.abs(yy[ok]))))
+                shared_denom += 1e-10
+
                 for col in tc:
                     if col not in ad.columns:
                         continue
@@ -319,8 +333,9 @@ class CurvePlotter:
                     else:
                         # 其他传感器量（如 grf_l / grf_r）量纲可能很大，
                         # 在 alignment 图中归一化，便于和力/位置/EMG 同图比较。
-                        denom = np.nanmax(np.abs(y)) + 1e-10
-                        y_plot = y / denom
+                        # 用所有非 EMG 列共用的分母，保证 grf_l / grf_r
+                        # 之间的处理完全一致。
+                        y_plot = y / shared_denom
                         label = f'{label} (norm)'
 
                     ax.plot(ad['time'], y_plot, '--',

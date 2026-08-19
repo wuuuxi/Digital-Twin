@@ -164,18 +164,24 @@ KNEE_COP_SENSITIVITY = 491.6
 # 这是唯一一个不含微分、不含 COP、不含任何模型假设的绝对基准，
 # 所以它是标定鞋垫增益最干净的入口。
 # 判定“静止”用四道闸门同时把关：杆力平稳、GRF 平稳、各关节角不动、质心不动。
-QUIET_CAL_KEYS = ('IM-1',)     # 空元组 = 对所有组都试一遍
+QUIET_CAL_KEYS = ()            # 空元组 = 对所有组都试一遍
 QUIET_WIN_S = 0.5              # 判定“不动”用的滑窗长度
 QUIET_MIN_DUR_S = 0.8          # 合格静止窗口的最短时长
 QUIET_BAR_SD_N = 15.0          # 杆力波动上限（对应“Robot force 不变”）
 # |bar_y| 上限。注意 external_forces 里 F_bar 含 Mb*g，杆架在架子上时
 # 这一项未必是 0，所以这里不强求它为 0，而是把实测 bar_y 计入“应有值”，
 # 同时把 bar_y 的均值和最大值打出来，让人自己判断杆到底卸没卸。
-QUIET_BAR_MAX_N = 250.0
+# 放到很大 = 实际关掉这道闸门。目的变了：不再只找“杆卸载的站立段”，
+# 而是把九组里所有静止窗口都扫出来，得到一条覆盖 700-2700 N 的
+# (总压力, k) 点列，用来判断增益到底是常数还是随压力变化。
+QUIET_BAR_MAX_N = 3000.0
 QUIET_GRF_SD_N = 25.0          # 鞋垫总力波动上限
 QUIET_ANGLE_SD_DEG = 1.5       # 各关节角波动上限（对应“angle 几乎不变”）
 QUIET_COM_SD_M = 0.004         # 质心漂移上限（对应“position/velocity 不变”）
-QUIET_ONLY_BEFORE_SEGMENT = True   # 只在第一段动作之前找（用户指的“前一小段”）
+# 改为 False：只看动作前的静止段只能给出一个低压点（IM-1 实测 703 N），
+# 而 V0-gain 的九组回归落在 944-2716 N，两者外推差 0.22，无法判断是
+# 非线性还是标定错。要分辨就必须在中间压力也拿到静止点。
+QUIET_ONLY_BEFORE_SEGMENT = False
 QUIET_K_SPREAD_WARN = 0.05     # 多个静止窗口标出的 k 若差这么多，说明不可信
 QUIET_ANGLE_COORDS = ('knee_angle_l', 'knee_angle_r',
                       'hip_flexion_l', 'hip_flexion_r',
@@ -454,7 +460,7 @@ def calibrate_insole_gain(key, sto_df, kin, mot_path, body_mass, seg=None):
     杆真的卸载时第二项也没了，于是应有值就是体重，一个不含微分、
     不含 COP、不含任何模型假设的绝对基准。定义
         k = GRF_y_实测 / GRF_y_应有
-    k < 1 就是鞋垫欠读，修法是把鞋垫力整体除以 k。
+    k < 1 是鞋垫欠读，k > 1 是过读；两种情况都把鞋垫竖直力整体除以 k 来修。
 
     这一路与 V0-gain 完全独立：V0-gain 用九组不同负载的斜率（相对量），
     这一路用单组的绝对值。两者吻合才能确认“乘性欠读”这个结论。
@@ -638,8 +644,10 @@ def calibrate_insole_gain(key, sto_df, kin, mot_path, body_mass, seg=None):
     print('  缺口              = {:+9.1f} N   （体重的 {:.1%}）'.format(
         best['grf'] - best['need'],
         abs(best['grf'] - best['need']) / mg if mg > 0 else float('nan')))
-    print('  ==> 鞋垫增益 k = 实测 / 应有 = {:.4f}，欠读 {:+.1%}'.format(
-        best['k'], 1.0 - best['k']))
+    # 原来固定写“欠读 {:+.1%}”，k > 1 时会打成“欠读 -18.7%”，字面与实际相反。
+    print('  ==> 鞋垫增益 k = 实测 / 应有 = {:.4f}，{}{:.1%}'.format(
+        best['k'], '过读 +' if best['k'] > 1.0 else '欠读 -',
+        abs(1.0 - best['k'])))
     print('      修正系数 1/k = {:.4f}（把鞋垫竖直力乘这个数）'.format(
         1.0 / best['k'] if abs(best['k']) > 1e-6 else float('nan')))
     k_bw_only = best['grf'] / mg if mg > 0 else float('nan')

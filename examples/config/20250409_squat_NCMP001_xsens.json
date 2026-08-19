@@ -75,7 +75,7 @@
         "insole_file_r": "2025-04-09-16-09_15S/Medilogic Insoles-右 力.csv",
         "insole_map_l": "2025-04-09-16-09_15S/Medilogic Insoles-左 Medilogic Insoles G2.脚.csv",
         "insole_map_r": "2025-04-09-16-09_15S/Medilogic Insoles-右 Medilogic Insoles G2.脚.csv",
-        "insole_time_offset": -8.1565
+        "insole_time_offset": -8.1722
       },
       "35": {
         "robot_file": "robot/NCMP-001_30R_20250409_160611.csv",
@@ -99,7 +99,7 @@
         "insole_file_r": "2025-04-09-16-03_45r/Medilogic Insoles-右 力.csv",
         "insole_map_l": "2025-04-09-16-03_45r/Medilogic Insoles-左 Medilogic Insoles G2.脚.csv",
         "insole_map_r": "2025-04-09-16-03_45r/Medilogic Insoles-右 Medilogic Insoles G2.脚.csv",
-        "insole_time_offset": -2.983
+        "insole_time_offset": -2.9827
       },
       "65": {
         "robot_file": "robot/NCMP-001_60R_20250409_161159.csv",
@@ -123,7 +123,7 @@
         "insole_file_r": "2025-04-09-16-07_85R/Medilogic Insoles-右 力.csv",
         "insole_map_l": "2025-04-09-16-07_85R/Medilogic Insoles-左 Medilogic Insoles G2.脚.csv",
         "insole_map_r": "2025-04-09-16-07_85R/Medilogic Insoles-右 Medilogic Insoles G2.脚.csv",
-        "insole_time_offset": -4.8926
+        "insole_time_offset": -4.8936
       }
     },
     "load_modes": {
@@ -166,6 +166,22 @@
         }
       }
     }
+  },
+  "opensim_settings": {
+    "subject_mass": 93.0,
+    "bar_mass": 0.0,
+    "bar_contact_body": "torso",
+    "bar_contact_point": [-0.0444, 0.3829, 0.0],
+    "insole_use_frame_cop": true,
+    "insole_contact_point": [0.097, -0.0011, 0.0],
+    "muscle_analysis_coordinates": [
+      "hip_flexion_r",
+      "hip_flexion_l",
+      "knee_angle_r",
+      "knee_angle_l",
+      "ankle_angle_r",
+      "ankle_angle_l"
+    ]
   },
   "variable_load_file": {
     "emg_folder": "EMG",

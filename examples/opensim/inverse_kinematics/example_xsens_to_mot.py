@@ -38,7 +38,7 @@ from digitaltwin.osim.mot_pipeline import (
 #  配置
 # ============================================================
 
-CONFIG_FILE = '../../config/20260513_squat_FTS09_xsens.json'
+CONFIG_FILE = '../../config/20250409_squat_NCMP001_xsens.json'
 
 # None = 处理 config 中所有 load；也可指定，如 ['20', '38', '56']
 LOAD_KEYS = None

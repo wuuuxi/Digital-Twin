@@ -40,7 +40,7 @@ from digitaltwin.utils.logger import beauty_print
 #  配置
 # ============================================================
 
-CONFIG_FILE = '../../config/20260513_squat_FTS09_xsens.json'
+CONFIG_FILE = '../../config/20250409_squat_NCMP001_xsens.json'
 
 # 运动切片图中的 EMG 行。只用第一块肌肉作为代表。
 TARGET_MUSCLES = ['VL', 'FibLon', 'RF']

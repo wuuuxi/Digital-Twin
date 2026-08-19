@@ -395,6 +395,30 @@ def build_left_joint_coordinate_map(config, joint_bases=None):
     return out
 
 
+def build_bilateral_joint_coordinate_map(config, joint_bases=None):
+    """
+    从 opensim_settings.muscle_analysis_coordinates 构建左右两侧关节坐标映射。
+
+    与 build_left_joint_coordinate_map 的区别：同时保留 _l 和 _r 两侧，
+    每个关节基名分开为两个条目，便于把左右关节力矩分别打印在同一张表里。
+
+    Returns
+    -------
+    dict
+        {f'{joint_base}_{side}': coord}
+        例如 {'knee_angle_l': 'knee_angle_l', 'knee_angle_r': 'knee_angle_r'}
+    """
+    coords = config.get('opensim_settings', {}).get(
+        'muscle_analysis_coordinates', [])
+    out = {}
+    for coord in coords:
+        if coord.endswith('_l') or coord.endswith('_r'):
+            base = coord[:-2]
+            if joint_bases is None or base in joint_bases:
+                out[coord] = coord
+    return out
+
+
 def get_inverse_dynamics_path(config, base_dir, load_key):
     """默认 inverse_dynamics.sto 路径。"""
     label = config['experiment_label']
