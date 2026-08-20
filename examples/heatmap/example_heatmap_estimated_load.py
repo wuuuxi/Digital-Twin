@@ -24,7 +24,7 @@ def main():
     pipeline = MultiLoadPipeline(subject)
     pipeline.debug = True
 
-    pipeline.run(include_xsens=False)
+    pipeline.run(include_xsens=False, write=True)
 
     # target_muscles = ["LTA", "LGL", "LFibLon", "LVL", "LRF", "LVM", "LAddl", "LBF", "LGlutMax", "LGlutMed"]
     target_muscles = ['GL', 'FibLon', 'VL', 'RF']

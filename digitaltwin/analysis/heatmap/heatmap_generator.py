@@ -83,6 +83,12 @@ def collect_cutted_data(results, movement_types=None, log=None,
             log('请先调用 run() 加载数据。')
         return None
 
+    # New structured result API.  Keeping this fast path here allows the
+    # existing generator and cache code to consume PipelineResults without
+    # duplicating the segment collection rules.
+    if hasattr(results, 'collect_segments'):
+        return results.collect_segments(movement_types=movement_types)
+
     frames = []
     for load_weight, result in results.items():
         cd = result.get('cutted_data')
@@ -148,6 +154,10 @@ class HeatmapGenerator:
         return collect_cutted_data(
             self.pipeline.results, movement_types=movement_types,
             log=self._log)
+
+    def collect_segments(self, movement_types=None):
+        """Public domain-neutral name for collecting movement segments."""
+        return self.collect_cutted_data(movement_types=movement_types)
 
     def _ensure_results(self):
         """确保 pipeline 已有 results，必要时先跑固定负载流水线。"""

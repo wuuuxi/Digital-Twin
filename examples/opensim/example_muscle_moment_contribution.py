@@ -213,7 +213,7 @@ def run_standard_data_pipeline(config_path):
     subject = Subject(config_path)
     pipeline = MultiLoadPipeline(subject)
     pipeline.debug = True
-    results = pipeline.run(include_xsens=False)
+    results = pipeline.run(include_xsens=False, write=True)
     return subject, pipeline, results
 
 
@@ -235,7 +235,7 @@ def get_upward_segment_from_results(pipeline_results, load_key):
     if result is None:
         return None
 
-    cutted = result.get('cutted_data')
+    cutted = result.segments
     if cutted is None:
         return None
 

@@ -21,7 +21,7 @@ def main():
     pipeline = MultiLoadPipeline(subject)
     pipeline.debug = True
 
-    results = pipeline.run(include_xsens=True)
+    results = pipeline.run(include_xsens=True, write=True)
     vload_results = pipeline.run_vload()
 
     defaults = _get_motion_defaults(subject.target_motion)

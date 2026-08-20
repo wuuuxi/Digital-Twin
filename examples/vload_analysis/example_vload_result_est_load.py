@@ -25,7 +25,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from digitaltwin import Subject, MultiLoadPipeline
-from digitaltwin.analysis.heatmap.heatmap_io import load_heatmap_params_by_mode
+from digitaltwin.analysis.activation.io import load_heatmap_params_by_mode
 from digitaltwin.analysis.vload.vload_planning import load_planned_vload
 from digitaltwin.visualization.vload.vload_result_plot import (
     plot_vload_overlay_est_load,

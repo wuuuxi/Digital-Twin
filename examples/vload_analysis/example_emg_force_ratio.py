@@ -118,7 +118,7 @@ def collect_fixed_load_data(results):
     """从固定负载 results 字典中提取切片数据。"""
     out = {}
     for load_weight, result in results.items():
-        cd = result.get('cutted_data')
+        cd = result.segments
         if cd is None:
             continue
         if isinstance(cd, list):
@@ -360,7 +360,7 @@ def main():
 
     # ---- 加载固定负载数据 ----
     print('\n[1/2] 加载固定负载数据...')
-    results = pipeline.run(include_xsens=False)
+    results = pipeline.run(include_xsens=False, write=True)
     datasets = collect_fixed_load_data(results)
 
     # ---- 加载变负载数据 ----

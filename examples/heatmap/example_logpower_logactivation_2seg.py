@@ -475,8 +475,8 @@ def main():
 
     # ---- 收集切片数据 ----
     if not pipeline.results:
-        pipeline.run(include_xsens=False)
-    cutted = pipeline._collect_cutted_data(movement_types=MOVEMENT_TYPES)
+        pipeline.run(include_xsens=False, write=True)
+    cutted = pipeline.collect_segments(movement_types=MOVEMENT_TYPES)
     if cutted is None or len(cutted) == 0:
         print('未收集到切片数据，终止。')
         return

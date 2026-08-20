@@ -154,6 +154,7 @@ def estimate_time_offset(time_l, force_l, time_r, force_r,
                          dt=None, max_lag=None, corr_win=None,
                          corr_thr=None, force_frac=None,
                          min_seg_s=None, detrend_win=None,
+                         robot_segments=None, min_overlap_frac=0.4,
                          allow_negative=False, verbose=True):
     """用互相关标定鞋垫相对机器人的时间差。
 
@@ -168,6 +169,11 @@ def estimate_time_offset(time_l, force_l, time_r, force_r,
     time_r, force_r : array-like -- 右鞋垫
     robot_time      : array-like -- 机器人相对时间 (s, 从 0 起)
     robot_force     : array-like -- 机器人参考力，建议 force_l + force_r
+    robot_segments  : sequence[(start, end)], optional
+                      由机器人位置/速度切片得到的动作窗口。提供时，只有落在
+                      这些窗口内的机器人样本参与每个候选滞后的相关计算。
+    min_overlap_frac: float -- 每个候选滞后至少覆盖的鞋垫动作样本比例。
+                      防止周期信号只重合一两个动作却产生更高的伪相关峰。
     allow_negative  : bool -- 若反相相关明显更强，是否接受它。默认 False：
                       只告警，不静静地把反相当成对齐。
 
@@ -234,14 +240,31 @@ def estimate_time_offset(time_l, force_l, time_r, force_r,
     rob = np.interp(rgrid, rt, rf, left=np.nan, right=np.nan)
     rob = _detrend(rob, dt, detrend_win)
 
+    # 机器人力、位置和速度由同一数据流采集。用标准流水线的位置/速度
+    # 切片窗口约束候选匹配，避免把准备阶段或只重合一两个重复动作的局部峰
+    # 当成整段时间偏移。没有窗口时仍保留有限时间范围门控。
+    robot_active = np.isfinite(rob)
+    if robot_segments:
+        robot_active = np.zeros(rgrid.size, dtype=bool)
+        for start, end in robot_segments:
+            robot_active |= ((rgrid >= float(start))
+                             & (rgrid <= float(end)))
+        robot_active &= np.isfinite(rob)
+
     lags = (np.arange(2 * M + 1) - M) * dt
     corrs = np.full(lags.size, np.nan)
+    overlap_counts = np.zeros(lags.size, dtype=int)
     min_n = max(3, int(round(min_seg_s / dt)))
+    base_n = int(np.isfinite(base).sum())
+    min_overlap_frac = float(np.clip(min_overlap_frac, 0.0, 1.0))
+    required_n = max(min_n, int(np.ceil(min_overlap_frac * base_n)))
 
     for m in range(lags.size):
         seg = rob[m:m + K]
-        ok = np.isfinite(base) & np.isfinite(seg)
-        if int(ok.sum()) < min_n:
+        active = robot_active[m:m + K]
+        ok = np.isfinite(base) & np.isfinite(seg) & active
+        overlap_counts[m] = int(ok.sum())
+        if overlap_counts[m] < required_n:
             continue
         a = base[ok]
         b = seg[ok]
@@ -253,8 +276,10 @@ def estimate_time_offset(time_l, force_l, time_r, force_r,
         corrs[m] = float((a * b).sum() / denom)
 
     if not np.isfinite(corrs).any():
-        beauty_print('  [Sync] 所有滞后上都无有效重叠，无法标定。'
-                     '真实时间差可能超出 ±{:.0f}s 搜索范围。'.format(max_lag),
+        beauty_print('  [Sync] 所有滞后都未达到有效动作重叠要求（至少 '
+                     '{:.0%} / {} 样本），无法标定。真实时间差可能超出 '
+                     '±{:.0f}s，或机器人位置/速度切片与鞋垫动作段不一致。'
+                     .format(min_overlap_frac, required_n, max_lag),
                      type='warning')
         return None
 
@@ -287,6 +312,8 @@ def estimate_time_offset(time_l, force_l, time_r, force_r,
                     peak = float(y1 - 0.25 * (y0 - y2) * delta)
 
     at_edge = (i <= 1) or (i >= corrs.size - 2)
+    overlap_fraction = (float(overlap_counts[i]) / base_n
+                        if base_n else 0.0)
     reliable = bool(abs(peak) >= SYNC_MIN_CORR and not at_edge)
 
     if at_edge:
@@ -301,9 +328,9 @@ def estimate_time_offset(time_l, force_l, time_r, force_r,
             type='warning')
 
     if verbose:
-        print('  [Sync] offset={:+.3f}s, corr={:.3f}, 拟合时长={:.1f}s, '
-              '深蹲段={} 个, reliable={}'.format(
-                  offset, peak, mask.sum() * dt,
+        print('  [Sync] offset={:+.3f}s, corr={:.3f}, 实际重叠={:.1f}s '
+              '({:.0%}), 动作段={} 个, reliable={}'.format(
+                  offset, peak, overlap_counts[i] * dt, overlap_fraction,
                   len(mask_info.get('segments', [])), reliable))
 
     return {
@@ -314,12 +341,17 @@ def estimate_time_offset(time_l, force_l, time_r, force_r,
         'at_edge': bool(at_edge),
         'lags': lags,
         'corrs': corrs,
+        'overlap_counts': overlap_counts,
+        'required_overlap_samples': required_n,
+        'overlap_fraction': overlap_fraction,
         'grid': grid,
         'mask': mask,
         'insole_detrended': ins,
         'insole_total': gl + gr,
         'segments': mask_info.get('segments', []),
-        'fit_duration_s': float(mask.sum()) * dt,
+        'fit_duration_s': float(overlap_counts[i]) * dt,
+        'selected_insole_duration_s': float(mask.sum()) * dt,
+        'robot_segments': list(robot_segments or []),
         'dt': dt,
         'fallback': bool(mask_info.get('fallback', False)),
     }

@@ -17,7 +17,7 @@ from matplotlib.gridspec import GridSpec
 from matplotlib.patches import Patch
 
 from digitaltwin.analysis.alignment import filter_movement_types
-from digitaltwin.analysis.heatmap.rbf_fitting import predict_at
+from digitaltwin.analysis.activation.rbf import predict_at
 from digitaltwin.analysis.vload.vload_planning import load_planned_vload
 from digitaltwin.analysis.vload.vload_metrics import (
     compute_rmse_at_actual_points,

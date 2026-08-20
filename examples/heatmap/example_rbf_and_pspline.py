@@ -20,7 +20,7 @@ RBF vs P-spline 对比示例
 import matplotlib.pyplot as plt
 
 from digitaltwin import Subject, MultiLoadPipeline
-from digitaltwin.analysis.heatmap.heatmap_io import load_heatmap_params_by_mode
+from digitaltwin.analysis.activation.io import load_heatmap_params_by_mode
 from digitaltwin.analysis.vload.vload_planning import load_planned_vload
 from digitaltwin.visualization.vload.vload_result_plot import (
     plot_vload_per_muscle_compare, print_groups_rmse,
@@ -37,7 +37,7 @@ def main():
     pipeline.debug = True
 
     # 加载固定负载 + 变负载数据
-    pipeline.run(include_xsens=False)
+    pipeline.run(include_xsens=False, write=True)
     vload_results = pipeline.run_vload()
     if not vload_results:
         print('未加载到变负载实际数据，终止。')

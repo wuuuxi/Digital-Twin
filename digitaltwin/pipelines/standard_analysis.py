@@ -28,6 +28,7 @@ from digitaltwin.utils.data_io import (
     read_data_csv as _read_data_csv,
 )
 from digitaltwin.utils.logger import beauty_print
+from digitaltwin.models import PipelineResults, TrialMetadata, TrialResult
 
 
 def run_standard_data_pipeline(config_path, include_xsens=False,
@@ -51,7 +52,7 @@ def run_standard_data_pipeline(config_path, include_xsens=False,
     -------
     subject : Subject
     pipeline : MultiLoadPipeline
-    results : dict
+    results : PipelineResults
     """
     subject = Subject(config_path)
     pipeline = MultiLoadPipeline(subject)
@@ -70,7 +71,7 @@ def _segments_to_pipeline_results(cutted_df):
     只需要每个 load 的 cutted_data，因此不还原 robot/emg/xsens 等完整字段。
     """
     if cutted_df is None or len(cutted_df) == 0:
-        return {}
+        return PipelineResults()
 
     load_col = None
     for c in ('load_weight', 'load', 'load_value'):
@@ -79,15 +80,29 @@ def _segments_to_pipeline_results(cutted_df):
             break
 
     if load_col is None:
-        return {'all': {'cutted_data': cutted_df}}
+        return PipelineResults({
+            'all': TrialResult(
+                metadata=TrialMetadata(load_weight='all'),
+                segments=cutted_df,
+            )
+        })
 
     results = {}
     for load_key, df_load in cutted_df.groupby(load_col):
         key = _canonical_load_key(load_key)
-        results[key] = {
-            'cutted_data': df_load.reset_index(drop=True),
-        }
-    return results
+        numeric_value = None
+        try:
+            numeric_value = float(load_key)
+        except (TypeError, ValueError):
+            pass
+        results[key] = TrialResult(
+            metadata=TrialMetadata(
+                load_weight=key,
+                load_value=numeric_value,
+            ),
+            segments=df_load.reset_index(drop=True),
+        )
+    return PipelineResults(results)
 
 
 def _collect_cutted_from_pipeline_results(pipeline_results):

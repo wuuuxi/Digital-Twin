@@ -15,26 +15,27 @@
 """
 import matplotlib.pyplot as plt
 from digitaltwin import Subject, MultiLoadPipeline
-from digitaltwin.visualization.heatmap import plot_load_slices_comparison
+from digitaltwin.visualization.activation import plot_load_slices_comparison
 
 
-def print_mean_activations(pipeline, target_muscles, movement_types):
+def print_mean_activations(results, target_muscles, movement_types):
     """按 modeling_file 分别打印指定 movement_types 下各目标肌肉的平均激活。
 
     Parameters
     ----------
-    pipeline : MultiLoadPipeline
-        已调过 run() 或 generate_heatmaps() 的 pipeline（需 results 非空）。
+    results : PipelineResults
+        ``MultiLoadPipeline.run()`` 返回的结构化结果。
     target_muscles : list of str
-        要统计的肌肉名称，对应 cutted_data 中的 'emg_\{musc\}' 列。
+        要统计的肌肉名称，对应 ``TrialResult.segments`` 中的
+        ``emg_{musc}`` 列。
     movement_types : list of str
         运动阶段过滤列表，如 ['upward'] 或 ['upward', 'downward']。
     """
     import numpy as np
     import pandas as pd
 
-    if not pipeline.results:
-        print('[mean-activation] pipeline.results 为空，请先 run() 或 generate_heatmaps()。')
+    if not results:
+        print('[mean-activation] results 为空，请先 run()。')
         return
 
     header = '  '.join([f'{m:>10s}' for m in target_muscles])
@@ -42,8 +43,8 @@ def print_mean_activations(pipeline, target_muscles, movement_types):
     print(f'== 各 modeling_file 在 movement_types={movement_types} 下的平均肌肉激活 ==')
     print(f'{"load":>8s}  {header}')
 
-    for load_weight, result in pipeline.results.items():
-        cd = result.get('cutted_data')
+    for load_weight, result in results.items():
+        cd = result.segments
         if cd is None or (hasattr(cd, '__len__') and len(cd) == 0):
             print(f'{str(load_weight):>8s}  (无切片数据)')
             continue
@@ -83,6 +84,8 @@ def main():
     # target_muscles = ['LGL', 'LFibLon', 'LVL']
     movement_types = ['upward']
 
+    results = pipeline.run(include_xsens=False, write=True)
+
     # 默认主曲面 = P-spline；同时跑 RBF 基线，并自动生成 1×2 对比图
     params = pipeline.generate_heatmaps(
         muscles=target_muscles,
@@ -101,7 +104,7 @@ def main():
     )
 
     # ---- 每块肌肉一张：每个负载下的原始数据散点 + RBF / P-spline 拟合曲线 ----
-    cutted = pipeline._collect_cutted_data(movement_types=movement_types)
+    cutted = pipeline.collect_segments(movement_types=movement_types)
     if cutted is not None and subject.height_range is not None:
         h_min, h_max = subject.height_range
         cutted = cutted[(cutted['pos_l'] >= h_min) &
@@ -123,7 +126,7 @@ def main():
             )
 
     # 打印每个 modeling_file 下、指定 movement_types 内各目标肌肉的平均激活
-    print_mean_activations(pipeline, target_muscles, movement_types)
+    print_mean_activations(results, target_muscles, movement_types)
 
     plt.show()
 

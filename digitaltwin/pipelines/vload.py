@@ -6,11 +6,11 @@
 """
 import numpy as np
 
-from digitaltwin.data.robot_processor import RobotProcessor, RobotOriginProcessor
-from digitaltwin.data.emg_processor import EMGProcessor
-from digitaltwin.data.xsens_processor import XsensProcessor
-from digitaltwin.analysis.alignment import DataAligner
-from digitaltwin.analysis.feature_injector import (
+from digitaltwin.data.robot import RobotProcessor, RobotOriginProcessor
+from digitaltwin.data.emg import EMGProcessor
+from digitaltwin.data.xsens import XsensProcessor
+from digitaltwin.processing.alignment import DataAligner
+from digitaltwin.processing.features import (
     inject_emg_features, inject_xsens_features
 )
 

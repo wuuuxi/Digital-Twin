@@ -22,7 +22,8 @@ import os
 import numpy as np
 
 from digitaltwin.utils.logger import beauty_print
-from digitaltwin.data.robot_processor import RobotProcessor
+from digitaltwin.data.robot import RobotProcessor
+from digitaltwin.processing.alignment import DataAligner
 from . import io as insole_io
 from .sync import estimate_time_offset
 from .timebase import OFFSET_KEY, has_offset
@@ -33,15 +34,19 @@ def _data_groups(subject):
 
 
 def load_robot_reference(subject, load_key, file_info, verbose=True):
-    """读机器人参考力，返回 (time_from_zero, force_l + force_r)。
+    """读机器人参考力和动作窗口。
 
     用左右之和而不是单侧：与鞋垫 L+R 同量纲、同相，且对单侧噪声不敏感。
+    动作窗口复用标准流水线的 ``DataAligner.cut_aligned_data``，由机器人
+    位置/速度定义。机器人力与位置/速度来自同一数据流，因此这些窗口可以
+    作为时间标定的可靠门控，避免周期信号只重合一两个重复动作时产生高相关
+    的错误峰。
     """
     robot_file = (file_info or {}).get('robot_file')
     if not robot_file:
         beauty_print('组 {}：缺 robot_file，跳过'.format(load_key),
                      type='warning')
-        return None, None
+        return None, None, None
 
     try:
         data = RobotProcessor.process(
@@ -54,21 +59,38 @@ def load_robot_reference(subject, load_key, file_info, verbose=True):
     except Exception as e:
         beauty_print('组 {}：机器人数据读取失败 ({})'.format(load_key, e),
                      type='warning')
-        return None, None
+        return None, None, None
 
     if data is None or 'time' not in data:
         beauty_print('组 {}：机器人数据为空，跳过'.format(load_key),
                      type='warning')
-        return None, None
+        return None, None, None
 
     t = np.asarray(data['time'], dtype=float)
     t = t - t[0]
     f = (np.asarray(data['force_l'], dtype=float)
          + np.asarray(data['force_r'], dtype=float))
+    motion_windows = []
+    if {'time', 'pos_l', 'vel_l'}.issubset(data.columns):
+        robot_for_cut = data.copy()
+        robot_for_cut['time'] = t
+        segments = DataAligner().cut_aligned_data(robot_for_cut)
+        if (segments is not None and len(segments) > 0
+                and hasattr(segments, 'columns')
+                and {'start_time', 'end_time'}.issubset(segments.columns)):
+            pairs = segments[['start_time', 'end_time']].drop_duplicates()
+            for start, end in pairs.itertuples(index=False, name=None):
+                start, end = float(start), float(end)
+                if np.isfinite(start) and np.isfinite(end) and end > start:
+                    motion_windows.append((start, end))
+            motion_windows.sort()
+
     if verbose:
         print('  [Robot] {}: {} frames, {:.1f}s'.format(
             os.path.basename(str(robot_file)), t.size, t[-1] - t[0]))
-    return t, f
+        print('  [Robot] 位置/速度切片得到 {} 个动作窗口'.format(
+            len(motion_windows)))
+    return t, f, motion_windows
 
 
 def load_insole_raw(subject, file_info, key, verbose=False):
@@ -88,7 +110,7 @@ def load_insole_raw(subject, file_info, key, verbose=False):
 
 
 def calibrate_group(subject, load_key, file_info, max_lag=30.0, corr_thr=0.5,
-                    verbose=True):
+                    min_overlap_frac=0.4, verbose=True):
     """标定单一采集组，返回 (info, t_rob, f_rob)。失败时 info 为 None。"""
     if verbose:
         print('\n=== 组 {} ==='.format(load_key))
@@ -102,19 +124,22 @@ def calibrate_group(subject, load_key, file_info, max_lag=30.0, corr_thr=0.5,
                      type='warning')
         return None, None, None
 
-    t_rob, f_rob = load_robot_reference(subject, load_key, file_info,
-                                        verbose=verbose)
+    t_rob, f_rob, robot_segments = load_robot_reference(
+        subject, load_key, file_info, verbose=verbose)
     if t_rob is None:
         return None, None, None
 
     info = estimate_time_offset(tl, fl, tr, fr, t_rob, f_rob,
                                 max_lag=max_lag, corr_thr=corr_thr,
+                                robot_segments=robot_segments,
+                                min_overlap_frac=min_overlap_frac,
                                 verbose=verbose)
     return info, t_rob, f_rob
 
 
-def calibrate_insole_offsets(subject, load_keys=None, write_json=True,
+def calibrate_insole_offsets(subject, load_keys=None, write_json=False,
                              min_corr=0.5, max_lag=30.0, corr_thr=0.5,
+                             min_overlap_frac=0.4,
                              plot=True, show=True, verbose=True):
     """批量标定鞋垫时间偏移，写回 json，并画诊断图。
 
@@ -126,6 +151,9 @@ def calibrate_insole_offsets(subject, load_keys=None, write_json=True,
     min_corr : float -- 低于此相关系数不写回，只报告
     max_lag : float -- 滞后搜索范围 ±(s)
     corr_thr : float -- 左右一致性门槛，决定哪些段算深蹲
+    min_overlap_frac : float -- 候选 offset 至少覆盖多少鞋垫动作样本；同时
+        使用机器人位置/速度切片窗口门控。默认 0.4，可排除只匹配一两个
+        重复动作的伪高相关峰。
     plot / show : bool
 
     Returns
@@ -148,7 +176,8 @@ def calibrate_insole_offsets(subject, load_keys=None, write_json=True,
 
         info, t_rob, f_rob = calibrate_group(
             subject, load_key, file_info, max_lag=max_lag,
-            corr_thr=corr_thr, verbose=verbose)
+            corr_thr=corr_thr, min_overlap_frac=min_overlap_frac,
+            verbose=verbose)
         if info is None:
             report[str(load_key)] = {'offset': None, 'corr': None,
                                      'reliable': False, 'written': False}
@@ -174,6 +203,7 @@ def calibrate_insole_offsets(subject, load_keys=None, write_json=True,
             'reliable': bool(info['reliable']),
             'at_edge': bool(info['at_edge']),
             'fit_duration_s': float(info['fit_duration_s']),
+            'overlap_fraction': float(info['overlap_fraction']),
             'n_segments': int(len(info['segments'])),
             'fallback': bool(info['fallback']),
             'written': bool(write_json and ok),
@@ -237,16 +267,18 @@ def print_report(report):
       - written=False 的组没有写回，需要先查数据再重标。
     建议标定时把这张表连同日期一并记在实验记录里。
     """
-    print('\n' + '=' * 78)
-    print('{:<8}{:>12}{:>10}{:>12}{:>10}{:>10}{:>10}'.format(
-        'group', 'offset(s)', 'corr', 'fit(s)', 'segs', 'reliable', 'written'))
-    print('-' * 78)
+    print('\n' + '=' * 88)
+    print('{:<8}{:>12}{:>10}{:>12}{:>10}{:>10}{:>10}{:>10}'.format(
+        'group', 'offset(s)', 'corr', 'fit(s)', 'overlap', 'segs',
+        'reliable', 'written'))
+    print('-' * 88)
     for key, r in report.items():
         if r.get('offset') is None:
-            print('{:<8}{:>12}{:>10}{:>12}{:>10}{:>10}{:>10}'.format(
-                key, '-', '-', '-', '-', 'False', 'False'))
+            print('{:<8}{:>12}{:>10}{:>12}{:>10}{:>10}{:>10}{:>10}'.format(
+                key, '-', '-', '-', '-', '-', 'False', 'False'))
             continue
-        print('{:<8}{:>+12.3f}{:>10.3f}{:>12.1f}{:>10d}{:>10}{:>10}'.format(
+        print('{:<8}{:>+12.3f}{:>10.3f}{:>12.1f}{:>9.0%}{:>10d}{:>10}{:>10}'.format(
             key, r['offset'], r['corr'], r['fit_duration_s'],
+            r.get('overlap_fraction', float('nan')),
             r['n_segments'], str(r['reliable']), str(r['written'])))
-    print('=' * 78)
+    print('=' * 88)

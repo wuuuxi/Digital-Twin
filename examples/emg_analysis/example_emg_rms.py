@@ -28,19 +28,19 @@ def main():
     pipeline = MultiLoadPipeline(subject)
     pipeline.debug = True
 
-    pipeline.run(include_xsens=False)
+    fixed_results = pipeline.run(include_xsens=False, write=True)
     vload_results = pipeline.run_vload()
 
     # muscles = subject.musc_label[:12]
     muscles = subject.musc_label
 
-    plot_feature_vs_time_combined(pipeline.results, vload_results, muscles,
+    plot_feature_vs_time_combined(fixed_results, vload_results, muscles,
                                   feature=FEATURE, feature_label=LABEL)
-    plot_feature_vs_position_combined(pipeline.results, vload_results, muscles,
+    plot_feature_vs_position_combined(fixed_results, vload_results, muscles,
                                      feature=FEATURE, feature_label=LABEL)
-    plot_pos_vel_emg_feature_grid_combined(pipeline.results, vload_results, ['LVL', 'LRF'],
+    plot_pos_vel_emg_feature_grid_combined(fixed_results, vload_results, ['LVL', 'LRF'],
                                            subject=subject, feature=FEATURE, feature_label=LABEL)
-    plot_feature_bar_combined(pipeline.results, vload_results, muscles,
+    plot_feature_bar_combined(fixed_results, vload_results, muscles,
                              feature=FEATURE, feature_label=LABEL)
 
     plt.show()

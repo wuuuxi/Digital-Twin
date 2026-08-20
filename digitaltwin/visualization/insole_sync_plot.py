@@ -38,8 +38,10 @@ def plot_sync_diagnosis(load_key, info, t_rob, f_rob, t_ins=None, f_ins=None):
         t_ins, f_ins = info['grid'], info['insole_total']
 
     fig, axes = plt.subplots(3, 1, figsize=(11, 8), constrained_layout=True)
-    fig.suptitle('{}: insole vs robot  offset={:+.3f}s, corr={:.3f}'.format(
-        load_key, info['offset'], info['corr']))
+    fig.suptitle(
+        '{}: insole vs robot  offset={:+.3f}s, corr={:.3f}, overlap={:.0%}'
+        .format(load_key, info['offset'], info['corr'],
+                info.get('overlap_fraction', 1.0)))
 
     for ax, shift, title in (
             (axes[0], 0.0, 'Before: raw insole time'),
@@ -59,6 +61,6 @@ def plot_sync_diagnosis(load_key, info, t_rob, f_rob, t_ins=None, f_ins=None):
     axes[2].axhline(0.0, color='0.7', lw=0.8)
     axes[2].set_xlabel('lag (s)   [insole time + lag -> robot time]')
     axes[2].set_ylabel('Pearson r')
-    axes[2].set_title('Cross-correlation over squat phases', fontsize=10)
+    axes[2].set_title('Cross-correlation over motion segments', fontsize=10)
     axes[2].legend(loc='upper right', fontsize=8)
     return fig

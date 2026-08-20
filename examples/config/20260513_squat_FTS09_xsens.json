@@ -134,7 +134,7 @@
         "insole_file_r": "2026-05-13-17-34_squat_IM/Medilogic Insoles-RT Force.csv",
         "insole_map_l": "2026-05-13-17-34_squat_IM/Medilogic Insoles-LT Medilogic Insoles G2. Foot.csv",
         "insole_map_r": "2026-05-13-17-34_squat_IM/Medilogic Insoles-RT Medilogic Insoles G2. Foot.csv",
-        "insole_time_offset": -2.8516
+        "insole_time_offset": -2.8423
       },
       "IK-0.3": {
         "mode": "isokinetic",
@@ -147,7 +147,7 @@
         "insole_file_r": "2026-05-13-17-25_squat_IK0.3/Medilogic Insoles-RT Force.csv",
         "insole_map_l": "2026-05-13-17-25_squat_IK0.3/Medilogic Insoles-LT Medilogic Insoles G2. Foot.csv",
         "insole_map_r": "2026-05-13-17-25_squat_IK0.3/Medilogic Insoles-RT Medilogic Insoles G2. Foot.csv",
-        "insole_time_offset": -1.4291
+        "insole_time_offset": -1.4297
       },
       "IK-0.15": {
         "mode": "isokinetic",
@@ -160,7 +160,7 @@
         "insole_file_r": "2026-05-13-17-29_squat_IK0.15/Medilogic Insoles-RT Force.csv",
         "insole_map_l": "2026-05-13-17-29_squat_IK0.15/Medilogic Insoles-LT Medilogic Insoles G2. Foot.csv",
         "insole_map_r": "2026-05-13-17-29_squat_IK0.15/Medilogic Insoles-RT Medilogic Insoles G2. Foot.csv",
-        "insole_time_offset": -3.7431
+        "insole_time_offset": -3.7553
       },
       "20": {
         "mode": "isotonic",
@@ -172,7 +172,7 @@
         "insole_file_r": "2026-05-13-16-58_Squat15p/Medilogic Insoles-RT Force.csv",
         "insole_map_l": "2026-05-13-16-58_Squat15p/Medilogic Insoles-LT Medilogic Insoles G2. Foot.csv",
         "insole_map_r": "2026-05-13-16-58_Squat15p/Medilogic Insoles-RT Medilogic Insoles G2. Foot.csv",
-        "insole_time_offset": -1.5956
+        "insole_time_offset": -1.5921
       },
       "38": {
         "mode": "isotonic",
@@ -184,7 +184,7 @@
         "insole_file_r": "2026-05-13-17-00_squat30p/Medilogic Insoles-RT Force.csv",
         "insole_map_l": "2026-05-13-17-00_squat30p/Medilogic Insoles-LT Medilogic Insoles G2. Foot.csv",
         "insole_map_r": "2026-05-13-17-00_squat30p/Medilogic Insoles-RT Medilogic Insoles G2. Foot.csv",
-        "insole_time_offset": -4.85
+        "insole_time_offset": -4.843
       },
       "56": {
         "mode": "isotonic",
@@ -196,7 +196,7 @@
         "insole_file_r": "2026-05-13-17-02_squat45p/Medilogic Insoles-RT Force.csv",
         "insole_map_l": "2026-05-13-17-02_squat45p/Medilogic Insoles-LT Medilogic Insoles G2. Foot.csv",
         "insole_map_r": "2026-05-13-17-02_squat45p/Medilogic Insoles-RT Medilogic Insoles G2. Foot.csv",
-        "insole_time_offset": -20.2495
+        "insole_time_offset": -20.2531
       },
       "75": {
         "mode": "isotonic",
@@ -208,7 +208,7 @@
         "insole_file_r": "2026-05-13-17-09_squat60p/Medilogic Insoles-RT Force.csv",
         "insole_map_l": "2026-05-13-17-09_squat60p/Medilogic Insoles-LT Medilogic Insoles G2. Foot.csv",
         "insole_map_r": "2026-05-13-17-09_squat60p/Medilogic Insoles-RT Medilogic Insoles G2. Foot.csv",
-        "insole_time_offset": -5.8281
+        "insole_time_offset": -5.8344
       },
       "94": {
         "mode": "isotonic",
@@ -220,7 +220,7 @@
         "insole_file_r": "2026-05-13-17-15_squat75p/Medilogic Insoles-RT Force.csv",
         "insole_map_l": "2026-05-13-17-15_squat75p/Medilogic Insoles-LT Medilogic Insoles G2. Foot.csv",
         "insole_map_r": "2026-05-13-17-15_squat75p/Medilogic Insoles-RT Medilogic Insoles G2. Foot.csv",
-        "insole_time_offset": -1.8123
+        "insole_time_offset": -1.8144
       },
       "106": {
         "mode": "isotonic",
@@ -232,7 +232,7 @@
         "insole_file_r": "2026-05-13-17-19_squat85p/Medilogic Insoles-RT Force.csv",
         "insole_map_l": "2026-05-13-17-19_squat85p/Medilogic Insoles-LT Medilogic Insoles G2. Foot.csv",
         "insole_map_r": "2026-05-13-17-19_squat85p/Medilogic Insoles-RT Medilogic Insoles G2. Foot.csv",
-        "insole_time_offset": -2.8822
+        "insole_time_offset": -2.8762
       }
     }
   },
@@ -240,9 +240,17 @@
     "subject_mass": 70.0,
     "bar_mass": 0.0,
     "bar_contact_body": "torso",
-    "bar_contact_point": [-0.0444, 0.3829, 0.0],
+    "bar_contact_point": [
+      -0.0444,
+      0.3829,
+      0.0
+    ],
     "insole_use_frame_cop": true,
-    "insole_contact_point": [0.097, -0.0011, 0.0],
+    "insole_contact_point": [
+      0.097,
+      -0.0011,
+      0.0
+    ],
     "muscle_analysis_coordinates": [
       "hip_flexion_r",
       "hip_flexion_l",

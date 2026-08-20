@@ -735,3 +735,374 @@
 [2026-08-10 14:02:26.086] [info] Loaded model WholeBodyModel from file C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\workspace\whole body model.osim
 [2026-08-13 19:14:43.200] [info] Updating Model file from 40000 to latest format...
 [2026-08-13 19:14:43.258] [info] Loaded model WholeBodyModel from file C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\workspace\whole body model.osim
+[2026-08-20 17:18:12.289] [info] Updating Model file from 40000 to latest format...
+[2026-08-20 17:18:12.418] [info] Loaded model WholeBodyModel from file C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\workspace\whole body model.osim
+[2026-08-20 17:20:00.950] [info] Loaded model WholeBodyModel from file C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\whole body model_20260513_squat_FTS09.osim
+[2026-08-20 17:20:04.320] [info] AbstractTool 20260513_squat_FTS09_IM-1 loading model C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\whole body model_20260513_squat_FTS09.osim
+[2026-08-20 17:20:04.397] [info] Loaded model WholeBodyModel from file C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\whole body model_20260513_squat_FTS09.osim
+[2026-08-20 17:20:04.681] [info] 'ExternalLoads' was renamed and is being set to 'externalloads'.
+[2026-08-20 17:20:04.735] [info] Old version storage/motion file encountered
+[2026-08-20 17:20:04.735] [info] Storage: read data file = bar_force_IM-1.sto (nr=7629 nc=28)
+[2026-08-20 17:20:04.735] [info] .. assuming rotations in Radians..
+[2026-08-20 17:20:04.788] [info] ExternalForce::bar_force Data source being set to external_forces
+[2026-08-20 17:20:04.788] [info] ExternalForce::grf_l Data source being set to external_forces
+[2026-08-20 17:20:04.788] [info] ExternalForce::grf_r Data source being set to external_forces
+[2026-08-20 17:20:04.816] [info] Loading coordinates from file 'C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\mot\MVN-011_FTS09_opensim.mot'.
+[2026-08-20 17:20:04.816] [info] Old version storage/motion file encountered
+[2026-08-20 17:20:04.816] [info] Storage: read data file = C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\mot\MVN-011_FTS09_opensim.mot (nr=7629 nc=44)
+[2026-08-20 17:20:04.816] [info] .. assuming rotations in Degrees..
+[2026-08-20 17:20:04.928] [warning] Model::formCompleteStorages():  Did not find column /jointset/patellofemoral_r/knee_angle_r_beta/value in storage object.
+[2026-08-20 17:20:04.929] [warning] Model::formCompleteStorages():  Did not find column /jointset/patellofemoral_l/knee_angle_l_beta/value in storage object.
+[2026-08-20 17:20:04.929] [warning] Model::formCompleteStorages():  Did not find column /jointset/L5_S1_IVDjnt/flex_extension/value in storage object.
+[2026-08-20 17:20:04.929] [warning] Model::formCompleteStorages():  Did not find column /jointset/L5_S1_IVDjnt/lat_bending/value in storage object.
+[2026-08-20 17:20:04.929] [warning] Model::formCompleteStorages():  Did not find column /jointset/L5_S1_IVDjnt/axial_rotation/value in storage object.
+[2026-08-20 17:20:04.929] [warning] Model::formCompleteStorages():  Did not find column /jointset/L4_L5_IVDjnt/L4_L5_IVDjnt_r3/value in storage object.
+[2026-08-20 17:20:04.929] [warning] Model::formCompleteStorages():  Did not find column /jointset/L4_L5_IVDjnt/L4_L5_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 17:20:04.929] [warning] Model::formCompleteStorages():  Did not find column /jointset/L4_L5_IVDjnt/L4_L5_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 17:20:04.929] [warning] Model::formCompleteStorages():  Did not find column /jointset/L3_L4_IVDjnt/L3_L4_IVDjnt_r3/value in storage object.
+[2026-08-20 17:20:04.929] [warning] Model::formCompleteStorages():  Did not find column /jointset/L3_L4_IVDjnt/L3_L4_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 17:20:04.929] [warning] Model::formCompleteStorages():  Did not find column /jointset/L3_L4_IVDjnt/L3_L4_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 17:20:04.929] [warning] Model::formCompleteStorages():  Did not find column /jointset/L2_L3_IVD_jnt/L2_L3_IVDjnt_r3/value in storage object.
+[2026-08-20 17:20:04.929] [warning] Model::formCompleteStorages():  Did not find column /jointset/L2_L3_IVD_jnt/L2_L3_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 17:20:04.929] [warning] Model::formCompleteStorages():  Did not find column /jointset/L2_L3_IVD_jnt/L2_L3_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 17:20:04.929] [warning] Model::formCompleteStorages():  Did not find column /jointset/L1_L2_IVD_jnt/L1_L2_IVDjnt_r3/value in storage object.
+[2026-08-20 17:20:04.929] [warning] Model::formCompleteStorages():  Did not find column /jointset/L1_L2_IVD_jnt/L1_L2_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 17:20:04.929] [warning] Model::formCompleteStorages():  Did not find column /jointset/L1_L2_IVD_jnt/L1_L2_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 17:20:04.929] [warning] Model::formCompleteStorages():  Did not find column /jointset/Torsojnt/Torso_Rot/value in storage object.
+[2026-08-20 17:20:04.929] [warning] Model::formCompleteStorages():  Did not find column /jointset/Abdjnt/Abs_r3/value in storage object.
+[2026-08-20 17:20:04.929] [warning] Model::formCompleteStorages():  Did not find column /jointset/Abdjnt/Abs_t1/value in storage object.
+[2026-08-20 17:20:04.929] [warning] Model::formCompleteStorages():  Did not find column /jointset/Abdjnt/Abs_t2/value in storage object.
+[2026-08-20 17:20:04.929] [warning] Model::formCompleteStorages():  Did not find column /jointset/LB_wrapjnt/LB_wrapjnt_r3/value in storage object.
+[2026-08-20 17:20:04.929] [warning] Model::formCompleteStorages():  Did not find column /jointset/LB_wrapjnt/LB_wrapjnt_t1/value in storage object.
+[2026-08-20 17:20:04.929] [warning] Model::formCompleteStorages():  Did not find column /jointset/LB_wrapjnt/LB_wrapjnt_t2/value in storage object.
+[2026-08-20 17:21:35.763] [info] Found 7629 state vectors with time stamps ranging from 0 to 31.783333.
+[2026-08-20 17:21:35.763] [info] Executing the analyses from 0 to 31.783333...
+[2026-08-20 17:28:46.345] [info] Printing results of investigation 20260513_squat_FTS09_IM-1 to C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\muscle_analysis\IM-1
+[2026-08-20 17:29:01.293] [info] AbstractTool 20260513_squat_FTS09_IK-0.3 loading model C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\whole body model_20260513_squat_FTS09.osim
+[2026-08-20 17:29:01.371] [info] Loaded model WholeBodyModel from file C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\whole body model_20260513_squat_FTS09.osim
+[2026-08-20 17:29:01.649] [info] 'ExternalLoads' was renamed and is being set to 'externalloads'.
+[2026-08-20 17:29:01.699] [info] Old version storage/motion file encountered
+[2026-08-20 17:29:01.699] [info] Storage: read data file = bar_force_IK-0.3.sto (nr=10928 nc=28)
+[2026-08-20 17:29:01.699] [info] .. assuming rotations in Radians..
+[2026-08-20 17:29:01.775] [info] ExternalForce::bar_force Data source being set to external_forces
+[2026-08-20 17:29:01.775] [info] ExternalForce::grf_l Data source being set to external_forces
+[2026-08-20 17:29:01.775] [info] ExternalForce::grf_r Data source being set to external_forces
+[2026-08-20 17:29:01.801] [info] Loading coordinates from file 'C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\mot\MVN-008_FTS09_opensim.mot'.
+[2026-08-20 17:29:01.802] [info] Old version storage/motion file encountered
+[2026-08-20 17:29:01.802] [info] Storage: read data file = C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\mot\MVN-008_FTS09_opensim.mot (nr=10928 nc=44)
+[2026-08-20 17:29:01.802] [info] .. assuming rotations in Degrees..
+[2026-08-20 17:29:01.963] [warning] Model::formCompleteStorages():  Did not find column /jointset/patellofemoral_r/knee_angle_r_beta/value in storage object.
+[2026-08-20 17:29:01.963] [warning] Model::formCompleteStorages():  Did not find column /jointset/patellofemoral_l/knee_angle_l_beta/value in storage object.
+[2026-08-20 17:29:01.963] [warning] Model::formCompleteStorages():  Did not find column /jointset/L5_S1_IVDjnt/flex_extension/value in storage object.
+[2026-08-20 17:29:01.963] [warning] Model::formCompleteStorages():  Did not find column /jointset/L5_S1_IVDjnt/lat_bending/value in storage object.
+[2026-08-20 17:29:01.963] [warning] Model::formCompleteStorages():  Did not find column /jointset/L5_S1_IVDjnt/axial_rotation/value in storage object.
+[2026-08-20 17:29:01.963] [warning] Model::formCompleteStorages():  Did not find column /jointset/L4_L5_IVDjnt/L4_L5_IVDjnt_r3/value in storage object.
+[2026-08-20 17:29:01.963] [warning] Model::formCompleteStorages():  Did not find column /jointset/L4_L5_IVDjnt/L4_L5_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 17:29:01.963] [warning] Model::formCompleteStorages():  Did not find column /jointset/L4_L5_IVDjnt/L4_L5_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 17:29:01.963] [warning] Model::formCompleteStorages():  Did not find column /jointset/L3_L4_IVDjnt/L3_L4_IVDjnt_r3/value in storage object.
+[2026-08-20 17:29:01.963] [warning] Model::formCompleteStorages():  Did not find column /jointset/L3_L4_IVDjnt/L3_L4_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 17:29:01.963] [warning] Model::formCompleteStorages():  Did not find column /jointset/L3_L4_IVDjnt/L3_L4_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 17:29:01.963] [warning] Model::formCompleteStorages():  Did not find column /jointset/L2_L3_IVD_jnt/L2_L3_IVDjnt_r3/value in storage object.
+[2026-08-20 17:29:01.963] [warning] Model::formCompleteStorages():  Did not find column /jointset/L2_L3_IVD_jnt/L2_L3_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 17:29:01.963] [warning] Model::formCompleteStorages():  Did not find column /jointset/L2_L3_IVD_jnt/L2_L3_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 17:29:01.963] [warning] Model::formCompleteStorages():  Did not find column /jointset/L1_L2_IVD_jnt/L1_L2_IVDjnt_r3/value in storage object.
+[2026-08-20 17:29:01.963] [warning] Model::formCompleteStorages():  Did not find column /jointset/L1_L2_IVD_jnt/L1_L2_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 17:29:01.963] [warning] Model::formCompleteStorages():  Did not find column /jointset/L1_L2_IVD_jnt/L1_L2_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 17:29:01.963] [warning] Model::formCompleteStorages():  Did not find column /jointset/Torsojnt/Torso_Rot/value in storage object.
+[2026-08-20 17:29:01.963] [warning] Model::formCompleteStorages():  Did not find column /jointset/Abdjnt/Abs_r3/value in storage object.
+[2026-08-20 17:29:01.963] [warning] Model::formCompleteStorages():  Did not find column /jointset/Abdjnt/Abs_t1/value in storage object.
+[2026-08-20 17:29:01.963] [warning] Model::formCompleteStorages():  Did not find column /jointset/Abdjnt/Abs_t2/value in storage object.
+[2026-08-20 17:29:01.963] [warning] Model::formCompleteStorages():  Did not find column /jointset/LB_wrapjnt/LB_wrapjnt_r3/value in storage object.
+[2026-08-20 17:29:01.963] [warning] Model::formCompleteStorages():  Did not find column /jointset/LB_wrapjnt/LB_wrapjnt_t1/value in storage object.
+[2026-08-20 17:29:01.963] [warning] Model::formCompleteStorages():  Did not find column /jointset/LB_wrapjnt/LB_wrapjnt_t2/value in storage object.
+[2026-08-20 17:31:18.393] [info] Found 10928 state vectors with time stamps ranging from 0 to 45.529167.
+[2026-08-20 17:31:18.394] [info] Executing the analyses from 0 to 45.529167...
+[2026-08-20 17:41:59.476] [info] Printing results of investigation 20260513_squat_FTS09_IK-0.3 to C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\muscle_analysis\IK-0.3
+[2026-08-20 17:42:28.700] [info] AbstractTool 20260513_squat_FTS09_IK-0.15 loading model C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\whole body model_20260513_squat_FTS09.osim
+[2026-08-20 17:42:28.784] [info] Loaded model WholeBodyModel from file C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\whole body model_20260513_squat_FTS09.osim
+[2026-08-20 17:42:29.114] [info] 'ExternalLoads' was renamed and is being set to 'externalloads'.
+[2026-08-20 17:42:29.199] [info] Old version storage/motion file encountered
+[2026-08-20 17:42:29.199] [info] Storage: read data file = bar_force_IK-0.15.sto (nr=18035 nc=28)
+[2026-08-20 17:42:29.199] [info] .. assuming rotations in Radians..
+[2026-08-20 17:42:29.345] [info] ExternalForce::bar_force Data source being set to external_forces
+[2026-08-20 17:42:29.345] [info] ExternalForce::grf_l Data source being set to external_forces
+[2026-08-20 17:42:29.345] [info] ExternalForce::grf_r Data source being set to external_forces
+[2026-08-20 17:42:29.383] [info] Loading coordinates from file 'C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\mot\MVN-010_FTS09_opensim.mot'.
+[2026-08-20 17:42:29.383] [info] Old version storage/motion file encountered
+[2026-08-20 17:42:29.383] [info] Storage: read data file = C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\mot\MVN-010_FTS09_opensim.mot (nr=18035 nc=44)
+[2026-08-20 17:42:29.383] [info] .. assuming rotations in Degrees..
+[2026-08-20 17:42:29.740] [warning] Model::formCompleteStorages():  Did not find column /jointset/patellofemoral_r/knee_angle_r_beta/value in storage object.
+[2026-08-20 17:42:29.741] [warning] Model::formCompleteStorages():  Did not find column /jointset/patellofemoral_l/knee_angle_l_beta/value in storage object.
+[2026-08-20 17:42:29.741] [warning] Model::formCompleteStorages():  Did not find column /jointset/L5_S1_IVDjnt/flex_extension/value in storage object.
+[2026-08-20 17:42:29.741] [warning] Model::formCompleteStorages():  Did not find column /jointset/L5_S1_IVDjnt/lat_bending/value in storage object.
+[2026-08-20 17:42:29.741] [warning] Model::formCompleteStorages():  Did not find column /jointset/L5_S1_IVDjnt/axial_rotation/value in storage object.
+[2026-08-20 17:42:29.741] [warning] Model::formCompleteStorages():  Did not find column /jointset/L4_L5_IVDjnt/L4_L5_IVDjnt_r3/value in storage object.
+[2026-08-20 17:42:29.741] [warning] Model::formCompleteStorages():  Did not find column /jointset/L4_L5_IVDjnt/L4_L5_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 17:42:29.741] [warning] Model::formCompleteStorages():  Did not find column /jointset/L4_L5_IVDjnt/L4_L5_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 17:42:29.741] [warning] Model::formCompleteStorages():  Did not find column /jointset/L3_L4_IVDjnt/L3_L4_IVDjnt_r3/value in storage object.
+[2026-08-20 17:42:29.741] [warning] Model::formCompleteStorages():  Did not find column /jointset/L3_L4_IVDjnt/L3_L4_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 17:42:29.741] [warning] Model::formCompleteStorages():  Did not find column /jointset/L3_L4_IVDjnt/L3_L4_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 17:42:29.741] [warning] Model::formCompleteStorages():  Did not find column /jointset/L2_L3_IVD_jnt/L2_L3_IVDjnt_r3/value in storage object.
+[2026-08-20 17:42:29.741] [warning] Model::formCompleteStorages():  Did not find column /jointset/L2_L3_IVD_jnt/L2_L3_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 17:42:29.741] [warning] Model::formCompleteStorages():  Did not find column /jointset/L2_L3_IVD_jnt/L2_L3_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 17:42:29.741] [warning] Model::formCompleteStorages():  Did not find column /jointset/L1_L2_IVD_jnt/L1_L2_IVDjnt_r3/value in storage object.
+[2026-08-20 17:42:29.741] [warning] Model::formCompleteStorages():  Did not find column /jointset/L1_L2_IVD_jnt/L1_L2_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 17:42:29.741] [warning] Model::formCompleteStorages():  Did not find column /jointset/L1_L2_IVD_jnt/L1_L2_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 17:42:29.741] [warning] Model::formCompleteStorages():  Did not find column /jointset/Torsojnt/Torso_Rot/value in storage object.
+[2026-08-20 17:42:29.741] [warning] Model::formCompleteStorages():  Did not find column /jointset/Abdjnt/Abs_r3/value in storage object.
+[2026-08-20 17:42:29.741] [warning] Model::formCompleteStorages():  Did not find column /jointset/Abdjnt/Abs_t1/value in storage object.
+[2026-08-20 17:42:29.741] [warning] Model::formCompleteStorages():  Did not find column /jointset/Abdjnt/Abs_t2/value in storage object.
+[2026-08-20 17:42:29.741] [warning] Model::formCompleteStorages():  Did not find column /jointset/LB_wrapjnt/LB_wrapjnt_r3/value in storage object.
+[2026-08-20 17:42:29.741] [warning] Model::formCompleteStorages():  Did not find column /jointset/LB_wrapjnt/LB_wrapjnt_t1/value in storage object.
+[2026-08-20 17:42:29.741] [warning] Model::formCompleteStorages():  Did not find column /jointset/LB_wrapjnt/LB_wrapjnt_t2/value in storage object.
+[2026-08-20 17:45:50.979] [info] Found 18035 state vectors with time stamps ranging from 0 to 75.141667.
+[2026-08-20 17:45:50.980] [info] Executing the analyses from 0 to 75.141667...
+[2026-08-20 18:04:25.599] [info] Printing results of investigation 20260513_squat_FTS09_IK-0.15 to C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\muscle_analysis\IK-0.15
+[2026-08-20 18:04:38.568] [info] AbstractTool 20260513_squat_FTS09_20 loading model C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\whole body model_20260513_squat_FTS09.osim
+[2026-08-20 18:04:38.652] [info] Loaded model WholeBodyModel from file C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\whole body model_20260513_squat_FTS09.osim
+[2026-08-20 18:04:39.039] [info] 'ExternalLoads' was renamed and is being set to 'externalloads'.
+[2026-08-20 18:04:39.108] [info] Old version storage/motion file encountered
+[2026-08-20 18:04:39.108] [info] Storage: read data file = bar_force_20.sto (nr=6803 nc=28)
+[2026-08-20 18:04:39.108] [info] .. assuming rotations in Radians..
+[2026-08-20 18:04:39.160] [info] ExternalForce::bar_force Data source being set to external_forces
+[2026-08-20 18:04:39.160] [info] ExternalForce::grf_l Data source being set to external_forces
+[2026-08-20 18:04:39.161] [info] ExternalForce::grf_r Data source being set to external_forces
+[2026-08-20 18:04:39.186] [info] Loading coordinates from file 'C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\mot\MVN-001_FTS09_opensim.mot'.
+[2026-08-20 18:04:39.187] [info] Old version storage/motion file encountered
+[2026-08-20 18:04:39.187] [info] Storage: read data file = C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\mot\MVN-001_FTS09_opensim.mot (nr=6803 nc=44)
+[2026-08-20 18:04:39.187] [info] .. assuming rotations in Degrees..
+[2026-08-20 18:04:39.326] [warning] Model::formCompleteStorages():  Did not find column /jointset/patellofemoral_r/knee_angle_r_beta/value in storage object.
+[2026-08-20 18:04:39.326] [warning] Model::formCompleteStorages():  Did not find column /jointset/patellofemoral_l/knee_angle_l_beta/value in storage object.
+[2026-08-20 18:04:39.326] [warning] Model::formCompleteStorages():  Did not find column /jointset/L5_S1_IVDjnt/flex_extension/value in storage object.
+[2026-08-20 18:04:39.327] [warning] Model::formCompleteStorages():  Did not find column /jointset/L5_S1_IVDjnt/lat_bending/value in storage object.
+[2026-08-20 18:04:39.327] [warning] Model::formCompleteStorages():  Did not find column /jointset/L5_S1_IVDjnt/axial_rotation/value in storage object.
+[2026-08-20 18:04:39.327] [warning] Model::formCompleteStorages():  Did not find column /jointset/L4_L5_IVDjnt/L4_L5_IVDjnt_r3/value in storage object.
+[2026-08-20 18:04:39.327] [warning] Model::formCompleteStorages():  Did not find column /jointset/L4_L5_IVDjnt/L4_L5_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 18:04:39.327] [warning] Model::formCompleteStorages():  Did not find column /jointset/L4_L5_IVDjnt/L4_L5_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 18:04:39.327] [warning] Model::formCompleteStorages():  Did not find column /jointset/L3_L4_IVDjnt/L3_L4_IVDjnt_r3/value in storage object.
+[2026-08-20 18:04:39.327] [warning] Model::formCompleteStorages():  Did not find column /jointset/L3_L4_IVDjnt/L3_L4_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 18:04:39.327] [warning] Model::formCompleteStorages():  Did not find column /jointset/L3_L4_IVDjnt/L3_L4_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 18:04:39.327] [warning] Model::formCompleteStorages():  Did not find column /jointset/L2_L3_IVD_jnt/L2_L3_IVDjnt_r3/value in storage object.
+[2026-08-20 18:04:39.327] [warning] Model::formCompleteStorages():  Did not find column /jointset/L2_L3_IVD_jnt/L2_L3_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 18:04:39.327] [warning] Model::formCompleteStorages():  Did not find column /jointset/L2_L3_IVD_jnt/L2_L3_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 18:04:39.327] [warning] Model::formCompleteStorages():  Did not find column /jointset/L1_L2_IVD_jnt/L1_L2_IVDjnt_r3/value in storage object.
+[2026-08-20 18:04:39.327] [warning] Model::formCompleteStorages():  Did not find column /jointset/L1_L2_IVD_jnt/L1_L2_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 18:04:39.327] [warning] Model::formCompleteStorages():  Did not find column /jointset/L1_L2_IVD_jnt/L1_L2_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 18:04:39.327] [warning] Model::formCompleteStorages():  Did not find column /jointset/Torsojnt/Torso_Rot/value in storage object.
+[2026-08-20 18:04:39.327] [warning] Model::formCompleteStorages():  Did not find column /jointset/Abdjnt/Abs_r3/value in storage object.
+[2026-08-20 18:04:39.327] [warning] Model::formCompleteStorages():  Did not find column /jointset/Abdjnt/Abs_t1/value in storage object.
+[2026-08-20 18:04:39.327] [warning] Model::formCompleteStorages():  Did not find column /jointset/Abdjnt/Abs_t2/value in storage object.
+[2026-08-20 18:04:39.327] [warning] Model::formCompleteStorages():  Did not find column /jointset/LB_wrapjnt/LB_wrapjnt_r3/value in storage object.
+[2026-08-20 18:04:39.327] [warning] Model::formCompleteStorages():  Did not find column /jointset/LB_wrapjnt/LB_wrapjnt_t1/value in storage object.
+[2026-08-20 18:04:39.327] [warning] Model::formCompleteStorages():  Did not find column /jointset/LB_wrapjnt/LB_wrapjnt_t2/value in storage object.
+[2026-08-20 18:06:15.190] [info] Found 6803 state vectors with time stamps ranging from 0 to 28.341667.
+[2026-08-20 18:06:15.190] [info] Executing the analyses from 0 to 28.341667...
+[2026-08-20 18:13:01.120] [info] Printing results of investigation 20260513_squat_FTS09_20 to C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\muscle_analysis\20
+[2026-08-20 18:13:11.228] [info] AbstractTool 20260513_squat_FTS09_38 loading model C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\whole body model_20260513_squat_FTS09.osim
+[2026-08-20 18:13:11.314] [info] Loaded model WholeBodyModel from file C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\whole body model_20260513_squat_FTS09.osim
+[2026-08-20 18:13:11.657] [info] 'ExternalLoads' was renamed and is being set to 'externalloads'.
+[2026-08-20 18:13:11.716] [info] Old version storage/motion file encountered
+[2026-08-20 18:13:11.716] [info] Storage: read data file = bar_force_38.sto (nr=7999 nc=28)
+[2026-08-20 18:13:11.716] [info] .. assuming rotations in Radians..
+[2026-08-20 18:13:11.792] [info] ExternalForce::bar_force Data source being set to external_forces
+[2026-08-20 18:13:11.792] [info] ExternalForce::grf_l Data source being set to external_forces
+[2026-08-20 18:13:11.792] [info] ExternalForce::grf_r Data source being set to external_forces
+[2026-08-20 18:13:11.821] [info] Loading coordinates from file 'C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\mot\MVN-002_FTS09_opensim.mot'.
+[2026-08-20 18:13:11.821] [info] Old version storage/motion file encountered
+[2026-08-20 18:13:11.821] [info] Storage: read data file = C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\mot\MVN-002_FTS09_opensim.mot (nr=7999 nc=44)
+[2026-08-20 18:13:11.821] [info] .. assuming rotations in Degrees..
+[2026-08-20 18:13:11.948] [warning] Model::formCompleteStorages():  Did not find column /jointset/patellofemoral_r/knee_angle_r_beta/value in storage object.
+[2026-08-20 18:13:11.948] [warning] Model::formCompleteStorages():  Did not find column /jointset/patellofemoral_l/knee_angle_l_beta/value in storage object.
+[2026-08-20 18:13:11.948] [warning] Model::formCompleteStorages():  Did not find column /jointset/L5_S1_IVDjnt/flex_extension/value in storage object.
+[2026-08-20 18:13:11.948] [warning] Model::formCompleteStorages():  Did not find column /jointset/L5_S1_IVDjnt/lat_bending/value in storage object.
+[2026-08-20 18:13:11.948] [warning] Model::formCompleteStorages():  Did not find column /jointset/L5_S1_IVDjnt/axial_rotation/value in storage object.
+[2026-08-20 18:13:11.948] [warning] Model::formCompleteStorages():  Did not find column /jointset/L4_L5_IVDjnt/L4_L5_IVDjnt_r3/value in storage object.
+[2026-08-20 18:13:11.948] [warning] Model::formCompleteStorages():  Did not find column /jointset/L4_L5_IVDjnt/L4_L5_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 18:13:11.948] [warning] Model::formCompleteStorages():  Did not find column /jointset/L4_L5_IVDjnt/L4_L5_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 18:13:11.948] [warning] Model::formCompleteStorages():  Did not find column /jointset/L3_L4_IVDjnt/L3_L4_IVDjnt_r3/value in storage object.
+[2026-08-20 18:13:11.948] [warning] Model::formCompleteStorages():  Did not find column /jointset/L3_L4_IVDjnt/L3_L4_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 18:13:11.948] [warning] Model::formCompleteStorages():  Did not find column /jointset/L3_L4_IVDjnt/L3_L4_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 18:13:11.948] [warning] Model::formCompleteStorages():  Did not find column /jointset/L2_L3_IVD_jnt/L2_L3_IVDjnt_r3/value in storage object.
+[2026-08-20 18:13:11.948] [warning] Model::formCompleteStorages():  Did not find column /jointset/L2_L3_IVD_jnt/L2_L3_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 18:13:11.948] [warning] Model::formCompleteStorages():  Did not find column /jointset/L2_L3_IVD_jnt/L2_L3_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 18:13:11.948] [warning] Model::formCompleteStorages():  Did not find column /jointset/L1_L2_IVD_jnt/L1_L2_IVDjnt_r3/value in storage object.
+[2026-08-20 18:13:11.948] [warning] Model::formCompleteStorages():  Did not find column /jointset/L1_L2_IVD_jnt/L1_L2_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 18:13:11.948] [warning] Model::formCompleteStorages():  Did not find column /jointset/L1_L2_IVD_jnt/L1_L2_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 18:13:11.948] [warning] Model::formCompleteStorages():  Did not find column /jointset/Torsojnt/Torso_Rot/value in storage object.
+[2026-08-20 18:13:11.948] [warning] Model::formCompleteStorages():  Did not find column /jointset/Abdjnt/Abs_r3/value in storage object.
+[2026-08-20 18:13:11.948] [warning] Model::formCompleteStorages():  Did not find column /jointset/Abdjnt/Abs_t1/value in storage object.
+[2026-08-20 18:13:11.948] [warning] Model::formCompleteStorages():  Did not find column /jointset/Abdjnt/Abs_t2/value in storage object.
+[2026-08-20 18:13:11.948] [warning] Model::formCompleteStorages():  Did not find column /jointset/LB_wrapjnt/LB_wrapjnt_r3/value in storage object.
+[2026-08-20 18:13:11.948] [warning] Model::formCompleteStorages():  Did not find column /jointset/LB_wrapjnt/LB_wrapjnt_t1/value in storage object.
+[2026-08-20 18:13:11.948] [warning] Model::formCompleteStorages():  Did not find column /jointset/LB_wrapjnt/LB_wrapjnt_t2/value in storage object.
+[2026-08-20 18:14:16.739] [info] AssemblySolver::track() attempt Failed: SimTK Exception thrown at Assembler.cpp:973:
+  Method Assembler::track() failed because:
+Unable to achieve required assembly error tolerance.
+Assembly error tolerance achieved: 5.10782358166283e-10 required: 1e-10.
+[2026-08-20 18:14:16.761] [error] Model unable to assemble: AssemblySolver::assemble() Failed: SimTK Exception thrown at Assembler.cpp:897:
+  Method Assembler::assemble() failed because:
+Unable to achieve required assembly error tolerance.
+Assembly error tolerance achieved: 5.1078233186783122e-10 required: 1e-10..Model relaxing constraints and trying again.
+[2026-08-20 18:14:20.199] [info] Found 7999 state vectors with time stamps ranging from 0 to 33.325.
+[2026-08-20 18:14:20.199] [info] Executing the analyses from 0 to 33.325...
+[2026-08-20 18:19:34.746] [info] Printing results of investigation 20260513_squat_FTS09_38 to C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\muscle_analysis\38
+[2026-08-20 18:19:44.286] [info] AbstractTool 20260513_squat_FTS09_56 loading model C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\whole body model_20260513_squat_FTS09.osim
+[2026-08-20 18:19:44.404] [info] Loaded model WholeBodyModel from file C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\whole body model_20260513_squat_FTS09.osim
+[2026-08-20 18:19:44.859] [info] 'ExternalLoads' was renamed and is being set to 'externalloads'.
+[2026-08-20 18:19:44.947] [info] Old version storage/motion file encountered
+[2026-08-20 18:19:44.947] [info] Storage: read data file = bar_force_56.sto (nr=6958 nc=28)
+[2026-08-20 18:19:44.947] [info] .. assuming rotations in Radians..
+[2026-08-20 18:19:45.025] [info] ExternalForce::bar_force Data source being set to external_forces
+[2026-08-20 18:19:45.025] [info] ExternalForce::grf_l Data source being set to external_forces
+[2026-08-20 18:19:45.025] [info] ExternalForce::grf_r Data source being set to external_forces
+[2026-08-20 18:19:45.061] [info] Loading coordinates from file 'C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\mot\MVN-003_FTS09_opensim.mot'.
+[2026-08-20 18:19:45.061] [info] Old version storage/motion file encountered
+[2026-08-20 18:19:45.061] [info] Storage: read data file = C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\mot\MVN-003_FTS09_opensim.mot (nr=6958 nc=44)
+[2026-08-20 18:19:45.061] [info] .. assuming rotations in Degrees..
+[2026-08-20 18:19:45.206] [warning] Model::formCompleteStorages():  Did not find column /jointset/patellofemoral_r/knee_angle_r_beta/value in storage object.
+[2026-08-20 18:19:45.206] [warning] Model::formCompleteStorages():  Did not find column /jointset/patellofemoral_l/knee_angle_l_beta/value in storage object.
+[2026-08-20 18:19:45.206] [warning] Model::formCompleteStorages():  Did not find column /jointset/L5_S1_IVDjnt/flex_extension/value in storage object.
+[2026-08-20 18:19:45.206] [warning] Model::formCompleteStorages():  Did not find column /jointset/L5_S1_IVDjnt/lat_bending/value in storage object.
+[2026-08-20 18:19:45.206] [warning] Model::formCompleteStorages():  Did not find column /jointset/L5_S1_IVDjnt/axial_rotation/value in storage object.
+[2026-08-20 18:19:45.206] [warning] Model::formCompleteStorages():  Did not find column /jointset/L4_L5_IVDjnt/L4_L5_IVDjnt_r3/value in storage object.
+[2026-08-20 18:19:45.206] [warning] Model::formCompleteStorages():  Did not find column /jointset/L4_L5_IVDjnt/L4_L5_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 18:19:45.206] [warning] Model::formCompleteStorages():  Did not find column /jointset/L4_L5_IVDjnt/L4_L5_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 18:19:45.206] [warning] Model::formCompleteStorages():  Did not find column /jointset/L3_L4_IVDjnt/L3_L4_IVDjnt_r3/value in storage object.
+[2026-08-20 18:19:45.206] [warning] Model::formCompleteStorages():  Did not find column /jointset/L3_L4_IVDjnt/L3_L4_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 18:19:45.206] [warning] Model::formCompleteStorages():  Did not find column /jointset/L3_L4_IVDjnt/L3_L4_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 18:19:45.206] [warning] Model::formCompleteStorages():  Did not find column /jointset/L2_L3_IVD_jnt/L2_L3_IVDjnt_r3/value in storage object.
+[2026-08-20 18:19:45.206] [warning] Model::formCompleteStorages():  Did not find column /jointset/L2_L3_IVD_jnt/L2_L3_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 18:19:45.206] [warning] Model::formCompleteStorages():  Did not find column /jointset/L2_L3_IVD_jnt/L2_L3_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 18:19:45.206] [warning] Model::formCompleteStorages():  Did not find column /jointset/L1_L2_IVD_jnt/L1_L2_IVDjnt_r3/value in storage object.
+[2026-08-20 18:19:45.206] [warning] Model::formCompleteStorages():  Did not find column /jointset/L1_L2_IVD_jnt/L1_L2_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 18:19:45.206] [warning] Model::formCompleteStorages():  Did not find column /jointset/L1_L2_IVD_jnt/L1_L2_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 18:19:45.206] [warning] Model::formCompleteStorages():  Did not find column /jointset/Torsojnt/Torso_Rot/value in storage object.
+[2026-08-20 18:19:45.206] [warning] Model::formCompleteStorages():  Did not find column /jointset/Abdjnt/Abs_r3/value in storage object.
+[2026-08-20 18:19:45.206] [warning] Model::formCompleteStorages():  Did not find column /jointset/Abdjnt/Abs_t1/value in storage object.
+[2026-08-20 18:19:45.206] [warning] Model::formCompleteStorages():  Did not find column /jointset/Abdjnt/Abs_t2/value in storage object.
+[2026-08-20 18:19:45.206] [warning] Model::formCompleteStorages():  Did not find column /jointset/LB_wrapjnt/LB_wrapjnt_r3/value in storage object.
+[2026-08-20 18:19:45.206] [warning] Model::formCompleteStorages():  Did not find column /jointset/LB_wrapjnt/LB_wrapjnt_t1/value in storage object.
+[2026-08-20 18:19:45.206] [warning] Model::formCompleteStorages():  Did not find column /jointset/LB_wrapjnt/LB_wrapjnt_t2/value in storage object.
+[2026-08-20 18:21:19.675] [info] Found 6958 state vectors with time stamps ranging from 0 to 28.9875.
+[2026-08-20 18:21:19.676] [info] Executing the analyses from 0 to 28.9875...
+[2026-08-20 18:28:02.490] [info] Printing results of investigation 20260513_squat_FTS09_56 to C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\muscle_analysis\56
+[2026-08-20 18:28:11.185] [info] AbstractTool 20260513_squat_FTS09_75 loading model C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\whole body model_20260513_squat_FTS09.osim
+[2026-08-20 18:28:11.264] [info] Loaded model WholeBodyModel from file C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\whole body model_20260513_squat_FTS09.osim
+[2026-08-20 18:28:11.612] [info] 'ExternalLoads' was renamed and is being set to 'externalloads'.
+[2026-08-20 18:28:11.663] [info] Old version storage/motion file encountered
+[2026-08-20 18:28:11.663] [info] Storage: read data file = bar_force_75.sto (nr=8721 nc=28)
+[2026-08-20 18:28:11.664] [info] .. assuming rotations in Radians..
+[2026-08-20 18:28:11.757] [info] ExternalForce::bar_force Data source being set to external_forces
+[2026-08-20 18:28:11.757] [info] ExternalForce::grf_l Data source being set to external_forces
+[2026-08-20 18:28:11.757] [info] ExternalForce::grf_r Data source being set to external_forces
+[2026-08-20 18:28:11.796] [info] Loading coordinates from file 'C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\mot\MVN-004_FTS09_opensim.mot'.
+[2026-08-20 18:28:11.796] [info] Old version storage/motion file encountered
+[2026-08-20 18:28:11.796] [info] Storage: read data file = C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\mot\MVN-004_FTS09_opensim.mot (nr=8721 nc=44)
+[2026-08-20 18:28:11.797] [info] .. assuming rotations in Degrees..
+[2026-08-20 18:28:11.952] [warning] Model::formCompleteStorages():  Did not find column /jointset/patellofemoral_r/knee_angle_r_beta/value in storage object.
+[2026-08-20 18:28:11.952] [warning] Model::formCompleteStorages():  Did not find column /jointset/patellofemoral_l/knee_angle_l_beta/value in storage object.
+[2026-08-20 18:28:11.952] [warning] Model::formCompleteStorages():  Did not find column /jointset/L5_S1_IVDjnt/flex_extension/value in storage object.
+[2026-08-20 18:28:11.952] [warning] Model::formCompleteStorages():  Did not find column /jointset/L5_S1_IVDjnt/lat_bending/value in storage object.
+[2026-08-20 18:28:11.952] [warning] Model::formCompleteStorages():  Did not find column /jointset/L5_S1_IVDjnt/axial_rotation/value in storage object.
+[2026-08-20 18:28:11.952] [warning] Model::formCompleteStorages():  Did not find column /jointset/L4_L5_IVDjnt/L4_L5_IVDjnt_r3/value in storage object.
+[2026-08-20 18:28:11.952] [warning] Model::formCompleteStorages():  Did not find column /jointset/L4_L5_IVDjnt/L4_L5_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 18:28:11.952] [warning] Model::formCompleteStorages():  Did not find column /jointset/L4_L5_IVDjnt/L4_L5_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 18:28:11.952] [warning] Model::formCompleteStorages():  Did not find column /jointset/L3_L4_IVDjnt/L3_L4_IVDjnt_r3/value in storage object.
+[2026-08-20 18:28:11.952] [warning] Model::formCompleteStorages():  Did not find column /jointset/L3_L4_IVDjnt/L3_L4_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 18:28:11.952] [warning] Model::formCompleteStorages():  Did not find column /jointset/L3_L4_IVDjnt/L3_L4_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 18:28:11.952] [warning] Model::formCompleteStorages():  Did not find column /jointset/L2_L3_IVD_jnt/L2_L3_IVDjnt_r3/value in storage object.
+[2026-08-20 18:28:11.952] [warning] Model::formCompleteStorages():  Did not find column /jointset/L2_L3_IVD_jnt/L2_L3_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 18:28:11.952] [warning] Model::formCompleteStorages():  Did not find column /jointset/L2_L3_IVD_jnt/L2_L3_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 18:28:11.952] [warning] Model::formCompleteStorages():  Did not find column /jointset/L1_L2_IVD_jnt/L1_L2_IVDjnt_r3/value in storage object.
+[2026-08-20 18:28:11.952] [warning] Model::formCompleteStorages():  Did not find column /jointset/L1_L2_IVD_jnt/L1_L2_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 18:28:11.952] [warning] Model::formCompleteStorages():  Did not find column /jointset/L1_L2_IVD_jnt/L1_L2_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 18:28:11.952] [warning] Model::formCompleteStorages():  Did not find column /jointset/Torsojnt/Torso_Rot/value in storage object.
+[2026-08-20 18:28:11.952] [warning] Model::formCompleteStorages():  Did not find column /jointset/Abdjnt/Abs_r3/value in storage object.
+[2026-08-20 18:28:11.952] [warning] Model::formCompleteStorages():  Did not find column /jointset/Abdjnt/Abs_t1/value in storage object.
+[2026-08-20 18:28:11.952] [warning] Model::formCompleteStorages():  Did not find column /jointset/Abdjnt/Abs_t2/value in storage object.
+[2026-08-20 18:28:11.952] [warning] Model::formCompleteStorages():  Did not find column /jointset/LB_wrapjnt/LB_wrapjnt_r3/value in storage object.
+[2026-08-20 18:28:11.952] [warning] Model::formCompleteStorages():  Did not find column /jointset/LB_wrapjnt/LB_wrapjnt_t1/value in storage object.
+[2026-08-20 18:28:11.952] [warning] Model::formCompleteStorages():  Did not find column /jointset/LB_wrapjnt/LB_wrapjnt_t2/value in storage object.
+[2026-08-20 18:30:13.007] [info] Found 8721 state vectors with time stamps ranging from 0 to 36.333333.
+[2026-08-20 18:30:13.008] [info] Executing the analyses from 0 to 36.333333...
+[2026-08-20 18:38:39.871] [info] Printing results of investigation 20260513_squat_FTS09_75 to C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\muscle_analysis\75
+[2026-08-20 18:39:00.810] [info] AbstractTool 20260513_squat_FTS09_94 loading model C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\whole body model_20260513_squat_FTS09.osim
+[2026-08-20 18:39:00.927] [info] Loaded model WholeBodyModel from file C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\whole body model_20260513_squat_FTS09.osim
+[2026-08-20 18:39:01.330] [info] 'ExternalLoads' was renamed and is being set to 'externalloads'.
+[2026-08-20 18:39:01.419] [info] Old version storage/motion file encountered
+[2026-08-20 18:39:01.419] [info] Storage: read data file = bar_force_94.sto (nr=11996 nc=28)
+[2026-08-20 18:39:01.419] [info] .. assuming rotations in Radians..
+[2026-08-20 18:39:01.543] [info] ExternalForce::bar_force Data source being set to external_forces
+[2026-08-20 18:39:01.543] [info] ExternalForce::grf_l Data source being set to external_forces
+[2026-08-20 18:39:01.543] [info] ExternalForce::grf_r Data source being set to external_forces
+[2026-08-20 18:39:01.573] [info] Loading coordinates from file 'C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\mot\MVN-005_FTS09_opensim.mot'.
+[2026-08-20 18:39:01.573] [info] Old version storage/motion file encountered
+[2026-08-20 18:39:01.573] [info] Storage: read data file = C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\mot\MVN-005_FTS09_opensim.mot (nr=11996 nc=44)
+[2026-08-20 18:39:01.573] [info] .. assuming rotations in Degrees..
+[2026-08-20 18:39:01.804] [warning] Model::formCompleteStorages():  Did not find column /jointset/patellofemoral_r/knee_angle_r_beta/value in storage object.
+[2026-08-20 18:39:01.805] [warning] Model::formCompleteStorages():  Did not find column /jointset/patellofemoral_l/knee_angle_l_beta/value in storage object.
+[2026-08-20 18:39:01.805] [warning] Model::formCompleteStorages():  Did not find column /jointset/L5_S1_IVDjnt/flex_extension/value in storage object.
+[2026-08-20 18:39:01.805] [warning] Model::formCompleteStorages():  Did not find column /jointset/L5_S1_IVDjnt/lat_bending/value in storage object.
+[2026-08-20 18:39:01.805] [warning] Model::formCompleteStorages():  Did not find column /jointset/L5_S1_IVDjnt/axial_rotation/value in storage object.
+[2026-08-20 18:39:01.805] [warning] Model::formCompleteStorages():  Did not find column /jointset/L4_L5_IVDjnt/L4_L5_IVDjnt_r3/value in storage object.
+[2026-08-20 18:39:01.805] [warning] Model::formCompleteStorages():  Did not find column /jointset/L4_L5_IVDjnt/L4_L5_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 18:39:01.805] [warning] Model::formCompleteStorages():  Did not find column /jointset/L4_L5_IVDjnt/L4_L5_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 18:39:01.805] [warning] Model::formCompleteStorages():  Did not find column /jointset/L3_L4_IVDjnt/L3_L4_IVDjnt_r3/value in storage object.
+[2026-08-20 18:39:01.805] [warning] Model::formCompleteStorages():  Did not find column /jointset/L3_L4_IVDjnt/L3_L4_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 18:39:01.805] [warning] Model::formCompleteStorages():  Did not find column /jointset/L3_L4_IVDjnt/L3_L4_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 18:39:01.805] [warning] Model::formCompleteStorages():  Did not find column /jointset/L2_L3_IVD_jnt/L2_L3_IVDjnt_r3/value in storage object.
+[2026-08-20 18:39:01.805] [warning] Model::formCompleteStorages():  Did not find column /jointset/L2_L3_IVD_jnt/L2_L3_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 18:39:01.805] [warning] Model::formCompleteStorages():  Did not find column /jointset/L2_L3_IVD_jnt/L2_L3_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 18:39:01.805] [warning] Model::formCompleteStorages():  Did not find column /jointset/L1_L2_IVD_jnt/L1_L2_IVDjnt_r3/value in storage object.
+[2026-08-20 18:39:01.805] [warning] Model::formCompleteStorages():  Did not find column /jointset/L1_L2_IVD_jnt/L1_L2_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 18:39:01.805] [warning] Model::formCompleteStorages():  Did not find column /jointset/L1_L2_IVD_jnt/L1_L2_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 18:39:01.805] [warning] Model::formCompleteStorages():  Did not find column /jointset/Torsojnt/Torso_Rot/value in storage object.
+[2026-08-20 18:39:01.805] [warning] Model::formCompleteStorages():  Did not find column /jointset/Abdjnt/Abs_r3/value in storage object.
+[2026-08-20 18:39:01.805] [warning] Model::formCompleteStorages():  Did not find column /jointset/Abdjnt/Abs_t1/value in storage object.
+[2026-08-20 18:39:01.805] [warning] Model::formCompleteStorages():  Did not find column /jointset/Abdjnt/Abs_t2/value in storage object.
+[2026-08-20 18:39:01.805] [warning] Model::formCompleteStorages():  Did not find column /jointset/LB_wrapjnt/LB_wrapjnt_r3/value in storage object.
+[2026-08-20 18:39:01.805] [warning] Model::formCompleteStorages():  Did not find column /jointset/LB_wrapjnt/LB_wrapjnt_t1/value in storage object.
+[2026-08-20 18:39:01.805] [warning] Model::formCompleteStorages():  Did not find column /jointset/LB_wrapjnt/LB_wrapjnt_t2/value in storage object.
+[2026-08-20 18:41:45.710] [info] Found 11996 state vectors with time stamps ranging from 0 to 49.979167.
+[2026-08-20 18:41:45.711] [info] Executing the analyses from 0 to 49.979167...
+[2026-08-20 18:53:24.406] [info] Printing results of investigation 20260513_squat_FTS09_94 to C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\muscle_analysis\94
+[2026-08-20 18:53:44.114] [info] AbstractTool 20260513_squat_FTS09_106 loading model C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\whole body model_20260513_squat_FTS09.osim
+[2026-08-20 18:53:44.202] [info] Loaded model WholeBodyModel from file C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\whole body model_20260513_squat_FTS09.osim
+[2026-08-20 18:53:44.501] [info] 'ExternalLoads' was renamed and is being set to 'externalloads'.
+[2026-08-20 18:53:44.562] [info] Old version storage/motion file encountered
+[2026-08-20 18:53:44.562] [info] Storage: read data file = bar_force_106.sto (nr=10066 nc=28)
+[2026-08-20 18:53:44.562] [info] .. assuming rotations in Radians..
+[2026-08-20 18:53:44.633] [info] ExternalForce::bar_force Data source being set to external_forces
+[2026-08-20 18:53:44.633] [info] ExternalForce::grf_l Data source being set to external_forces
+[2026-08-20 18:53:44.633] [info] ExternalForce::grf_r Data source being set to external_forces
+[2026-08-20 18:53:44.659] [info] Loading coordinates from file 'C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\mot\MVN-006_FTS09_opensim.mot'.
+[2026-08-20 18:53:44.660] [info] Old version storage/motion file encountered
+[2026-08-20 18:53:44.660] [info] Storage: read data file = C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\mot\MVN-006_FTS09_opensim.mot (nr=10066 nc=44)
+[2026-08-20 18:53:44.660] [info] .. assuming rotations in Degrees..
+[2026-08-20 18:53:44.848] [warning] Model::formCompleteStorages():  Did not find column /jointset/patellofemoral_r/knee_angle_r_beta/value in storage object.
+[2026-08-20 18:53:44.848] [warning] Model::formCompleteStorages():  Did not find column /jointset/patellofemoral_l/knee_angle_l_beta/value in storage object.
+[2026-08-20 18:53:44.848] [warning] Model::formCompleteStorages():  Did not find column /jointset/L5_S1_IVDjnt/flex_extension/value in storage object.
+[2026-08-20 18:53:44.849] [warning] Model::formCompleteStorages():  Did not find column /jointset/L5_S1_IVDjnt/lat_bending/value in storage object.
+[2026-08-20 18:53:44.849] [warning] Model::formCompleteStorages():  Did not find column /jointset/L5_S1_IVDjnt/axial_rotation/value in storage object.
+[2026-08-20 18:53:44.849] [warning] Model::formCompleteStorages():  Did not find column /jointset/L4_L5_IVDjnt/L4_L5_IVDjnt_r3/value in storage object.
+[2026-08-20 18:53:44.849] [warning] Model::formCompleteStorages():  Did not find column /jointset/L4_L5_IVDjnt/L4_L5_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 18:53:44.849] [warning] Model::formCompleteStorages():  Did not find column /jointset/L4_L5_IVDjnt/L4_L5_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 18:53:44.849] [warning] Model::formCompleteStorages():  Did not find column /jointset/L3_L4_IVDjnt/L3_L4_IVDjnt_r3/value in storage object.
+[2026-08-20 18:53:44.849] [warning] Model::formCompleteStorages():  Did not find column /jointset/L3_L4_IVDjnt/L3_L4_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 18:53:44.849] [warning] Model::formCompleteStorages():  Did not find column /jointset/L3_L4_IVDjnt/L3_L4_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 18:53:44.849] [warning] Model::formCompleteStorages():  Did not find column /jointset/L2_L3_IVD_jnt/L2_L3_IVDjnt_r3/value in storage object.
+[2026-08-20 18:53:44.849] [warning] Model::formCompleteStorages():  Did not find column /jointset/L2_L3_IVD_jnt/L2_L3_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 18:53:44.849] [warning] Model::formCompleteStorages():  Did not find column /jointset/L2_L3_IVD_jnt/L2_L3_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 18:53:44.849] [warning] Model::formCompleteStorages():  Did not find column /jointset/L1_L2_IVD_jnt/L1_L2_IVDjnt_r3/value in storage object.
+[2026-08-20 18:53:44.849] [warning] Model::formCompleteStorages():  Did not find column /jointset/L1_L2_IVD_jnt/L1_L2_IVD_bendjnt_r1/value in storage object.
+[2026-08-20 18:53:44.849] [warning] Model::formCompleteStorages():  Did not find column /jointset/L1_L2_IVD_jnt/L1_L2_IVD_rotjnt_r2/value in storage object.
+[2026-08-20 18:53:44.849] [warning] Model::formCompleteStorages():  Did not find column /jointset/Torsojnt/Torso_Rot/value in storage object.
+[2026-08-20 18:53:44.849] [warning] Model::formCompleteStorages():  Did not find column /jointset/Abdjnt/Abs_r3/value in storage object.
+[2026-08-20 18:53:44.849] [warning] Model::formCompleteStorages():  Did not find column /jointset/Abdjnt/Abs_t1/value in storage object.
+[2026-08-20 18:53:44.849] [warning] Model::formCompleteStorages():  Did not find column /jointset/Abdjnt/Abs_t2/value in storage object.
+[2026-08-20 18:53:44.849] [warning] Model::formCompleteStorages():  Did not find column /jointset/LB_wrapjnt/LB_wrapjnt_r3/value in storage object.
+[2026-08-20 18:53:44.849] [warning] Model::formCompleteStorages():  Did not find column /jointset/LB_wrapjnt/LB_wrapjnt_t1/value in storage object.
+[2026-08-20 18:53:44.849] [warning] Model::formCompleteStorages():  Did not find column /jointset/LB_wrapjnt/LB_wrapjnt_t2/value in storage object.
+[2026-08-20 18:55:50.802] [info] Found 10066 state vectors with time stamps ranging from 0 to 41.9375.
+[2026-08-20 18:55:50.802] [info] Executing the analyses from 0 to 41.9375...
+[2026-08-20 19:05:41.215] [info] Printing results of investigation 20260513_squat_FTS09_106 to C:\Users\PC\OneDrive\CUHK\HKSI digital twins\Digital Twin\result\20260513_squat_FTS09\opensim\muscle_analysis\106

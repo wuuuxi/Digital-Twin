@@ -18,26 +18,26 @@ import pandas as pd
 import pickle
 from datetime import datetime
 
-from digitaltwin.data.robot_processor import RobotProcessor
-from digitaltwin.data.emg_processor import EMGProcessor
-from digitaltwin.data.xsens_processor import XsensProcessor
+from digitaltwin.data.robot import RobotProcessor
+from digitaltwin.data.emg import EMGProcessor
+from digitaltwin.data.xsens import XsensProcessor
 from digitaltwin.data.insole import (InsoleProcessor, has_offset,
                                      resolve_time_offset)
-from digitaltwin.analysis.alignment import DataAligner
-from digitaltwin.analysis.curve_analysis import CurveAnalyzer
-from digitaltwin.analysis.feature_injector import (
+from digitaltwin.processing.alignment import DataAligner
+from digitaltwin.analysis.curves import CurveAnalyzer
+from digitaltwin.processing.features import (
     inject_emg_features, inject_xsens_features,
     compute_mdf_for_results, compute_segmented_mdf_for_results,
 )
-from digitaltwin.analysis.heatmap.heatmap_generator import (
+from digitaltwin.analysis.activation.generator import (
     HeatmapGenerator, estimate_load_from_df,
 )
-from digitaltwin.analysis.vload.variable_load import generate_variable_load
-from digitaltwin.config_manager import numeric_load_value
+from digitaltwin.config.loads import numeric_load_value
 from digitaltwin.pipelines.vload import VLoadPipeline
 from digitaltwin.visualization.plot_curves import CurvePlotter
 from digitaltwin.visualization.vload.variable_load_plot import plot_variable_load_result
 from digitaltwin.utils.logger import beauty_print
+from digitaltwin.models import PipelineResults, TrialMetadata, TrialResult
 
 
 class MultiLoadPipeline:
@@ -58,7 +58,7 @@ class MultiLoadPipeline:
         self.plotter = CurvePlotter(subject=subject)
         self.heatmap_generator = HeatmapGenerator(self)
 
-        self.results = {}
+        self.results = PipelineResults()
         self.aligned_data = None
         self.vload_results = {}
         self.debug = False
@@ -66,7 +66,7 @@ class MultiLoadPipeline:
     # ==================== 核心流水线 ====================
 
     def run(self, robot_files=None, include_xsens=True,
-            include_insole=False):
+            include_insole=False, write=False):
         """
         执行完整的多负载数据处理流水线。
 
@@ -83,11 +83,16 @@ class MultiLoadPipeline:
             鞋垫时间轴只由采集组里的 insole_time_offset 决定（由
             example_insole_sync_offset.py 互相关标定得到）；没有该参数的组
             会 beauty_print 告警并使用鞋垫文件的原始相对时间。
+        write : bool
+            是否将合并后的 ``aligned_data.csv``/``.pkl`` 写入
+            ``subject.result_folder``。默认 ``False``，避免 library API
+            在分析调用中产生隐式副作用；需要保持旧 example 行为时请显式
+            传入 ``write=True``。
 
         Returns
         -------
-        dict
-            每个负载的处理结果
+        PipelineResults
+            按负载键索引的结构化试次结果。
         """
         if robot_files is None:
             robot_files = self.subject.modeling_data
@@ -104,14 +109,14 @@ class MultiLoadPipeline:
             if result is not None:
                 all_results[load_weight] = result
 
-        self.results = all_results
-        self.plotter.set_results(all_results)
+        self.results = PipelineResults(all_results)
+        self.plotter.set_results(self.results)
         self._log(f"成功处理 {len(all_results)}/{len(robot_files)} 个负载")
 
         if all_results:
-            self._align_all_loads()
+            self._align_all_loads(write=write)
 
-        return all_results
+        return self.results
 
     @staticmethod
     def _numeric_load_value(load_weight, file_info=None):
@@ -129,15 +134,17 @@ class MultiLoadPipeline:
         start_time = file_info.get("start_time", 0)
         xsens_file = file_info.get("xsens_file", None)
 
-        result = {
-            'load_weight': load_weight,
-            'load_value': self._numeric_load_value(load_weight, file_info),
-            'robot_data': None,
-            'emg_data': None,
-            'xsens_data': None,
-            'aligned_data': None,
-            'metadata': {}
-        }
+        result = TrialResult(
+            metadata=TrialMetadata(
+                load_weight=str(load_weight),
+                load_value=self._numeric_load_value(load_weight, file_info),
+                load_mode=file_info.get('mode'),
+                source_files={
+                    key: value for key, value in file_info.items()
+                    if key.endswith('_file') and isinstance(value, str)
+                },
+            )
+        )
 
         try:
             # 1. 机器人数据
@@ -145,38 +152,44 @@ class MultiLoadPipeline:
                 robot_file, load_weight,
                 self.subject.modeling_robot_folder, self.subject.folder,
                 turn_position=self.subject.turn_position,
-                load_value=result['load_value'])
+                load_value=result.load_value)
             if robot_data is None:
                 self._log(f"负载 {load_weight}kg: 机器人数据处理失败")
                 return None
-            result['robot_data'] = robot_data
-            result['metadata']['robot_samples'] = len(robot_data)
+            result.robot_data = robot_data
+            result.metadata.robot_samples = len(robot_data)
 
             # 2. EMG 数据
-            emg_data = self.emg_processor.process(
-                emg_file, load_weight,
-                self.subject.modeling_emg_folder, self.subject.folder,
-                motion_flag=self.subject.motion_flag,
-                remove_leading_zeros=self.subject.remove_leading_zeros)
-            if emg_data is None:
-                self._log(f"负载 {load_weight}kg: EMG数据处理失败")
-                return None
-            result['emg_data'] = emg_data
-            result['metadata']['emg_samples'] = len(emg_data['time'])
+            if emg_file:
+                emg_data = self.emg_processor.process(
+                    emg_file, load_weight,
+                    self.subject.modeling_emg_folder, self.subject.folder,
+                    motion_flag=self.subject.motion_flag,
+                    remove_leading_zeros=self.subject.remove_leading_zeros)
+                if emg_data is None:
+                    self._log(f"负载 {load_weight}kg: EMG数据处理失败")
+                    return None
+            else:
+                emg_data = None
+                self._log(f"负载 {load_weight}: CONFIG 未提供 EMG 文件，跳过 EMG 对齐")
+            result.emg_data = emg_data
+            result.metadata.emg_samples = (
+                len(emg_data['time']) if emg_data is not None else None)
 
             # 3. Xsens 数据（可选）
             if include_xsens and xsens_file:
                 xsens_data = XsensProcessor.process(
                     xsens_file, load_weight, self.subject.folder,
                     xsens_folder=self.subject.modeling_xsens_folder)
-                result['xsens_data'] = xsens_data
+                result.xsens_data = xsens_data
 
             # 4. 对齐机器人和 EMG 数据
             aligned = self.aligner.align_robot_emg(robot_data, emg_data)
 
             # 5. 注入 EMG 特征（MDF + RMS）
-            aligned = inject_emg_features(
-                aligned, emg_data, self.subject.emg_fs)
+            if emg_data is not None:
+                aligned = inject_emg_features(
+                    aligned, emg_data, self.subject.emg_fs)
 
             # 6. 可选注入其他传感器，例如鞋垫 GRF
             if include_insole:
@@ -184,15 +197,15 @@ class MultiLoadPipeline:
                     aligned, file_info, load_weight)
 
             # 7. 注入 Xsens 关节角度
-            if include_xsens and xsens_file and result.get('xsens_data'):
+            if include_xsens and xsens_file and result.xsens_data:
                 aligned = inject_xsens_features(
-                    aligned, result['xsens_data'], start_time=start_time)
+                    aligned, result.xsens_data, start_time=start_time)
 
-            result['aligned_data'] = aligned
+            result.aligned_data = aligned
 
             # 8. 运动分割
             cutted = self.aligner.cut_aligned_data(aligned)
-            result['cutted_data'] = cutted
+            result.segments = cutted
 
             # 9. 计算平均曲线（切片为空时跳过，不能让异常把整组数据打掉）
             if cutted is None or (hasattr(cutted, '__len__') and len(cutted) == 0):
@@ -201,13 +214,12 @@ class MultiLoadPipeline:
                     'aligned_data，可用力阈值窗口（result_analysis.get_action_windows）'
                     '继续分析。'.format(load_weight),
                     type="warning")
-                result['average_data'] = {}
+                result.average_data = {}
             else:
-                result['average_data'] = self.curve_analyzer.process_for_curves(cutted)
+                result.average_data = self.curve_analyzer.process_for_curves(cutted)
 
-            result['metadata']['load_weight'] = load_weight
-            result['metadata']['processing_time'] = (
-                datetime.now().isoformat())
+            result.metadata.load_weight = str(load_weight)
+            result.metadata.processing_time = datetime.now().isoformat()
             return result
 
         except Exception as e:
@@ -282,12 +294,12 @@ class MultiLoadPipeline:
 
         return out
 
-    def _align_all_loads(self):
+    def _align_all_loads(self, write=False):
         """对齐所有负载的数据并保存"""
         all_aligned = []
         for load_weight, result in self.results.items():
-            if result['aligned_data'] is not None:
-                df = result['aligned_data'].copy()
+            if result.aligned_data is not None:
+                df = result.aligned_data.copy()
                 df['load_weight'] = load_weight
                 df['load_value'] = result.get(
                     'load_value', self._numeric_load_value(load_weight))
@@ -301,7 +313,8 @@ class MultiLoadPipeline:
                     self.aligned_data['pos_l'].max()
                 ]
             self._log(f"所有负载对齐完成，共 {len(self.aligned_data)} 个样本")
-            self._save_aligned_data()
+            if write:
+                self._save_aligned_data()
 
     def _save_aligned_data(self, save_path=None):
         """保存对齐后的数据"""
@@ -332,9 +345,9 @@ class MultiLoadPipeline:
     def plot(self, save_path=None):
         """绘制平均曲线"""
         for load_weight, result in self.results.items():
-            if 'average_data' in result and result['average_data']:
+            if result.average_data:
                 self.plotter.plot_average_curves(
-                    result['average_data'], save_path=save_path)
+                    result.average_data, save_path=save_path)
 
     def visualize_alignment(self, **kwargs):
         self.plotter.visualize_alignment(
@@ -455,6 +468,16 @@ class MultiLoadPipeline:
         return self.heatmap_generator.collect_cutted_data(
             movement_types=movement_types)
 
+    def collect_segments(self, movement_types=None):
+        """Collect movement segments through the public pipeline API.
+
+        ``_collect_cutted_data`` remains as a compatibility alias for old
+        scripts; new examples should use this method or
+        ``PipelineResults.collect_segments``.
+        """
+        return self.heatmap_generator.collect_segments(
+            movement_types=movement_types)
+
     def generate_heatmaps(self, muscles=None, save_dir=None,
                           data_len=50, sigma=1.0,
                           num_centers=20, fit_3d=False,
@@ -523,7 +546,8 @@ class MultiLoadPipeline:
     # ==================== 变负载优化 ====================
 
     def run_variable_load_optimization(self, variable_mode=1,
-                                       use_pspline=True, tee=None):
+                                       use_pspline=True, tee=None,
+                                       load_source='nominal'):
         """
         Parameters
         ----------
@@ -536,17 +560,30 @@ class MultiLoadPipeline:
         tee : bool or None, default None
             是否把 ipopt 的求解日志打到 stdout。None 时随 self.debug 自动开关，
             方便出现“bad status: error”之类问题时直接看到 ipopt 的退出原因。
+        load_source : {'nominal', 'estimated'}, default 'nominal'
+            选择热力图参数来源。``estimated`` 使用
+            ``result_folder/heatmap_estimated_load/params`` 下由
+            ``generate_heatmaps_with_estimated_load`` 生成的参数。
         """
         if tee is None:
             tee = bool(self.debug)
+        # Pyomo/IPOPT is an optional optimization dependency.  Delay this
+        # import so ordinary fixed-load data analysis remains lightweight.
+        from digitaltwin.analysis.vload.variable_load import (
+            ensure_ipopt_available,
+            generate_variable_load,
+        )
+        ipopt_executable = ensure_ipopt_available()
         self._log(
-            f"开始变负载优化 (use_pspline={use_pspline}, tee={tee})...")
+            f"开始变负载优化 (use_pspline={use_pspline}, tee={tee}, "
+            f"ipopt={ipopt_executable})...")
         generate_variable_load(
             self.subject,
             variable_mode=variable_mode,
             plot_fn=plot_variable_load_result,
             use_pspline=use_pspline,
             tee=tee,
+            load_source=load_source,
         )
         self._log("变负载优化完成。")
 

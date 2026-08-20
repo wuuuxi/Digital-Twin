@@ -9,7 +9,10 @@ example_insole_sync_offset.py
 跑完之后，json 的每个采集组里只会多出一个字段：
     "insole_time_offset": 1.234
 
-标定质量（corr / 拟合时长 / 段数 / 是否写回）只在终端的 print_report
+标定会复用机器人位置/速度切片得到的动作窗口，并要求候选 offset 覆盖
+足够比例的动作样本，避免周期信号只重合一两个动作时选中错误相关峰。
+
+标定质量（corr / 拟合时长 / overlap / 段数 / 是否写回）只在终端的 print_report
 表里看，不写进 json。corr 低于 MIN_CORR 的组不会被写回，所以
 配置里出现 insole_time_offset 就意味着它通过了阀值。
 
@@ -41,6 +44,7 @@ WRITE_JSON = True     # 是否把 offset 写回配置文件
 MIN_CORR = 0.5        # 低于此相关系数只报告、不写回
 MAX_LAG = 30.0        # 滞后搜索范围 ±(s)；峰值落在边界时加大它
 CORR_THR = 0.5        # 左右一致性门槛，决定哪些段算深蹲
+MIN_OVERLAP_FRAC = 0.4  # 候选 offset 至少覆盖的鞋垫动作样本比例
 PLOT = True           # 是否画诊断图
 # ----------------------------------------------------------------
 
@@ -55,6 +59,7 @@ def main():
         min_corr=MIN_CORR,
         max_lag=MAX_LAG,
         corr_thr=CORR_THR,
+        min_overlap_frac=MIN_OVERLAP_FRAC,
         plot=PLOT,
     )
 

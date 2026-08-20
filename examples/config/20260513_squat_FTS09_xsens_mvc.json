@@ -1,0 +1,373 @@
+{
+  "experiment_label": "20260513_squat_FTS09",
+  "folder": "C:/Users/PC/OneDrive/Experiment/20260513_HKSI_squat/",
+  "emg_settings": {
+    "fs": 1000,
+    "emg_folder": "MVC",
+    "mvc_file": [
+      "EMG_FTS09_Squat_IM_1_2026-05-13_05-34-13.csv",
+      "EMG_FTS09_MVC_Ankle_L_1_2026-05-13_06-14-22.csv",
+      "EMG_FTS09_MVC_Ankle_L_2_2026-05-13_06-15-33.csv",
+      "EMG_FTS09_MVC_Ankle_L_3_2026-05-13_06-16-50.csv",
+      "EMG_FTS09_MVC_Ankle_L_4_2026-05-13_06-18-00.csv",
+      "EMG_FTS09_MVC_Hip_L_1_2026-05-13_05-57-50.csv",
+      "EMG_FTS09_MVC_Hip_L_2_2026-05-13_05-58-58.csv",
+      "EMG_FTS09_MVC_Hip_L_3_2026-05-13_06-00-03.csv",
+      "EMG_FTS09_MVC_Hip_L_4_2026-05-13_06-01-09.csv",
+      "EMG_FTS09_MVC_Knee_L_1_2026-05-13_06-28-49.csv",
+      "EMG_FTS09_MVC_Knee_L_2_2026-05-13_06-29-53.csv",
+      "EMG_FTS09_MVC_Knee_L_3_2026-05-13_06-31-15.csv",
+      "EMG_FTS09_MVC_Knee_L_4_2026-05-13_06-32-23.csv"
+    ],
+    "musc_label": [
+      "LTA",
+      "LGL",
+      "LSOL",
+      "LFibLon",
+      "LVL",
+      "LRF",
+      "LVM",
+      "LAddl",
+      "LBF",
+      "LST",
+      "LGlutMax",
+      "LGlutMed",
+      "RTA",
+      "RGL",
+      "RSOL",
+      "RFibLon",
+      "RVL",
+      "RRF",
+      "RVM",
+      "RAddl",
+      "RBF",
+      "RST",
+      "RGlutMax",
+      "RGlutMed"
+    ],
+    "musc_mvc": [
+      0.2551,
+      0.1117,
+      0.0913,
+      0.1027,
+      0.2673,
+      0.1798,
+      0.3053,
+      0.0951,
+      0.1233,
+      0.1409,
+      0.135,
+      0.0362,
+      0.1123,
+      0.0683,
+      0.0549,
+      0.0466,
+      0.0287,
+      0.1565,
+      0.2789,
+      0.0684,
+      0.0779,
+      0.1202,
+      0.0657,
+      0.1191
+    ]
+  },
+  "motion_settings": {
+    "motion_flag": "all",
+    "target_motion": "squat",
+    "remove_leading_zeros": true,
+    "turn_position": true
+  },
+  "modeling_file": {
+    "emg_folder": "emg",
+    "xsens_folder": "xsens",
+    "insole_folder": "Sorted",
+    "load_modes": {
+      "isotonic": {
+        "description": "定负载深蹲。配重已知，直接读 load_kg。",
+        "load_source": "nominal",
+        "required_fields": [
+          "load_kg"
+        ],
+        "example_entry": {
+          "mode": "isotonic",
+          "load_kg": 20.0,
+          "robot_file": "robot/xxx.csv"
+        }
+      },
+      "isokinetic": {
+        "description": "等速深蹲。限定最高速度，发力较大时杆接近恒速运动，加速度为 0，此时杆力全部用于平衡重力，可由受力反推等效负载。load_kg 写 null。",
+        "load_source": "force",
+        "required_fields": [
+          "target_velocity"
+        ],
+        "example_entry": {
+          "mode": "isokinetic",
+          "target_velocity": 0.3,
+          "load_kg": null,
+          "robot_file": "robot/xxx.csv"
+        }
+      },
+      "isometric": {
+        "description": "等长。杆固定在某高度不动，受试者在该位置发最大力，速度与加速度均为 0，同样由受力反推等效负载。load_kg 写 null。",
+        "load_source": "force",
+        "required_fields": [
+          "bar_height"
+        ],
+        "example_entry": {
+          "mode": "isometric",
+          "bar_height": 1.0,
+          "load_kg": null,
+          "robot_file": "robot/xxx.csv"
+        }
+      }
+    },
+    "data": {
+      "IM-1": {
+        "mode": "isometric",
+        "bar_height": 1.0,
+        "load_kg": null,
+        "robot_file": "robot/RobotUdp_FTS09_Squat_IM_1_20260513_173420.csv",
+        "emg_file": "EMG_FTS09_Squat_IM_1_2026-05-13_05-34-13.csv",
+        "xsens_file": "MVN-011_FTS09.xlsx",
+        "insole_file_l": "2026-05-13-17-34_squat_IM/Medilogic Insoles-LT Force.csv",
+        "insole_file_r": "2026-05-13-17-34_squat_IM/Medilogic Insoles-RT Force.csv",
+        "insole_map_l": "2026-05-13-17-34_squat_IM/Medilogic Insoles-LT Medilogic Insoles G2. Foot.csv",
+        "insole_map_r": "2026-05-13-17-34_squat_IM/Medilogic Insoles-RT Medilogic Insoles G2. Foot.csv",
+        "insole_time_offset": -2.8423
+      },
+      "IK-0.3": {
+        "mode": "isokinetic",
+        "target_velocity": 0.3,
+        "load_kg": null,
+        "robot_file": "robot/RobotUdp_FTS09_Squat_IK0.3_20260513_172556.csv",
+        "emg_file": "EMG_FTS09_Squat_IK0.3_1_2026-05-13_05-25-52.csv",
+        "xsens_file": "MVN-008_FTS09.xlsx",
+        "insole_file_l": "2026-05-13-17-25_squat_IK0.3/Medilogic Insoles-LT Force.csv",
+        "insole_file_r": "2026-05-13-17-25_squat_IK0.3/Medilogic Insoles-RT Force.csv",
+        "insole_map_l": "2026-05-13-17-25_squat_IK0.3/Medilogic Insoles-LT Medilogic Insoles G2. Foot.csv",
+        "insole_map_r": "2026-05-13-17-25_squat_IK0.3/Medilogic Insoles-RT Medilogic Insoles G2. Foot.csv",
+        "insole_time_offset": -1.4297
+      },
+      "IK-0.15": {
+        "mode": "isokinetic",
+        "target_velocity": 0.15,
+        "load_kg": null,
+        "robot_file": "robot/RobotUdp_FTS09_Squat_IK0.15_20260513_172927.csv",
+        "emg_file": "EMG_FTS09_Squat_IK0.15_1_2026-05-13_05-29-20.csv",
+        "xsens_file": "MVN-010_FTS09.xlsx",
+        "insole_file_l": "2026-05-13-17-29_squat_IK0.15/Medilogic Insoles-LT Force.csv",
+        "insole_file_r": "2026-05-13-17-29_squat_IK0.15/Medilogic Insoles-RT Force.csv",
+        "insole_map_l": "2026-05-13-17-29_squat_IK0.15/Medilogic Insoles-LT Medilogic Insoles G2. Foot.csv",
+        "insole_map_r": "2026-05-13-17-29_squat_IK0.15/Medilogic Insoles-RT Medilogic Insoles G2. Foot.csv",
+        "insole_time_offset": -3.7553
+      },
+      "20": {
+        "mode": "isotonic",
+        "load_kg": 20.0,
+        "robot_file": "robot/RobotUdp_FTS09_Squat_15p_3_20260513_165830.csv",
+        "emg_file": "EMG_FTS09_Squat_15p_1_2026-05-13_04-58-13.csv",
+        "xsens_file": "MVN-001_FTS09.xlsx",
+        "insole_file_l": "2026-05-13-16-58_Squat15p/Medilogic Insoles-LT Force.csv",
+        "insole_file_r": "2026-05-13-16-58_Squat15p/Medilogic Insoles-RT Force.csv",
+        "insole_map_l": "2026-05-13-16-58_Squat15p/Medilogic Insoles-LT Medilogic Insoles G2. Foot.csv",
+        "insole_map_r": "2026-05-13-16-58_Squat15p/Medilogic Insoles-RT Medilogic Insoles G2. Foot.csv",
+        "insole_time_offset": -1.5921
+      },
+      "38": {
+        "mode": "isotonic",
+        "load_kg": 38.0,
+        "robot_file": "robot/RobotUdp_FTS09_Squat_30p_20260513_170034.csv",
+        "emg_file": "EMG_FTS09_Squat_30p_1_2026-05-13_05-00-23.csv",
+        "xsens_file": "MVN-002_FTS09.xlsx",
+        "insole_file_l": "2026-05-13-17-00_squat30p/Medilogic Insoles-LT Force.csv",
+        "insole_file_r": "2026-05-13-17-00_squat30p/Medilogic Insoles-RT Force.csv",
+        "insole_map_l": "2026-05-13-17-00_squat30p/Medilogic Insoles-LT Medilogic Insoles G2. Foot.csv",
+        "insole_map_r": "2026-05-13-17-00_squat30p/Medilogic Insoles-RT Medilogic Insoles G2. Foot.csv",
+        "insole_time_offset": -4.843
+      },
+      "56": {
+        "mode": "isotonic",
+        "load_kg": 56.0,
+        "robot_file": "robot/RobotUdp_FTS09_Squat_45p_20260513_170310.csv",
+        "emg_file": "EMG_FTS09_Squat_45p_1_2026-05-13_05-02-42.csv",
+        "xsens_file": "MVN-003_FTS09.xlsx",
+        "insole_file_l": "2026-05-13-17-02_squat45p/Medilogic Insoles-LT Force.csv",
+        "insole_file_r": "2026-05-13-17-02_squat45p/Medilogic Insoles-RT Force.csv",
+        "insole_map_l": "2026-05-13-17-02_squat45p/Medilogic Insoles-LT Medilogic Insoles G2. Foot.csv",
+        "insole_map_r": "2026-05-13-17-02_squat45p/Medilogic Insoles-RT Medilogic Insoles G2. Foot.csv",
+        "insole_time_offset": -20.2531
+      },
+      "75": {
+        "mode": "isotonic",
+        "load_kg": 75.0,
+        "robot_file": "robot/RobotUdp_FTS09_Squat_60p_20260513_170907.csv",
+        "emg_file": "EMG_FTS09_Squat_60p_1_2026-05-13_05-08-52.csv",
+        "xsens_file": "MVN-004_FTS09.xlsx",
+        "insole_file_l": "2026-05-13-17-09_squat60p/Medilogic Insoles-LT Force.csv",
+        "insole_file_r": "2026-05-13-17-09_squat60p/Medilogic Insoles-RT Force.csv",
+        "insole_map_l": "2026-05-13-17-09_squat60p/Medilogic Insoles-LT Medilogic Insoles G2. Foot.csv",
+        "insole_map_r": "2026-05-13-17-09_squat60p/Medilogic Insoles-RT Medilogic Insoles G2. Foot.csv",
+        "insole_time_offset": -5.8344
+      },
+      "94": {
+        "mode": "isotonic",
+        "load_kg": 94.0,
+        "robot_file": "robot/RobotUdp_FTS09_Squat_75p_20260513_171545.csv",
+        "emg_file": "EMG_FTS09_Squat_75p_1_2026-05-13_05-15-37.csv",
+        "xsens_file": "MVN-005_FTS09.xlsx",
+        "insole_file_l": "2026-05-13-17-15_squat75p/Medilogic Insoles-LT Force.csv",
+        "insole_file_r": "2026-05-13-17-15_squat75p/Medilogic Insoles-RT Force.csv",
+        "insole_map_l": "2026-05-13-17-15_squat75p/Medilogic Insoles-LT Medilogic Insoles G2. Foot.csv",
+        "insole_map_r": "2026-05-13-17-15_squat75p/Medilogic Insoles-RT Medilogic Insoles G2. Foot.csv",
+        "insole_time_offset": -1.8144
+      },
+      "106": {
+        "mode": "isotonic",
+        "load_kg": 106.0,
+        "robot_file": "robot/RobotUdp_FTS09_Squat_85p_20260513_171938.csv",
+        "emg_file": "EMG_FTS09_Squat_85p_1_2026-05-13_05-19-31.csv",
+        "xsens_file": "MVN-006_FTS09.xlsx",
+        "insole_file_l": "2026-05-13-17-19_squat85p/Medilogic Insoles-LT Force.csv",
+        "insole_file_r": "2026-05-13-17-19_squat85p/Medilogic Insoles-RT Force.csv",
+        "insole_map_l": "2026-05-13-17-19_squat85p/Medilogic Insoles-LT Medilogic Insoles G2. Foot.csv",
+        "insole_map_r": "2026-05-13-17-19_squat85p/Medilogic Insoles-RT Medilogic Insoles G2. Foot.csv",
+        "insole_time_offset": -2.8762
+      }
+    }
+  },
+  "opensim_settings": {
+    "subject_mass": 70.0,
+    "bar_mass": 0.0,
+    "bar_contact_body": "torso",
+    "bar_contact_point": [
+      -0.0444,
+      0.3829,
+      0.0
+    ],
+    "insole_use_frame_cop": true,
+    "insole_contact_point": [
+      0.097,
+      -0.0011,
+      0.0
+    ],
+    "muscle_analysis_coordinates": [
+      "hip_flexion_r",
+      "hip_flexion_l",
+      "knee_angle_r",
+      "knee_angle_l",
+      "ankle_angle_r",
+      "ankle_angle_l"
+    ],
+    "muscle_analysis_muscles": [
+      "tibant_l",
+      "gaslat_l",
+      "soleus_l",
+      "perlong_l",
+      "vaslat_l",
+      "recfem_l",
+      "vasmed_l",
+      "addlong_l",
+      "bflh_l",
+      "semiten_l",
+      "glmax1_l",
+      "glmed1_l",
+      "tibant_r",
+      "gaslat_r",
+      "soleus_r",
+      "perlong_r",
+      "vaslat_r",
+      "recfem_r",
+      "vasmed_r",
+      "addlong_r",
+      "bflh_r",
+      "semiten_r",
+      "glmax1_r",
+      "glmed1_r"
+    ]
+  },
+  "fatigue_file": {
+    "emg_folder": "fatigue/emg",
+    "robot_folder": "fatigue/robot",
+    "fatigue_data": {
+      "variable1": {
+        "robot_file": "RobotUdp_FTS09_V1_20260527_161334.csv",
+        "emg_file": "EMG_FTS09_Squat_V1_1_2026-05-27_04-13-23.csv",
+        "load_file": "Msquat_multi muslce.csv"
+      },
+      "variable2": {
+        "robot_file": "RobotUdp_FTS09_c3_20260603_161939.csv",
+        "emg_file": "EMG_FTS09_c3_3_2026-06-03_04-19-28.csv",
+        "load_file": "Msquat_multi muslce.csv"
+      },
+      "constant1": {
+        "robot_file": "RobotUdp_FTS09_V3_20260527_170145.csv",
+        "emg_file": "EMG_FTS09_Squat_V3_1_2026-05-27_05-01-37.csv",
+        "load_file": "Msquat_multi middle_mean.csv"
+      },
+      "constant2": {
+        "robot_file": "RobotUdp_FTS09_c1_20260603_152015.csv",
+        "emg_file": "EMG_FTS09_c1_1_2026-06-03_03-20-46.csv",
+        "load_file": "Msquat_multi middle_mean.csv"
+      },
+      "elastic": {
+        "robot_file": "RobotUdp_FTS09_c2_20260603_154935.csv",
+        "emg_file": "EMG_FTS09_c2_1_2026-06-03_03-49-29.csv",
+        "load_file": "Msquat_multi middle_elastic.csv"
+      }
+    }
+  },
+  "heatmap_settings": {
+    "height_range": [
+      1.41,
+      1.909
+    ],
+    "load_range": [
+      20,
+      105
+    ],
+    "titles": [
+      "LVL",
+      "LVM",
+      "LGlutMax",
+      "RVL",
+      "RVM",
+      "RGlutMax",
+      "RGL",
+      "RBF"
+    ],
+    "goal": [
+      0.6755,
+      0.6714,
+      0.4063,
+      0.6805,
+      0.6777,
+      0.6157,
+      0.2621,
+      0.4163
+    ],
+    "over_activate_threshold": [
+      0.9,
+      0.9,
+      0.9,
+      0.9,
+      0.9,
+      0.9,
+      0.9,
+      0.9
+    ],
+    "epsilons": [
+      1
+    ],
+    "max_iter": [
+      10000,
+      10000,
+      10000,
+      10000,
+      10000,
+      10000,
+      10000,
+      10000
+    ]
+  }
+}

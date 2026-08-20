@@ -27,16 +27,16 @@ def main():
     subject = Subject('../config/20260513_squat_FTS09.json')
     pipeline = MultiLoadPipeline(subject)
     pipeline.debug = True
-    pipeline.run(include_xsens=False)
+    fixed_results = pipeline.run(include_xsens=False, write=True)
 
     # muscles = subject.musc_label[:12]
     muscles = subject.musc_label
 
-    plot_feature_vs_time(pipeline.results, muscles, feature=FEATURE, feature_label=LABEL)
-    plot_feature_vs_position(pipeline.results, muscles, feature=FEATURE, feature_label=LABEL)
-    plot_pos_vel_emg_feature_grid(pipeline.results, ['LVL', 'LGL'], subject=subject,
+    plot_feature_vs_time(fixed_results, muscles, feature=FEATURE, feature_label=LABEL)
+    plot_feature_vs_position(fixed_results, muscles, feature=FEATURE, feature_label=LABEL)
+    plot_pos_vel_emg_feature_grid(fixed_results, ['LVL', 'LGL'], subject=subject,
                                   feature=FEATURE, feature_label=LABEL)
-    plot_feature_bar_by_load(pipeline.results, muscles, feature=FEATURE, feature_label=LABEL)
+    plot_feature_bar_by_load(fixed_results, muscles, feature=FEATURE, feature_label=LABEL)
 
     plt.show()
 

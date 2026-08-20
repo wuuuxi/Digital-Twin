@@ -96,6 +96,7 @@ def main():
     results = pipeline.run(
         include_xsens=False,
         include_insole=INCLUDE_INSOLE_GRF,
+        write=True,
     )
 
     if not results:

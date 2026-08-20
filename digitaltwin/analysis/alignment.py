@@ -63,6 +63,15 @@ class DataAligner:
             对齐后的DataFrame
         """
         try:
+            # EMG 是可选传感器。没有 EMG 文件时，仍保留机器人时间轴，
+            # 这样仅做力/位置/速度分析的配置不会因对齐步骤失败。
+            if emg_data is None:
+                aligned_df = robot_data.copy()
+                if 'time' in aligned_df.columns:
+                    aligned_df['time_robot'] = aligned_df['time'].values
+                    aligned_df['time_aligned'] = True
+                return aligned_df
+
             robot_time = robot_data['time'].values
             emg_time = emg_data['time']
 

@@ -16,7 +16,7 @@ Activation(Height) 插值作为预测（不从 overlays 中读取 params）。
 import numpy as np
 
 from digitaltwin.analysis.alignment import filter_movement_types
-from digitaltwin.analysis.heatmap.rbf_fitting import predict_at
+from digitaltwin.analysis.activation.rbf import predict_at
 from digitaltwin.analysis.vload.vload_planning import load_planned_vload
 from digitaltwin.utils.array_tools import interp_sorted, rmse_with_count
 

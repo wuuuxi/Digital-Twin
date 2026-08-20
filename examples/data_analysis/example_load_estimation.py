@@ -18,7 +18,7 @@ def main():
     pipeline = MultiLoadPipeline(subject)
     pipeline.debug = True
 
-    pipeline.run(include_xsens=False)
+    pipeline.run(include_xsens=False, write=True)
     pipeline.visualize_load_estimation(movement_types=['upward'])
     plt.show()
 

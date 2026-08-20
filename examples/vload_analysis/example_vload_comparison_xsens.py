@@ -39,7 +39,7 @@ def main():
     pipeline.debug = True
 
     # --- 数据加载 ---
-    results = pipeline.run(include_xsens=True)
+    results = pipeline.run(include_xsens=True, write=True)
     vload_results = pipeline.run_vload()
 
     # --- 运动类型默认参数 ---

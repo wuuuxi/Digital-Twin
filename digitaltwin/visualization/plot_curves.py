@@ -306,11 +306,12 @@ class CurvePlotter:
                     tc = (['emg_TriLat'] if subject and subject.target_motion == 'benchpress'
                           else ['emg_FibLon', 'emg_VL', 'emg_RF'])
 
-                # 非 EMG 的传感器列（如 grf_l / grf_r）必须共用同一个归一化
-                # 分母，否则各自被独立拉伸到自己的 [-1,1]，视觉幅度一样但
-                # 实际数值比例被破坏，无法比较左右差异。
+                # 鞋垫 GRF 等同类非 EMG 传感器共用同一个归一化分母，
+                # 但 Xsens 角度不能与 GRF 共用分母，否则角度会被压得过小。
                 non_emg_cols = [c for c in tc
-                                if c in ad.columns and not c.startswith('emg_')]
+                                if c in ad.columns
+                                and not c.startswith('emg_')
+                                and not c.startswith('xsens_')]
                 shared_denom = 0.0
                 for c in non_emg_cols:
                     yy = ad[c].values.astype(float)
@@ -330,15 +331,27 @@ class CurvePlotter:
                         # EMG 激活通常已经归一化，直接画
                         y_plot = y
                         label = f'EMG {label}'
+                    elif col.startswith('xsens_'):
+                        # Xsens 角度使用自身最大绝对值归一化，且分母上限
+                        # 为 180 度，避免被 GRF 的数值范围压缩成近似直线。
+                        finite = y[np.isfinite(y)]
+                        xsens_denom = (float(np.nanmax(np.abs(finite)))
+                                       if finite.size else 1.0)
+                        xsens_denom = min(xsens_denom, 180.0)
+                        if xsens_denom <= 1e-10:
+                            xsens_denom = 1.0
+                        y_plot = y / xsens_denom
+                        label = f'{label}'
                     else:
                         # 其他传感器量（如 grf_l / grf_r）量纲可能很大，
                         # 在 alignment 图中归一化，便于和力/位置/EMG 同图比较。
                         # 用所有非 EMG 列共用的分母，保证 grf_l / grf_r
                         # 之间的处理完全一致。
                         y_plot = y / shared_denom
-                        label = f'{label} (norm)'
+                        label = f'{label}'
 
-                    ax.plot(ad['time'], y_plot, '--',
+                    line_style = '-' if col.startswith('xsens_') else '--'
+                    ax.plot(ad['time'], y_plot, line_style,
                             label=label, alpha=0.7)
 
             ax.set_title(f'Load: {_load_label(lw)}')
@@ -396,7 +409,8 @@ class CurvePlotter:
         if _avail:
             target_muscles = self._resolve_muscle_cols(target_muscles, _avail)
 
-        muscle_col = target_muscles[0]
+        # EMG 不是必选传感器；没有 EMG 时仍绘制机器人和其他传感器行。
+        muscle_col = target_muscles[0] if target_muscles else None
 
         # 只保留实际存在的额外传感器列，避免空子图
         valid_extra_cols = []
@@ -410,8 +424,9 @@ class CurvePlotter:
             ('vel_l', 'Velocity', 'vel'),
             ('pos_l', 'Position', 'pos'),
             ('force_l', 'Force', 'force'),
-            (muscle_col, 'EMG Activation', 'emg'),
         ]
+        if muscle_col is not None:
+            signal_specs.append((muscle_col, 'EMG Activation', 'emg'))
         for col in valid_extra_cols:
             signal_specs.append((col, col, f'extra_{col}'))
 

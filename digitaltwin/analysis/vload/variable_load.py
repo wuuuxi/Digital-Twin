@@ -15,12 +15,64 @@ import numpy as np
 import pandas as pd
 import pickle
 import os
+import shutil
+import sys
 
 from pyomo.environ import (
     ConcreteModel, RangeSet, Var, Objective, ConstraintList,
     NonNegativeReals, minimize, value, exp, sqrt,
 )
 from pyomo.opt import SolverFactory
+
+
+def find_ipopt_executable():
+    """Locate IPOPT, including the standard Windows conda environment path.
+
+    IDE launches sometimes use the correct conda Python interpreter without
+    adding ``<env>/Library/bin`` to ``PATH``.  In that situation Pyomo cannot
+    find an installed ``ipopt.exe`` even though it sits next to the active
+    environment.  Resolve that location explicitly before creating a solver.
+    """
+
+    configured = os.environ.get('DIGITALTWIN_IPOPT_EXECUTABLE')
+    candidates = [
+        configured,
+        shutil.which('ipopt'),
+        os.path.join(sys.prefix, 'Library', 'bin', 'ipopt.exe'),
+        os.path.join(sys.prefix, 'bin', 'ipopt'),
+    ]
+    for candidate in candidates:
+        if candidate and os.path.isfile(candidate):
+            return os.path.abspath(candidate)
+    return None
+
+
+def ensure_ipopt_available():
+    """Return the IPOPT executable or raise an actionable configuration error."""
+
+    executable = find_ipopt_executable()
+    if executable is None:
+        raise RuntimeError(
+            "Variable-load optimization requires the IPOPT executable. "
+            "Install it in the active environment (for example: "
+            "`conda install -c conda-forge ipopt`) or set "
+            "DIGITALTWIN_IPOPT_EXECUTABLE to the full ipopt executable path. "
+            f"Active Python environment: {sys.prefix}"
+        )
+    return executable
+
+
+def _create_ipopt_solver(max_iter):
+    executable = ensure_ipopt_available()
+    solver = SolverFactory('ipopt', executable=executable)
+    if not solver.available(exception_flag=False):
+        raise RuntimeError(
+            f"Pyomo found IPOPT at {executable}, but the executable is not "
+            "available to the solver. Check the active conda environment and "
+            "its runtime libraries."
+        )
+    solver.options['max_iter'] = max_iter
+    return solver
 
 
 # ============================================================
@@ -146,14 +198,14 @@ def _warm_start_from_pspline(pspline_list, w, g, xi, l_min, l_max,
     从 P-spline 曲面上查找贴近目标激活 g 的负载曲线，作为 ipopt 的 warm start。
 
     策略：
-      1. 在 \[l_min, l_max\] 上取 n_grid 点。
-      2. 对每个高度 xi\[i\]，计算所有肌肉在 grid 上的加权偏差
-         dev\[i, k\] = Σ_j w_j \* |a_j(xi\[i\], l_grid\[k\]) - g_j|
-         取 argmin 作为 l_init\[i\]。
-      3. 把 dev_min\[i\] < tol 的点标为"匹配成功"，取最长一段连续
-         匹配区间 \[i_start, i_end\]；其以前用 l_init\[i_start\] 填充，
-         其以后用 l_init\[i_end\] 填充（避免初始值跳变冲撞 epsilon 约束）。
-      4. 同时返回 a_init\[i, j\] = a_j(xi\[i\], l_init\[i\])，以保证等式约束
+      1. 在 [l_min, l_max] 上取 n_grid 点。
+      2. 对每个高度 xi[i]，计算所有肌肉在 grid 上的加权偏差
+         dev[i, k] = Σ_j w_j * |a_j(xi[i], l_grid[k]) - g_j|
+         取 argmin 作为 l_init[i]。
+      3. 把 dev_min[i] < tol 的点标为"匹配成功"，取最长一段连续
+         匹配区间 [i_start, i_end]；其以前用 l_init[i_start] 填充，
+         其以后用 l_init[i_end] 填充（避免初始值跳变冲撞 epsilon 约束）。
+      4. 同时返回 a_init[i, j] = a_j(xi[i], l_init[i])，以保证等式约束
          a == surface(l) 在初始点几乎成立。
     """
     from digitaltwin.analysis.heatmap.monotone_pspline import (
@@ -297,8 +349,7 @@ def variable_load_optimization(rbf_params, w, g=0.0, s=1, c=0,
     ) * (-1) ** c
     model.obj = Objective(expr=obj, sense=minimize)
 
-    solver = SolverFactory('ipopt')
-    solver.options['max_iter'] = max_iter
+    solver = _create_ipopt_solver(max_iter)
     solver.solve(model)
 
     load = np.array([value(model.l[i]) for i in model.I])
@@ -358,8 +409,7 @@ def variable_load_optimization_max(rbf_params, w, g=0.0, s=1, c=0,
     ) * (-1) ** c
     model.obj = Objective(expr=obj, sense=minimize)
 
-    solver = SolverFactory('ipopt')
-    solver.options['max_iter'] = max_iter
+    solver = _create_ipopt_solver(max_iter)
     solver.solve(model)
 
     load = np.array([value(model.l[i]) for i in model.I])
@@ -495,8 +545,7 @@ def variable_load_optimization_pspline(pspline_params_list, w, g=0.0, s=1, c=0,
                    for i in model.I for j in model.J)
     model.obj = Objective(expr=obj, sense=minimize)
 
-    solver = SolverFactory('ipopt')
-    solver.options['max_iter'] = max_iter
+    solver = _create_ipopt_solver(max_iter)
     solver.solve(model, tee=tee)
 
     load = np.array([value(model.l[i]) for i in model.I])
@@ -517,7 +566,9 @@ def one_muscle_variable_load(subject, title, muscle_files, goal, epsilons,
                               use_pspline=False, tee=False,
                               over_activate_th=None,
                               safety_muscle_files=None,
-                              safety_thresholds=None):
+                              safety_thresholds=None,
+                              parameter_dir=None,
+                              parameter_suffix=''):
     """
     单肌肉（或肌肉组合）的变负载优化 + 绘图 + CSV 导出。
 
@@ -562,13 +613,15 @@ def one_muscle_variable_load(subject, title, muscle_files, goal, epsilons,
     rbf_predict_fn = rbf_predict_fn or _rbf_predict
 
     height_min, height_max = subject.height_range
-    base = (subject.muscle_folder if subject.load_previous_data
-            else os.path.join(subject.result_folder, 'heatmap/params'))
+    base = parameter_dir or (
+        subject.muscle_folder if subject.load_previous_data
+        else os.path.join(subject.result_folder, 'heatmap/params'))
 
     # ---- 加载目标肌肉曲面参数 ----
     if use_pspline:
         psp_files = [
-            f.replace('_rbf_params.pkl', '_pspline_params.pkl')
+            f.replace('_rbf_params.pkl',
+                      f'{parameter_suffix}_pspline_params.pkl')
             for f in muscle_files
         ]
         pspline_list = []
@@ -593,7 +646,9 @@ def one_muscle_variable_load(subject, title, muscle_files, goal, epsilons,
     if use_pspline and safety_muscle_files:
         safety_pspline_list = []
         for file in safety_muscle_files:
-            sp_file = file.replace('_rbf_params.pkl', '_pspline_params.pkl')
+            sp_file = file.replace(
+                '_rbf_params.pkl',
+                f'{parameter_suffix}_pspline_params.pkl')
             with open(os.path.join(base, sp_file), 'rb') as f:
                 safety_pspline_list.append(pickle.load(f))
         safety_s_vals = (list(safety_thresholds)
@@ -694,7 +749,8 @@ def one_muscle_variable_load(subject, title, muscle_files, goal, epsilons,
 
 
 def generate_variable_load(subject, variable_mode=1, plot_fn=None,
-                            use_pspline=False, tee=False):
+                            use_pspline=False, tee=False,
+                            load_source='nominal'):
     """
     批量生成变负载优化结果（对 subject.titles 中的所有肌肉）。
 
@@ -711,7 +767,26 @@ def generate_variable_load(subject, variable_mode=1, plot_fn=None,
     use_pspline : bool, default False
         True 时使用 P-spline 曲面作为优化中的激活曲面（需 generate_heatmaps
         已产出 {musc}_pspline_params.pkl）；False 时使用 RBF。
+    load_source : {'nominal', 'estimated'}, default 'nominal'
+        ``estimated`` 从 ``heatmap_estimated_load/params`` 加载带 ``_est``
+        后缀的 P-spline 参数。
     """
+    if load_source not in {'nominal', 'estimated'}:
+        raise ValueError(
+            f"load_source 必须是 'nominal' 或 'estimated'，got {load_source!r}")
+
+    parameter_dir = (
+        os.path.join(subject.result_folder, 'heatmap_estimated_load', 'params')
+        if load_source == 'estimated' else
+        (subject.muscle_folder if subject.load_previous_data
+         else os.path.join(subject.result_folder, 'heatmap', 'params')))
+    parameter_suffix = '_est' if load_source == 'estimated' else ''
+
+    # Fail before loading model parameters or constructing Pyomo models, and
+    # handle conda-on-Windows installations whose Library/bin is missing from
+    # the IDE process PATH.
+    ensure_ipopt_available()
+
     titles = subject.titles
     goals = subject.goal
     max_iter = subject.max_iter or [10000] * len(titles)
@@ -775,7 +850,9 @@ def generate_variable_load(subject, variable_mode=1, plot_fn=None,
             use_pspline=use_pspline, tee=tee,
             over_activate_th=th_for_title,
             safety_muscle_files=safety_files if safety_files else None,
-            safety_thresholds=safety_ths if safety_ths else None)
+            safety_thresholds=safety_ths if safety_ths else None,
+            parameter_dir=parameter_dir,
+            parameter_suffix=parameter_suffix)
 
 
 # ============================================================

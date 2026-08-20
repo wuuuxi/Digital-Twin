@@ -53,7 +53,8 @@ def main():
 
     results = pipeline.run(
         include_xsens=False,
-        include_insole=INCLUDE_INSOLE_GRF)
+        include_insole=INCLUDE_INSOLE_GRF,
+        write=True)
 
     # 将短名转为 emg_ 前缀形式，交由 _resolve_muscle_cols 做数据列匹配
     emg_muscles = [f'emg_{m}' for m in target_muscles]

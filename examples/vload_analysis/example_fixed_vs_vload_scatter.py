@@ -10,7 +10,7 @@
   - 变负载：  每组实验一种稍深的颜色（Dark2），三角点
 
 数据来源：
-  - 固定负载：pipeline.run()      -> pipeline.results
+  - 固定负载：pipeline.run()      -> PipelineResults / TrialResult.segments
   - 变负载：  pipeline.run_vload() -> {label: {'cutted_data', ...}}
 
 用法：
@@ -85,8 +85,7 @@ def main():
     pipeline.debug = True
 
     # ---- 固定负载 ----
-    pipeline.run(include_xsens=False)
-    fixed_results = pipeline.results
+    fixed_results = pipeline.run(include_xsens=False, write=True)
 
     # ---- 变负载 ----
     vload_results = pipeline.run_vload()
@@ -95,7 +94,7 @@ def main():
 
     # 固定负载：每个负载一种较浅的颜色，圆点
     for li, lw in enumerate(fixed_results.keys()):
-        df = _prepare(fixed_results[lw].get('cutted_data'), MOVEMENT_TYPES)
+        df = _prepare(fixed_results[lw].segments, MOVEMENT_TYPES)
         if df is not None:
             _scatter_group(axes, df, FIXED_COLORS[li % len(FIXED_COLORS)],
                            f'{lw}kg', 'o')

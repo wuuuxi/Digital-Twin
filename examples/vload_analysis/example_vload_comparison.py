@@ -30,7 +30,7 @@ def main():
     pipeline.debug = True
 
     # --- 数据加载（不加载 Xsens） ---
-    results = pipeline.run(include_xsens=False)
+    results = pipeline.run(include_xsens=False, write=True)
     vload_results = pipeline.run_vload()
 
     muscles = subject.musc_label[:6]

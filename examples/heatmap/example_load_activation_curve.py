@@ -27,7 +27,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from digitaltwin import Subject, MultiLoadPipeline
-from digitaltwin.analysis.heatmap.rbf_fitting import (
+from digitaltwin.analysis.activation.rbf import (
     fit_activation_map, predict_at)
 
 
@@ -252,8 +252,8 @@ def main():
 
     # ---- 步骤 1：收集原始切片数据并按高度范围过滤 ----
     if not pipeline.results:
-        pipeline.run(include_xsens=False)
-    cutted = pipeline._collect_cutted_data(movement_types=MOVEMENT_TYPES)
+        pipeline.run(include_xsens=False, write=True)
+    cutted = pipeline.collect_segments(movement_types=MOVEMENT_TYPES)
     if cutted is None or len(cutted) == 0:
         print('未收集到切片数据，终止。')
         return
